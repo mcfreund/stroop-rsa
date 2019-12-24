@@ -1,27 +1,16 @@
 ## about ----
-## mike freund, 2019-02-23
+## mike freund, 2019-03-17
+## adapted for new project directory 2019-12-24
 ## 
 ## reads in afni images (beta estimates from GLM) into a list.
 ## this list contains one element per subject per parcel per hemisphere.
-## similarity measures are then calculated from this list, then saved as an .RData file via boxr::box_save() to
-##  ./stroop-rsa/data.
+## given a parcellation atlas, similarity measures are then calculated from this list, and saved as
+##  .RDS files to stroop-rsa/out/rsa/.
 ## the beta list is also optionally saved to this location.
-## this is done separately for mmp and gordon parcels, yielding two .RData files.
-## the subsequent script, 4_write_rsms.R,  will load these files, calculate RSMs,
-## and write the results to  ./stroop-rsa/data as csvs.
-## the purpose of this script is to get the data to a location (box) and format (.RData) that can be 
-## accessed via boxdrive (locally)---enabling many files to be (more) efficiently written compared to  via boxr.
-
-## updated 2019-03-14 :: conducting RSA on multi-parcel "clusters"
-## updated 2019-03-17 :: run only for held out subjects
+## 
 
 
-## set up env. ----
-
-do.clusters <- TRUE
-# do.held.out <- TRUE
-
-## dependencies
+## setup ----
 
 library(boxr)
 box_auth()

@@ -13,7 +13,9 @@ if (!exists("do.read.atlas")) {
     gordon = readline(prompt = "get gordon? [y, *any key*]  (*any key* for no)    \n") == "y"
   )
 }
+
 if (!is.logical(do.read.atlas) & !length(do.read.atlas) > 2) stop("funky values of do.read.atlas var")
+
 if (any(do.read.atlas)) {
   atlas <- vector("list", sum(do.read.atlas)) %>% setNames(names(do.read.atlas)[do.read.atlas])
   for (ii in seq_along(atlas)) atlas[[ii]] <- vector("list", 2) %>% setNames(c("l", "r"))
