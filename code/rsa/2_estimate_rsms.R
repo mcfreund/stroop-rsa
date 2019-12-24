@@ -11,10 +11,9 @@
 
 ## TODO
 ## script as function (executable): 
-##  - given an atlas (mmp, gordon, user defined) loops over and outputs RDA files.
-##  - (remove atlas loop)
-##  - save.betas
-##  - subject list...
+##  - given an atlas (mmp, gordon, user defined), loop over subjects and output RDA files.
+##  (remove atlas loop and get clusters in same format as other atlases; i.e. as mask)
+##  NORMALIZE EUCLIDEAN BY NVOX
 
 
 ## setup ----
@@ -142,7 +141,7 @@ for (atlas.i in names(atlas.key)) {
         if (save.betas) betalist[[this.subj.roi.hemi]] <- roi.betas
         ## get rsm (pearson and euclidean):
         rsarray.pearson[, , subj.i, roi.i, hemi.i] <- cor(roi.betas[, bias.items])
-        rsarray.euclidean[, , subj.i, roi.i, hemi.i] <- dist2mat(roi.betas[, bias.items])
+        rsarray.euclidean[, , subj.i, roi.i, hemi.i] <- dist2mat(roi.betas[, bias.items]) ## TODO: NORMALIZE BY NVOX
       }
     }
     
@@ -151,7 +150,7 @@ for (atlas.i in names(atlas.key)) {
   }
 
     ## store ----
-  
+    
     saveRDS(
       rsarray.pearson, 
       here(
@@ -169,5 +168,3 @@ for (atlas.i in names(atlas.key)) {
     )
 
 }  ## end atlas loop
-
-
