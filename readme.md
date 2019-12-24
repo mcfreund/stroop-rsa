@@ -1,5 +1,5 @@
-## directory contains code written by mike freund for rsa / correlational mvpa analyses of stroop data.
-
+## development directory for project involving RSA of color-word Stroop
+## WORK IN PROGRESS
 
 ### ./data
 * contains behavioral data assembled by stroop-rsa/write_behav_stroop_rsa.R.
