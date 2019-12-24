@@ -1,6 +1,11 @@
+## paths: pointers to nil-bluearc
+dir.nil.dmcc2.afni <- "/data/nil-bluearc/ccp-hcp/DMCC_ALL_BACKUPS/HCP_SUBJECTS_BACKUPS/AFNI_ANALYSIS"
+# dir.freund.external <- "/data/nil-external/ccp/freund"
+# dir.freund.scratch1 <- "/scratch1/ccp/freundm"
+# dir.git <- file.path(dir.freund.scratch1, "R01")
+# dir.atlas <- "/data/nil-external/ccp/freund/atlases"
 
-
-## strings
+## factor levels
 
 bias.colors <- c("blue", "purple", "red", "white")
 bias.words  <- toupper(bias.colors)

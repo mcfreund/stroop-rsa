@@ -7,7 +7,7 @@ library(dplyr)
 library(purrr)
 library(tidyr)
 library(data.table)
-# library(readxl)
+#l ibrary(readxl)
 # source(here("..", "gen", "funs", "_get_dirs_remote.R"))
 # source(here("r", "group-201902", "_get_misc_vars.R"))
 
@@ -189,3 +189,59 @@ copy.movregs <- function(
 
 
 ## load  and prep sheets ----
+stroop <- fread("data/behavior-and-events_group201902.csv")
+subj_sum <- fread("data/summary_group201902.csv")
+stroop.pro <- subset(stroop, session == "pro")
+
+## make grouping.var:
+is.nuisance <- stroop.pro$acc.final %in% c("0", "no.response", "unintelligible")
+stroop.pro <- stroop.pro %>%
+  ungroup %>%
+  mutate(
+    reg = item,
+    reg = ifelse(pc == "pc50", paste0("pc50_", trial.type), reg),
+    reg = ifelse(is.nuisance, "nuisance", reg)
+  )
+unique(stroop.pro$reg)
+sum(is.na(stroop.pro$reg))
+
+## NB: write events checks for "run1" and "run2" text in column "run"!!!
+if (any(unique(stroop.pro$run) %in% 1:2)) stroop.pro$run <- ifelse(stroop.pro$run == 1, "run1", "run2")
+
+dir.to.write.in <- here("glms")
+
+## first, check:
+stroop.pro %>% split(list(.$subj, .$session)) %>% map_dbl(nrow) %>% unique  ## should be length 1, of value 216
+head(stroop.pro[, grep("time.block", names(stroop.pro))])
+stroop.pro[, grep("time.block", names(stroop.pro))] %>% range
+
+## write events
+num.events.written <- stroop.pro %>% 
+  split(list(.$subj, .$session)) %>%
+  map(
+    write.events, 
+    grouping.var.name   = "reg",
+    grouping.var.values = unique(stroop.pro$reg),
+    dir.analysis        = dir.to.write.in,
+    onset.var.name      = "time.target.onset",
+    reg.suffix          = "acc-only"
+  )
+
+## write blocks
+stroop.pro %>% write.blocks(dir.analysis = dir.to.write.in)  ## runs silently
+
+## copy movregs
+summary.movregs <- copy.movregs(.dir.analysis = dir.to.write.in)
+
+
+## write summaries ----
+
+## event files
+df.num.events.written <- matrix(unlist(num.events.written), nrow = length(unique(stroop.pro$subj)), byrow = TRUE)
+df.num.events.written <- data.frame(unique(stroop.pro$subj), df.num.events.written)
+names(df.num.events.written) <- c("subj", unique(stroop.pro$reg))
+write.csv(df.num.events.written, here("out", "summaries", "event-files_group201902.csv"))
+
+## movregs
+summary.movregs <- summary.movregs %>% filter(session == "pro")
+write.csv(summary.movregs, here("out", "summaries", "moveregs_group201902.csv"))
