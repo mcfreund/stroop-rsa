@@ -5,28 +5,8 @@
 
 ## dependencies prompts and input validation ----
 
-library(dplyr)
-
-## do.mb
-
-if (!exists("do.mb")) {
-  do.mb <- c(
-    mb4 = readline(prompt = "do mb 4? [y, *any key*]  (*any key* for no)    \n") == "y",
-    mb8 = readline(prompt = "do mb 8? [y, *any key*]  (*any key* for no)    \n") == "y"
-  )
-}
-if (!is.logical(do.mb)) stop("funky values of do.mb var")
-if (!length(do.mb) > 1) stop("do.mb too long")
-if (do.mb["mb4"]) {
-  voxel.label <- "2p4"   ## for getting the correct ROI image below
-} else if (do.mb["mb8"]) { voxel.label <- "222" }
-
 ## do.read.atlas
 
-if (!exists("dir.atlas")) {
-  source(here::here("..", "gen/funs/get_dirs_remote.R"))
-  # print("sourcing ./gen/funs/get_dirs_remote.R")  ## commented for knitrs 2019-02-26
-}
 if (!exists("do.read.atlas")) {
   do.read.atlas <- c(
     mmp    = readline(prompt = "get mmp? [y, *any key*]  (*any key* for no)    \n") == "y",
@@ -46,11 +26,11 @@ if (any(do.read.atlas)) {
 if (do.read.atlas["mmp"]) {
   ## get atlas
   atlas$mmp$l <-oro.nifti::readNIfTI(
-    paste0(dir.atlas, "/HCP-MMP1_L_on_MNI152_ICBM2009a_nlin_", voxel.label, ".nii.gz"),
+    paste0(dir.atlas, "/HCP-MMP1_L_on_MNI152_ICBM2009a_nlin_2p4.nii.gz"),
     reorient = FALSE
     )
   atlas$mmp$r <- oro.nifti::readNIfTI(
-    paste0(dir.atlas, "/HCP-MMP1_R_on_MNI152_ICBM2009a_nlin_", voxel.label, ".nii.gz"),
+    paste0(dir.atlas, "/HCP-MMP1_R_on_MNI152_ICBM2009a_nlin_2p4.nii.gz"),
     reorient = FALSE
     )
 }
@@ -60,7 +40,7 @@ if (do.read.atlas["gordon"]) {
   ## same numbers for R and L hemispheres (one number per bilateral ROI), but separate objects
   ## for each hemisphere atlas.
   atlas$gordon$l <- oro.nifti::readNIfTI(
-    file.path(dir.atlas, paste0("gordon/communities_", voxel.label, "_resampled_LPI.nii.gz")),
+    file.path(dir.atlas, paste0("gordon/communities_2p4_resampled_LPI.nii.gz")),
     reorient = FALSE
     )
   atlas$gordon$r <- atlas$gordon$l
@@ -83,8 +63,8 @@ atlas.key$gordon <- read.table(
   file.path(dir.atlas, "communityKey_wsubcort.txt"),
   stringsAsFactors = FALSE
   ) %>%
-  rename(num.roi = comm.num, roi = comm.lbl) %>%
-  mutate(
+  dplyr::rename(num.roi = comm.num, roi = comm.lbl) %>%
+  dplyr::mutate(
     roi = gsub("(.*).$", "\\1", roi)
   ) %>%
-  filter(num.roi %% 2 == 1)
+  dplyr::filter(num.roi %% 2 == 1)

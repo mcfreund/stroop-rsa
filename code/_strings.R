@@ -8,7 +8,10 @@
 ## mike freund, 2019-02-20
 ## adapted for new project directory 2019-12-24
 
+
 ## paths: pointers for atlases and for BOLD timeseries ----
+
+nodename <- Sys.info()["nodename"]
 
 dir.nil.dmcc2.afni <- "/data/nil-bluearc/ccp-hcp/DMCC_ALL_BACKUPS/HCP_SUBJECTS_BACKUPS/AFNI_ANALYSIS"
 
