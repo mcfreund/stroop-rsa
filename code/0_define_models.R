@@ -1,11 +1,15 @@
+## about ----
+## creates model similarity matrices (for RSA) and writes them to .csv files.
+## 
+## mike freund, 2019-02-20
+## adapted for new project directory 2019-12-24
 
+## setup ----
 library(here)
 source(here("code", "_strings.R"))
 library(mikeutils)
 library(magrittr)
 library(dplyr)
-library(data.table)
-
 
 ## create:
 empty.rsm <- matrix(0, ncol = 16, nrow = 16, dimnames = list(bias.items, bias.items))
@@ -28,7 +32,7 @@ incongruency.rsm[!bias.items.congruency, !bias.items.congruency] <- 1
 ## check:
 qcor(incongruency.rsm)
 qcor(congruency.rsm)
-qcor(target.rsm)  ## NB: sorted by distractor
+qcor(target.rsm) ## NB: sorted by distractor
 qcor(distractor.rsm)  ## NB: sorted by distractor
 
 ## melt to data.frame

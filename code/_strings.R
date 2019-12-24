@@ -1,8 +1,15 @@
+## about ----
+## contains strings that are commonly used by scripts in this project.
+## 
+## these strings are mostly names of factor levels.
+## but, some are pointers (paths) to external directories, such as the directory that contains the BOLD timecourse images.
+## i try to limit the number of these external pointers.
+##
+## mike freund, 2019-02-20
+## adapted for new project directory 2019-12-24
+
 ## paths: pointers to nil-bluearc
 dir.nil.dmcc2.afni <- "/data/nil-bluearc/ccp-hcp/DMCC_ALL_BACKUPS/HCP_SUBJECTS_BACKUPS/AFNI_ANALYSIS"
-# dir.freund.external <- "/data/nil-external/ccp/freund"
-# dir.freund.scratch1 <- "/scratch1/ccp/freundm"
-# dir.git <- file.path(dir.freund.scratch1, "R01")
 # dir.atlas <- "/data/nil-external/ccp/freund/atlases"
 
 ## factor levels
