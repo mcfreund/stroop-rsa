@@ -1,0 +1,39 @@
+source ~/.lin.cshrc
+bash
+
+## mark all scripts in glms as executable
+chmod -R u+x /data/nil-external/ccp/freund/stroop-rsa/code/glms
+
+shopt -s nullglob
+cd /data/nil-external/ccp/freund/stroop-rsa/code/glms
+glms=(./pro_bias_acc-only/*)
+nglms=${#glms[@]}
+echo $nglms
+
+
+## change index to run different subsets:
+for f in "${glms[@]:0:13}"; do
+    "$f"
+done
+
+for f in "${glms[@]:13:26}"; do
+    "$f"
+done
+
+for f in "${glms[@]:26:39}"; do
+    "$f"
+done
+
+for f in "${glms[@]:39:52}"; do
+    "$f"
+done
+
+
+for f in "${glms[@]:52:66}"; do
+    "$f"
+done
+
+##----
+
+## delete all files containing pattern in directory
+#find AFNI_ANALYSIS -path '*/RESULTS*' -delete
