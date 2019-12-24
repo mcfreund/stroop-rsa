@@ -1,0 +1,2 @@
+mostly for holding .rmd / .rnw files for generating encapsulated reports.
+save to out/reports
