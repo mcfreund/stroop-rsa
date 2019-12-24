@@ -8,11 +8,25 @@
 ## mike freund, 2019-02-20
 ## adapted for new project directory 2019-12-24
 
-## paths: pointers to nil-bluearc
-dir.nil.dmcc2.afni <- "/data/nil-bluearc/ccp-hcp/DMCC_ALL_BACKUPS/HCP_SUBJECTS_BACKUPS/AFNI_ANALYSIS"
-# dir.atlas <- "/data/nil-external/ccp/freund/atlases"
+## paths: pointers for atlases and for BOLD timeseries ----
 
-## factor levels
+dir.nil.dmcc2.afni <- "/data/nil-bluearc/ccp-hcp/DMCC_ALL_BACKUPS/HCP_SUBJECTS_BACKUPS/AFNI_ANALYSIS"
+
+if (nodename == "ccplinux1") {
+  
+  dir.atlas <- "/data/nil-external/ccp/freund/atlases"
+  
+} else if (nodename == "CCP-FREUND") {
+  ## mike freund's (i.e., ccp's) thinkpad
+  ## reliant on box drive
+  ## assumes box drive location at ./Users/mcf/Box
+  
+  dir.atlas <- "C:/local/atlases"
+
+}
+
+
+## factor levels ----
 
 bias.colors <- c("blue", "purple", "red", "white")
 bias.words  <- toupper(bias.colors)
