@@ -15,7 +15,6 @@ if (!exists("do.read.atlas")) {
 }
 if (!is.logical(do.read.atlas) & !length(do.read.atlas) > 2) stop("funky values of do.read.atlas var")
 if (any(do.read.atlas)) {
-  if (!any(do.mb)) stop("!any(do.mb) == TRUE")
   atlas <- vector("list", sum(do.read.atlas)) %>% setNames(names(do.read.atlas)[do.read.atlas])
   for (ii in seq_along(atlas)) atlas[[ii]] <- vector("list", 2) %>% setNames(c("l", "r"))
   rm(ii)
