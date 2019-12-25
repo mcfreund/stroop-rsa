@@ -19,7 +19,6 @@
 ## setup ----
 
 do.read.atlas <- c("mmp" = TRUE, gordon = TRUE)
-save.betas <- FALSE  ## should the betas be written?
 file.suffix <- ""
 
 library(here)
@@ -124,6 +123,7 @@ for (atlas.i in names(atlas.key)) {
     ## image.betas with dims [i, j, k, regs]
     image.betas <- image.full[, , , 1, brick.nums + 1]
     rm(image.full)  ## take out the garbage
+    gc()
     dimnames(image.betas) <- list(i = NULL, j = NULL, k = NULL, reg = regs)
     
     ## generate rsm for each roi:
@@ -138,7 +138,6 @@ for (atlas.i in names(atlas.key)) {
         ## get roi:
         mask <- array(this.atlas.hemi %in% rois[roi.i], dim = dim(this.atlas.hemi))
         roi.betas <- apply(image.betas, "reg", function(slice.i) slice.i[mask])
-        if (save.betas) betalist[[this.subj.roi.hemi]] <- roi.betas
         ## get rsm (pearson and euclidean):
         rsarray.pearson[, , subj.i, roi.i, hemi.i] <- cor(roi.betas[, bias.items])
         rsarray.euclidean[, , subj.i, roi.i, hemi.i] <- dist2mat(roi.betas[, bias.items]) ## TODO: NORMALIZE BY NVOX
