@@ -13,7 +13,6 @@
 ## script as function (executable): 
 ##  - given an atlas (mmp, gordon, user defined), loop over subjects and output RDA files.
 ##  (remove atlas loop and get clusters in same format as other atlases; i.e. as mask)
-##  NORMALIZE EUCLIDEAN BY NVOX
 
 
 ## setup ----
@@ -30,7 +29,6 @@ library(data.table)
 library(oro.nifti)
 
 source(here("code", "_strings.R"))
-source(here("code", "_funs.R"))
 source(here("code", "_get_atlas.R"))
 
 ## paths, vars
@@ -80,46 +78,58 @@ for (atlas.i in names(atlas.key)) {
     # subj.i <- 1
     
     ## get afni images:
+    
     dir.glms <- file.path(dir.analysis, fit.subjs[subj.i], "results", glm.name)
     fname.nii <- file.path(dir.glms, paste0("stats_", fit.subjs[subj.i], ".nii.gz"))
+    
     if (file.exists(fname.nii)) {
       ## dims of image.run.full [i, j, k, ???, regressor]
       image.full <- readNIfTI(fname.nii, reorient = FALSE)
-    } else {
-      stop("file nonexistant! ", paste0(fname.nii))
-    }
+    } else { stop("file nonexistant! ", paste0(fname.nii)) }
     
     ## get brick numbers for regressors:
+    
     brick.nums <- rep(NA, length(regs))  ## + 1 for sustained
     for (reg.i in regs) {
       # reg.i <- regs[1]
+      
       image.label <- paste0(reg.i, "#0_Coef")
+      
       if (nodename == "CCP-FREUND") {
+        
         brick.str <- system2(
           "wsl",
-          args = paste(
-            "/home/mcf/abin/3dinfo", "-label2index", image.label, win2lin(fname.nii)
-          ),
+          args = paste("/home/mcf/abin/3dinfo", "-label2index", image.label, win2lin(fname.nii)),
           stdout = TRUE
         )
+        
       } else if (nodename == "ccplinux1"){
+        
         brick.str <- system2(
           "/usr/local/pkg/linux_openmp_64/3dinfo",
           args = paste("-label2index", image.label, fname.nii),
           stdout = TRUE
         )  ## doesn't matter which run.
+        
       }
+      
       ## for error checking:
+      
       has.error <- grepl("error", brick.str, ignore.case = TRUE)
       if (any(has.error)) stop("error loading brick nums: ", paste0(fit.subjs[subj.i], " ", reg.i))
+      
       ## to remove function call that is included in output (when is.local.session):
+      
       brick.str <- brick.str[!grepl("3dinfo: AFNI version", brick.str)]
       brick.num <- as.numeric(brick.str)
       brick.nums[which(reg.i == regs)] <- brick.num
+      
     }
+    
     if (any(is.na(brick.nums))) stop("brick nums equal zero! ", paste0(fit.subjs[subj.i]))
     
     ## put subset of images (only the relevant regressors) into one array:
+    
     ## image.betas with dims [i, j, k, regs]
     image.betas <- image.full[, , , 1, brick.nums + 1]
     rm(image.full)  ## take out the garbage
@@ -127,21 +137,28 @@ for (atlas.i in names(atlas.key)) {
     dimnames(image.betas) <- list(i = NULL, j = NULL, k = NULL, reg = regs)
     
     ## generate rsm for each roi:
+    
     rois <- atlas.key[[atlas.i]]$num.roi
     for (roi.i in seq_along(rois)) {  ## careful: roi.i is an index for as.numeric(rois)
       # roi.i <- 1
+      
       for (hemi.i in hemis) {
         # hemi.i <- "r"
+        
         ## for reading ease:
         this.atlas.hemi <- atlas[[atlas.i]][[hemi.i]]
         this.subj.roi.hemi <- paste(fit.subjs[subj.i], atlas.key[[atlas.i]][roi.i, "roi"], hemi.i, sep = "_")
+        
         ## get roi:
         mask <- array(this.atlas.hemi %in% rois[roi.i], dim = dim(this.atlas.hemi))
         roi.betas <- apply(image.betas, "reg", function(slice.i) slice.i[mask])
+        
         ## get rsm (pearson and euclidean):
         rsarray.pearson[, , subj.i, roi.i, hemi.i] <- cor(roi.betas[, bias.items])
-        rsarray.euclidean[, , subj.i, roi.i, hemi.i] <- dist2mat(roi.betas[, bias.items]) ## TODO: NORMALIZE BY NVOX
+        rsarray.euclidean[, , subj.i, roi.i, hemi.i] <- dist2mat(roi.betas[, bias.items]) / nrow(roi.betas)
+      
       }
+      
     }
     
     print(paste0(subj.i, ": subj ", fit.subjs[subj.i], " done!"), quote = FALSE)

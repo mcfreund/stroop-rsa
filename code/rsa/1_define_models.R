@@ -7,10 +7,12 @@
 ## setup ----
 
 library(here)
-source(here("code", "_strings.R"))
 library(mikeutils)
 library(magrittr)
 library(dplyr)
+
+source(here("code", "_strings.R"))
+
 
 ## create:
 empty.rsm <- matrix(0, ncol = 16, nrow = 16, dimnames = list(bias.items, bias.items))
