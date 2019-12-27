@@ -4,3 +4,4 @@
 .Ruserdata
 *.nii.gz
 docs/*
+old/*
