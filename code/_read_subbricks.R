@@ -1,20 +1,20 @@
 ## get afni images:
 ## TODO:
+## -> REMOVE LOOP call for single function
 ## gifti functionality
 ## runwise functionality
 
 read.subbricks <- function(
-  fname, 
+  image.full, 
   afni.path, 
-  .labels = c("asdf", "dafa", "fdsa"), 
-  .suffixes = c("+A", "SADF", "NI"), 
+  .label = "asdf", 
+  .suffix = "+A", 
   runwise = FALSE, 
   wsl = FALSE
   ) {
   
   ## input validation
-  if (!length(.suffixes) %in% c(1, length(.labels))) stop(".suffixes wrong length (not 1 or length(.labels)")
-  if (!dir.exists(path.3dinfo)) stop(paste0(path.3dinfo), " does not exist")
+  if (!length(.suffix) %in% c(1, length(.label))) stop(".suffix wrong length (not 1 or length(.label)")
   if (!file.exists(fname)) stop("file nonexistant! ", paste0(fname))
   path.3dinfo <- file.path(afni.path, "3dinfo")
   if (!dir.exists(path.3dinfo)) stop(paste0(path.3dinfo), " does not exist")
