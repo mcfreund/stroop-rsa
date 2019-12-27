@@ -179,7 +179,7 @@ for (atlas.i in names(atlas.key)) {
       rsarray.euclidean, 
       here(
         "out", "rsa", "obsv", 
-        paste0("rsarray_group201902_", glm.name, "_", atlas.i, "_euclidean", file.suffix, ".rds")
+        paste0("rsarray_", glm.name, "_", atlas.i, "_euclidean", file.suffix, ".rds")
       )
     )
 

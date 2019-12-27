@@ -58,3 +58,18 @@ write.csv(distractor.rsm, here("out", "mods", "bias_distractor.csv"))
 write.csv(congruency.rsm, here("out", "mods", "bias_congruency.csv"))
 write.csv(incongruency.rsm, here("out", "mods", "bias_incongruency.csv"))
 write.csv(models.wide, here("out", "mods", "bias_full_matrix.csv"), row.names = FALSE)
+
+## run model ----
+counts <- read.csv(here("data", "summary_event-counts.csv"), stringsAsFactors = FALSE)
+# View(counts)
+counts <- counts[counts$stimulus %in% bias.items, c("proactive1", "proactive2", "stimulus")]
+counts$proactive1 <- counts$proactive1 > 3
+counts$proactive2 <- counts$proactive2 > 3
+run1.items <- counts$stimulus[counts$proactive1]
+run2.items <- counts$stimulus[counts$proactive2]
+run.rsm <- matrix(0, ncol = 16, nrow = 16, dimnames = list(bias.items, bias.items))
+run.rsm[run1.items, run1.items] <- 1
+run.rsm[run2.items, run2.items] <- 1
+qcor(run.rsm, "run model", tl.cex = 0.5)  ## all looks good with schemes:
+
+write.csv(run.rsm, here("data", "bias_run.csv"))

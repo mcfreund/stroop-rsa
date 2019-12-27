@@ -1,0 +1,17 @@
+"","blueBLUE","purpleBLUE","redBLUE","whiteBLUE","bluePURPLE","purplePURPLE","redPURPLE","whitePURPLE","blueRED","purpleRED","redRED","whiteRED","blueWHITE","purpleWHITE","redWHITE","whiteWHITE"
+"blueBLUE",1,0,0,1,1,1,0,0,1,1,0,0,0,1,1,0
+"purpleBLUE",0,1,1,0,0,0,1,1,0,0,1,1,1,0,0,1
+"redBLUE",0,1,1,0,0,0,1,1,0,0,1,1,1,0,0,1
+"whiteBLUE",1,0,0,1,1,1,0,0,1,1,0,0,0,1,1,0
+"bluePURPLE",1,0,0,1,1,1,0,0,1,1,0,0,0,1,1,0
+"purplePURPLE",1,0,0,1,1,1,0,0,1,1,0,0,0,1,1,0
+"redPURPLE",0,1,1,0,0,0,1,1,0,0,1,1,1,0,0,1
+"whitePURPLE",0,1,1,0,0,0,1,1,0,0,1,1,1,0,0,1
+"blueRED",1,0,0,1,1,1,0,0,1,1,0,0,0,1,1,0
+"purpleRED",1,0,0,1,1,1,0,0,1,1,0,0,0,1,1,0
+"redRED",0,1,1,0,0,0,1,1,0,0,1,1,1,0,0,1
+"whiteRED",0,1,1,0,0,0,1,1,0,0,1,1,1,0,0,1
+"blueWHITE",0,1,1,0,0,0,1,1,0,0,1,1,1,0,0,1
+"purpleWHITE",1,0,0,1,1,1,0,0,1,1,0,0,0,1,1,0
+"redWHITE",1,0,0,1,1,1,0,0,1,1,0,0,0,1,1,0
+"whiteWHITE",0,1,1,0,0,0,1,1,0,0,1,1,1,0,0,1
