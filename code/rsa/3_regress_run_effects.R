@@ -1,8 +1,12 @@
 ## about ----
 ## 
+## description...
+## 
+## mike freund, 2019-03-17
+## adapted for new project directory 2019-12-27
 
 
-file.suffix <- ifelse(do.clusters, "_multiparcel.rds", ".rds")
+file.suffix <- ""
 
 
 ## setup

@@ -1,13 +1,12 @@
 ## about ----
-## mike freund, 2019-03-17
-## adapted for new project directory 2019-12-24
-## 
 ## reads in afni images (beta estimates from GLM) into a list.
 ## this list contains one element per subject per parcel per hemisphere.
 ## given a parcellation atlas, similarity measures are then calculated from this list, and saved as
 ##  .RDS files to stroop-rsa/out/rsa/.
 ## the beta list is also optionally saved to this location.
 ## 
+## mike freund, 2019-03-17
+## adapted for new project directory 2019-12-24
 
 ## TODO
 ## script as function (executable): 

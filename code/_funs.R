@@ -1,3 +1,4 @@
+`%>%` <- magrittr::`%>%`
 
 rank.to.rt <- function(df, subj, n, from.top = TRUE) {
   rt <- df[df$subj == subj, "rt"]

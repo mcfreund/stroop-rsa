@@ -1,6 +1,4 @@
 ## about ----
-## mike freund, 2019-02-24
-## 
 ## fits general linear models on each subject's RSMs from each parcel, computes simple summary statistics, 
 ## then writes the results to files.
 ## 
@@ -8,25 +6,26 @@
 ## and write a file of 'run-regressed' stats.
 ## see "run_effects" knitr in this directory for clarification.
 ## edited, june 04, 2019: add z / t column in results df, for effect size
+## 
+## mike freund, 2019-02-24
+## adapted for new project directory 2019-12-29
+
 
 ## set up env. ----
 
-do.clusters <- TRUE
-do.held.out <- TRUE
-
-
 ## dependencies
-
-## NB: BOX DRIVE
 
 library(here)
 library(dplyr)
 library(purrr)
 library(reshape2)
 library(data.table)
-source(here("..", "gen", "funs", "_get_dirs_local.R"))
-source(here("..", "gen", "funs", "_funs.R"))
-source(here("r", "group-201902", "_get_misc_vars.R"))
+source(here("code", "_strings.R"))
+source(here("code", "_get_atlas.R"))
+
+# source(here("..", "gen", "funs", "_get_dirs_local.R"))
+# source(here("..", "gen", "funs", "_funs.R"))
+# source(here("r", "group-201902", "_get_misc_vars.R"))
 
 ## strings and funs
 
