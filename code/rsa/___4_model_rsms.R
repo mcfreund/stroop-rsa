@@ -10,6 +10,9 @@
 ## mike freund, 2019-02-24
 ## adapted for new project directory 2019-12-29
 
+## TODO
+## 
+## 
 
 ## set up env. ----
 
@@ -29,16 +32,10 @@ source(here("code", "_get_atlas.R"))
 
 ## strings and funs
 
-file.suffix <- ifelse(do.clusters, "_multiparcel", "")
-if (do.held.out) {
-  file.subj.sample.suffix <- "_held-out"
-  file.rds.suffix <- "_held-out"
-} else {
-  file.subj.sample.suffix <- "_for-analysis" 
-  file.rds.suffix <- ""
-}
+file.suffix <- ""
 
 ## list of subjects for analysis
+
 group201902.analysis <- read.csv(
   file.path(dir.box.stroop.sheets, paste0("subj-sample_group-201902", file.subj.sample.suffix, ".csv")),
   stringsAsFactors = FALSE
