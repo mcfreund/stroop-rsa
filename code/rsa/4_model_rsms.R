@@ -30,17 +30,26 @@ rsv.models.ltri <- fread(here("out", "rsa", "mods", "rsv_bias_lower-triangles.cs
 
 ## create design matrices
 
+## models will be variants upon these main effects:
 tdc <- as.matrix(rsv.models.ltri[, c("target", "distractor", "congruency")])
 tdi <- as.matrix(rsv.models.ltri[, c("target", "distractor", "incongruency")])
+tdc.std <- scale(tdc)
+tdi.std <- scale(tdi)
 
 m <- list(
   tdc = cbind(b0 = 1, tdc),
   tdi = cbind(b0 = 1, tdi),
   txi = cbind(b0 = 1, tdi, ti = rsv.models.ltri$target * rsv.models.ltri$incongruency),
   dxi = cbind(b0 = 1, tdi, di = rsv.models.ltri$distractor * rsv.models.ltri$incongruency)
+  # all = cbind(b0 = 1, tdi, )  ## continuous and categorical
   )
-m.std <- lapply(m, scale)  ## standardize (for betas)
-m.std <- lapply(m.std, function(x) x[, -1])  ## remove intercept col
+m.std <- list(
+  tdc = tdc.std,
+  tdi = tdi.std,
+  txi = cbind(tdi.std, ti = tdi.std[, "incongruency"] * tdi.std[, "target"]),
+  dxi = cbind(tdi.std, di = tdi.std[, "incongruency"] * tdi.std[, "distractor"])
+  # all = cbind(b0 = 1, tdi, )  ## continuous and categorical
+)  ## get interaction btw standardized MEs, not standardized interaction
 
 
 ## loop over atlases ----
@@ -197,3 +206,4 @@ for (atlas.i in seq_along(atlas.key)) {
   )
 
 }
+
