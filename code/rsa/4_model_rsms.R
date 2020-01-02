@@ -173,11 +173,6 @@ for (atlas.i in seq_along(atlas.key)) {
   
   stats.subjs <- bind_rows(stats.subjs, .id = "model")
   
-  ## remove colons from values of param col (and shorten)
-  
-  stats.subjs$param[grepl("target:incongruency", stats.subjs$param)] <- "ti"
-  stats.subjs$param[grepl("distractor:incongruency", stats.subjs$param)] <- "di"
-  
   ## create subj, roi, and hemi cols from id col
   
   stats.subjs <- bind_cols(

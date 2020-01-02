@@ -39,16 +39,17 @@ for (atlas.i in seq_along(atlas.key)) {
   
   ## unwrap run model to lower-tri vector:
   
-  run.rsv <- mat2vec(run.rsm)
-  names(run.rsv) <- c("r", "c", "run.model")
+  run.rsv <- mat2vec(run.rsm, value.name = "run.model")
+  X <- cbind(1, run.rsv$run.model)  ## model: intercept, run regressor
   
   ## initialize indices and lists
   
+  is.lower.tri <- lower.tri(diag(length(bias.items)))
   subjs <- dimnames(rsarray)$subj
   parcels <- dimnames(rsarray)$roi
   hemis <- c("l", "r")
   rsarray.resid.rank <- array(NA, dim = dim(rsarray), dimnames = dimnames(rsarray))
-  rsarray.resid.linear <- rsarray.resid.rank
+  rsarray.resid.line <- rsarray.resid.rank
   
   ## loop
   
@@ -57,37 +58,36 @@ for (atlas.i in seq_along(atlas.key)) {
       for (n.hemi.k in seq_along(hemis)) {
         # n.hemi.k = 1; n.parcel.j = 1; n.subj.i = 1
         
-        ## get matrix
+        ## get matrix and unwrap to lower triangle
         
         rsm <- rsarray[, , n.subj.i, n.parcel.j, n.hemi.k]
+        rsv <- as.matrix(rsm[is.lower.tri])
         
-        ## matrix to vector:
+        ## transform and create response matrix
         
-        rsv <- mat2vec(rsm)
-        rsv <- full_join(rsv, run.rsv, by = c("r", "c"))
+        Y <- cbind(atanh(rsv), rank(rsv))
         
-        ## model:
+        ## regress run component from rsv
         
-        fit.linear <- lm(atanh(value) ~ run.model, rsv)
-        fit.rank   <- update(fit.linear, rank(value) ~ .)
-        resids <- cbind(
-          rsv[c("r", "c")], 
-          ## re-center (and transform back to r):
-          residuals.linear = tanh(residuals(fit.linear) + coef(fit.linear)["(Intercept)"]),
-          residuals.rank   = residuals(fit.rank) + coef(fit.rank)["(Intercept)"]
-        )
+        fits <- .lm.fit(X, Y)
+        E <- fits$residuals  ## residuals
+        B0 <- fits$coef[1, ]  ## intercepts
+        regressed <- sweep(E, 2, B0, "+")  ## re-center residuals (add intercepts)
+        
+        ## extract
+        
+        regressed.r <- tanh(regressed[, 1])
+        regressed.rank <- regressed[, 2]
         
         ## vector to matrix:
         
-        rsm.linear.i <- vec2mat(resids[, "residuals.linear"], dnames = bias.items)
-        rsm.rank.i   <- vec2mat(resids[, "residuals.rank"], dnames = bias.items)
+        rsm.line.i <- vec2mat(regressed.r, dnames = bias.items)  ## linear regressed
+        rsm.rank.i <- vec2mat(regressed.rank, dnames = bias.items)  ## rank regressed
         
         ## store:
         
-        name.ijk <- paste(subjs[n.subj.i], parcels[n.parcel.j], hemis[n.hemi.k], sep = "_")
-        
-        rsarray.resid.linear[, , n.subj.i, n.parcel.j, n.hemi.k] <- rsm.linear.i
-        rsarray.resid.rank[, , n.subj.i, n.parcel.j, n.hemi.k]   <- rsm.rank.i
+        rsarray.resid.line[, , n.subj.i, n.parcel.j, n.hemi.k] <- rsm.line.i
+        rsarray.resid.rank[, , n.subj.i, n.parcel.j, n.hemi.k] <- rsm.rank.i
         
       }
     }
@@ -105,7 +105,7 @@ for (atlas.i in seq_along(atlas.key)) {
   )
   
   saveRDS(
-    rsarray.resid.linear, 
+    rsarray.resid.line, 
     here(
       "out", "rsa", "obsv", 
       paste0("rsarray_pro_bias_acc-only_", name.atlas.i, "_pearson_residual-linear.rds")
@@ -114,5 +114,3 @@ for (atlas.i in seq_along(atlas.key)) {
   
   
 }
-
-
