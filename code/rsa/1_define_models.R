@@ -14,7 +14,8 @@ library(dplyr)
 source(here("code", "_strings.R"))
 
 
-## create:
+## create ----
+
 empty.rsm <- matrix(0, ncol = 16, nrow = 16, dimnames = list(bias.items, bias.items))
 target.rsm <- empty.rsm
 distractor.rsm <- empty.rsm
@@ -32,13 +33,15 @@ congruency.rsm[bias.items.congruency, bias.items.congruency] <- 1
 congruency.rsm[!bias.items.congruency, !bias.items.congruency] <- 1
 incongruency.rsm[!bias.items.congruency, !bias.items.congruency] <- 1
 
-## check:
+## check ----
+
 qcor(incongruency.rsm)
 qcor(congruency.rsm)
 qcor(target.rsm) ## NB: sorted by distractor
 qcor(distractor.rsm)  ## NB: sorted by distractor
 
 ## melt to data.frame
+
 models.wide <- cbind(
   target.rsm %>% reshape2::melt(value.name = "target") %>% rename(x = Var1, y = Var2),
   distractor = c(distractor.rsm),
@@ -53,14 +56,15 @@ models.wide %<>%
 
 ## write ----
 
-write.csv(target.rsm, here("out", "mods", "bias_target.csv"))
-write.csv(distractor.rsm, here("out", "mods", "bias_distractor.csv"))
-write.csv(congruency.rsm, here("out", "mods", "bias_congruency.csv"))
-write.csv(incongruency.rsm, here("out", "mods", "bias_incongruency.csv"))
-write.csv(models.wide, here("out", "mods", "bias_full_matrix.csv"), row.names = FALSE)
+write.csv(target.rsm, here("out", "rsa", "mods", "bias_target.csv"))
+write.csv(distractor.rsm, here("out", "rsa", "mods", "bias_distractor.csv"))
+write.csv(congruency.rsm, here("out", "rsa", "mods", "bias_congruency.csv"))
+write.csv(incongruency.rsm, here("out", "rsa", "mods", "bias_incongruency.csv"))
+write.csv(models.wide, here("out", "rsa", "mods", "bias_full_matrix.csv"), row.names = FALSE)
 
 ## run model ----
-counts <- read.csv(here("data", "summary_event-counts.csv"), stringsAsFactors = FALSE)
+
+counts <- data.table::fread(here("data", "summary_event-counts.csv"))
 # View(counts)
 counts <- counts[counts$stimulus %in% bias.items, c("proactive1", "proactive2", "stimulus")]
 counts$proactive1 <- counts$proactive1 > 3
@@ -72,4 +76,4 @@ run.rsm[run1.items, run1.items] <- 1
 run.rsm[run2.items, run2.items] <- 1
 qcor(run.rsm, "run model", tl.cex = 0.5)  ## all looks good with schemes:
 
-write.csv(run.rsm, here("data", "bias_run.csv"))
+write.csv(run.rsm, here("out", "rsa", "mods", "bias_run.csv"))

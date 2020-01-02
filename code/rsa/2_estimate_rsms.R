@@ -16,9 +16,6 @@
 
 ## setup ----
 
-do.read.atlas <- c("mmp" = TRUE, gordon = TRUE)
-file.suffix <- ""
-
 library(here)
 library(mikeutils)
 library(magrittr)
@@ -170,7 +167,7 @@ for (atlas.i in names(atlas.key)) {
       rsarray.pearson, 
       here(
         "out", "rsa", "obsv", 
-        paste0("rsarray_", glm.name, "_", atlas.i, "_pearson", file.suffix, ".rds")
+        paste0("rsarray_", glm.name, "_", atlas.i, "_pearson.rds")
         )
       )
     
@@ -178,7 +175,7 @@ for (atlas.i in names(atlas.key)) {
       rsarray.euclidean, 
       here(
         "out", "rsa", "obsv", 
-        paste0("rsarray_", glm.name, "_", atlas.i, "_euclidean", file.suffix, ".rds")
+        paste0("rsarray_", glm.name, "_", atlas.i, "_euclidean.rds")
       )
     )
 

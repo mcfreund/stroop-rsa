@@ -28,12 +28,11 @@ for (atlas.i in seq_along(atlas.key)) {
   
   rsarray <- readRDS(
     here(
-      "out", "rsa", "obsv", 
-      paste0("rsarray_pro_bias_acc-only_", name.atlas.i, "_pearson.rds")
+      "out", "rsa", "obsv", paste0("rsarray_pro_bias_acc-only_", name.atlas.i, "_pearson.rds")
     )
   )
   
-  run.rsm <- as.matrix(read.csv(here("data", "bias_run.csv"), row.names = 1))
+  run.rsm <- as.matrix(read.csv(here("out", "rsa", "mods", "bias_run.csv"), row.names = 1))
   
   
   ## regress ----
