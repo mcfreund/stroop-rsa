@@ -30,3 +30,14 @@ split.str.item <- function(col.j, prefix = "") {
   colnames(cols) <- paste0(prefix, c("color", "word", "congruency", "label"))
   return(cols)
 }
+
+lm.beta <- function(MOD) {
+  ## see ?QuantPsyc::lm.beta()
+  
+  b  <- summary(MOD)$coef[-1, 1]
+  sx <- sapply(MOD$model[-1], sd)
+  sy <- sapply(MOD$model[1], sd)
+  
+  b * sx / sy
+  
+}
