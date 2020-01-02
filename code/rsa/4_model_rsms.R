@@ -5,10 +5,9 @@
 ## adapted for new project directory 2019-12-29
 
 ## TODO
+## about
 ## add continuous models
 ## add tau a
-## parallelize loops
-## check warning on lm.betas (and speed up?)
 ## loop for statistic (euclidean)
 ## loop for atlas
 
@@ -25,20 +24,23 @@ source(here("code", "_strings.R"))
 source(here("code", "_funs.R"))
 source(here("code", "_get_atlas.R"))
 
-## models
+## read models
 
-models.wide <- fread(here("out", "rsa", "mods", "bias_full_matrix.csv"))
+rsv.models.ltri <- fread(here("out", "rsa", "mods", "rsv_bias_lower-triangles.csv"))
 
-## formulas
-f <- list(
-  tdc = ~ target + distractor + congruency,
-  tdi = ~ target + distractor + incongruency,
-  txi = ~ target + distractor + incongruency + target:incongruency,
-  dxi = ~ target + distractor + incongruency + distractor:incongruency
-  # all = ~ target + distractor + incongruency + cielab + tphon + silh + orth + dphon
-)
+## create design matrices
 
-## strings and funs
+tdc <- as.matrix(rsv.models.ltri[, c("target", "distractor", "congruency")])
+tdi <- as.matrix(rsv.models.ltri[, c("target", "distractor", "incongruency")])
+
+m <- list(
+  tdc = cbind(b0 = 1, tdc),
+  tdi = cbind(b0 = 1, tdi),
+  txi = cbind(b0 = 1, tdi, ti = rsv.models.ltri$target * rsv.models.ltri$incongruency),
+  dxi = cbind(b0 = 1, tdi, di = rsv.models.ltri$distractor * rsv.models.ltri$incongruency)
+  )
+m.std <- lapply(m, scale)  ## standardize (for betas)
+m.std <- lapply(m.std, function(x) x[, -1])  ## remove intercept col
 
 
 ## loop over atlases ----
@@ -64,7 +66,7 @@ for (atlas.i in seq_along(atlas.key)) {
   )
   
   
-  ## format similarity matrices ----
+  ## prepare similarity matrices for regression ----
   
   ## check if rows and col names are equal (should be, but just to be sure...)
   
@@ -75,106 +77,92 @@ for (atlas.i in seq_along(atlas.key)) {
   )
   if(!are.rowcol.equal) stop("rsarray isn't rsarray!")
   
-  ## get values 
+  ## get indices and values
   
   n.dim <- dim(rsarray.line)[1]
-  is.upper.tri <- upper.tri(diag(n.dim), diag = TRUE)
-  n.tri <- sum(!is.upper.tri) ## num unique elements ((ndim^2 - ndim) / 2)
+  is.lower.tri <- lower.tri(diag(n.dim))
   subjs <- dimnames(rsarray.line)$subj
   rois <- dimnames(rsarray.line)$roi
   hemis <- dimnames(rsarray.line)$hemi
+  n.mods <- length(subjs) * length(rois) * length(hemis)
   
-  ## unwrap into lower-triangle vector and create model regressors
+  ## unwrap into lower-triangle vector
   
-  rsvectors <- vector("list", length(subjs) * length(rois) * length(hemis))
+  rsvectors <- vector("list", n.mods)
   names(rsvectors) <- combo_paste3(subjs, rois, hemis)
   
-  ## NB: prefer loops here to vectorized code bc of lower memory demand.
-  ## will take a moment, though.
   for (subj.i in seq_along(subjs)) {
     for (roi.j in seq_along(rois)) {
       for (hemi.k in seq_along(hemis)) {
         # subj.i = 1; roi.j = 1; hemi.k = 1
         
-        rsm.line <- rsarray.line[, , subj.i, roi.j, hemi.k]
-        rsv.line <- mat2vec(rsm.line)
-        rsv.line <- rename(rsv.line, x = r, y = c, r = value)
-        
+        rsm.line <- rsarray.line[, , subj.i, roi.j, hemi.k]  ## get slice
         rsm.rank <- rsarray.rank[, , subj.i, roi.j, hemi.k]
-        rsv.rank <- mat2vec(rsm.rank)
-        rsv.rank <- rename(rsv.rank, x = r, y = c, rank = value)
-        
-        rsv <- full_join(rsv.line, rsv.rank, by = c("x", "y"))
-        
-        ## bind model regressors to observed vector
-        
-        rsv <- left_join(rsv, models.wide, by = c("x", "y"))  ## left_join (not full) bc models.wide is full matrix
-        
-        ## store in list (rsvectors)
+
+        z <- atanh(rsm.line[is.lower.tri])  ## get lower.triangle vector (and transform to fisher's z)
+        rank <- rsm.rank[is.lower.tri]
         
         name.ijk <- paste0(subjs[subj.i], "_", rois[roi.j], "_", hemis[hemi.k])  ## to match name
-        rsvectors[[name.ijk]] <- rsv
+        rsvectors[[name.ijk]] <- cbind(z, rank)
         
       }
     }
   }
   
-  ## check numbers --
+  ## check numbers
+  
   n.rows.rsvectors <- map_dbl(rsvectors, nrow)
   if(sum(n.rows.rsvectors != 120) > 0) stop("missing row somewhere in rsvectors!")
   
+  ## scale
+  
+  rsvectors.std <- rsvectors %>% map(scale)
+  
   
   ## fit models ----
-
-  stats.subjs <- setNames(vector("list", length(f)), names(f))
   
-  for (f.i in seq_along(f)) {
-    # f.i = 1
-
-    fits.rank <- rsvectors %>% map(lm, formula = update(f[[f.i]], rank ~ .))  ## fit models
-    fits.line <- rsvectors %>% map(lm, formula = update(f[[f.i]], atanh(r) ~ .))
+  stats.subjs <- setNames(vector("list", length(m)), names(m))
+  
+  for (m.i in seq_along(m)) {
+    # m.i = 1
     
-    ## get coefficients
+    X <- m[[m.i]]
+    X.std <- m.std[[m.i]]
     
-    coefs.rank <- fits.rank %>% map(~ coef(.)[-1]) %>% do.call(rbind, .)  ## get coefficients
-    coefs.line <- fits.line %>% map(~ coef(.)[-1]) %>% do.call(rbind, .)
+    ## get unstandardized coefficients
     
-    coefs.rank <- tibble::rownames_to_column(as.data.frame(coefs.rank, stringsAsFactors = FALSE), "id")  ## add rownames
-    coefs.line <- tibble::rownames_to_column(as.data.frame(coefs.line, stringsAsFactors = FALSE), "id")
+    fits <- rsvectors %>% map(~ .lm.fit( x = X, y = .))  ## fit models (two-column y)
+    coefs <- as.data.frame(do.call(rbind, lapply(fits, coef))) ## to single data.frame
     
-    coefs <- bind_rows(
-      rank   = melt(as.data.table(coefs.rank), id.vars = "id", variable = "param", value.name = "coef"), 
-      linear = melt(as.data.table(coefs.line), id.vars = "id", variable = "param", value.name = "coef"),
-      .id = "y"
-    )  ## melt to long-form, stack results from rank and linear, and add indicator column for response variable type
-
+    names(coefs) <- c("z", "rank")  ## same order as in models
+    coefs$param <- rep(colnames(X), n.mods)  ## same orders as in models
+    coefs$id <- rep(names(rsvectors), each = ncol(X))
+    coefs <- coefs[coefs$param != "b0", ]  ## ditch intercept
+    ## put rank and linear (z) coefs in single long-form column:
+    coefs <- melt(as.data.table(coefs), id.vars = c("id", "param"), variable = "y", value.name = "coef")
     
     ## get betas
     
-    betas.rank <- fits.rank %>% map(lm.beta) %>% do.call(rbind, .)
-    betas.line <- fits.line %>% map(lm.beta) %>% do.call(rbind, .)
+    fits.std <- rsvectors.std %>% map(~ .lm.fit( x = X.std, y = .))
+    betas <- as.data.frame(do.call(rbind, lapply(fits.std, coef)))
     
-    betas.rank <- tibble::rownames_to_column(as.data.frame(betas.rank, stringsAsFactors = FALSE), "id")
-    betas.line <- tibble::rownames_to_column(as.data.frame(betas.line, stringsAsFactors = FALSE), "id")
-    
-    betas <- bind_rows(
-      rank   = melt(as.data.table(betas.rank), id.vars = "id", variable = "param", value.name = "beta"), 
-      linear = melt(as.data.table(betas.line), id.vars = "id", variable = "param", value.name = "beta"),
-      .id = "y"
-    )
-    
+    names(betas) <- c("z", "rank")
+    betas$param <- rep(colnames(X.std), n.mods)
+    betas$id <- rep(names(rsvectors.std), each = ncol(X.std))
+    betas <- melt(as.data.table(betas), id.vars = c("id", "param"), variable = "y", value.name = "beta")
+
     ## bind and save
     
-    stats.subjs[[f.i]] <- full_join(betas, coefs, by = c("y", "id", "param"))
+    stats.subjs[[m.i]] <- full_join(coefs, betas, by = c("y", "id", "param"))
     
   }
   
   
   ## format ----
   
-  ## collate into data.frame:
+  ## collate into data.frame
   
-  stats.subjs <- bind_rows(stats.subjs, .id = "model")  ## will coerce to character vector and give warning
+  stats.subjs <- bind_rows(stats.subjs, .id = "model")
   
   ## remove colons from values of param col (and shorten)
   
@@ -206,7 +194,6 @@ for (atlas.i in seq_along(atlas.key)) {
   fwrite(
     stats.subjs,
     here("out", "rsa", "stats", paste0("subjs_pro_bias_acc-only_", name.atlas.i, "_pearson_residual.csv"))
-    )
-  
-}
+  )
 
+}

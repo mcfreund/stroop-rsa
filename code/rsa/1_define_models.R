@@ -16,51 +16,65 @@ source(here("code", "_strings.R"))
 
 ## create ----
 
-empty.rsm <- matrix(0, ncol = 16, nrow = 16, dimnames = list(bias.items, bias.items))
-target.rsm <- empty.rsm
-distractor.rsm <- empty.rsm
-congruency.rsm <- empty.rsm
-incongruency.rsm <- empty.rsm
-for (color.i in bias.colors) target.rsm[grepl(color.i, bias.items), grepl(color.i, bias.items)] <- 1
-for (word.i in bias.words) distractor.rsm[grepl(word.i, bias.items), grepl(word.i, bias.items)] <- 1
+rsm.empty <- matrix(0, ncol = 16, nrow = 16, dimnames = list(bias.items, bias.items))
+rsm.target <- rsm.empty
+rsm.distractor <- rsm.empty
+rsm.congruency <- rsm.empty
+rsm.incongruency <- rsm.empty
+for (color.i in bias.colors) rsm.target[grepl(color.i, bias.items), grepl(color.i, bias.items)] <- 1
+for (word.i in bias.words) rsm.distractor[grepl(word.i, bias.items), grepl(word.i, bias.items)] <- 1
 bias.items.congruency <- c(
   TRUE, rep(FALSE, 4),
   TRUE, rep(FALSE, 4),
   TRUE, rep(FALSE, 4),
   TRUE
 )  ## in same order as bias.items
-congruency.rsm[bias.items.congruency, bias.items.congruency] <- 1
-congruency.rsm[!bias.items.congruency, !bias.items.congruency] <- 1
-incongruency.rsm[!bias.items.congruency, !bias.items.congruency] <- 1
+rsm.congruency[bias.items.congruency, bias.items.congruency] <- 1
+rsm.congruency[!bias.items.congruency, !bias.items.congruency] <- 1
+rsm.incongruency[!bias.items.congruency, !bias.items.congruency] <- 1
 
 ## check ----
 
-qcor(incongruency.rsm)
-qcor(congruency.rsm)
-qcor(target.rsm) ## NB: sorted by distractor
-qcor(distractor.rsm)  ## NB: sorted by distractor
+qcor(rsm.incongruency)
+qcor(rsm.congruency)
+qcor(rsm.target) ## NB: sorted by distractor
+qcor(rsm.distractor)  ## NB: sorted by distractor
 
 ## melt to data.frame
 
-models.wide <- cbind(
-  target.rsm %>% reshape2::melt(value.name = "target") %>% rename(x = Var1, y = Var2),
-  distractor = c(distractor.rsm),
-  congruency = c(congruency.rsm),
-  incongruency = c(incongruency.rsm)
+rsv.models.full <- cbind(
+  rsm.target %>% mat2vec(full.matrix = TRUE, value.name = "target"),
+  distractor   = c(rsm.distractor),
+  congruency   = c(rsm.congruency),
+  incongruency = c(rsm.incongruency)
 )
-models.wide %<>%
-  mutate(
-    x = factor(x, levels = sort(bias.items)),
-    y = factor(y, levels = rev(sort(bias.items)))
-  )
+# rsmodels.full %<>%
+#   mutate(
+#     .row = factor(.row, levels = sort(bias.items)),
+#     .col = factor(.col, levels = rev(sort(bias.items)))
+#   )
+
+rsv.models.ltri <- cbind(
+  rsm.target %>% mat2vec(value.name = "target"),
+  distractor   = rsm.distractor[lower.tri(rsm.distractor)],
+  congruency   = rsm.congruency[lower.tri(rsm.congruency)],
+  incongruency = rsm.incongruency[lower.tri(rsm.incongruency)]
+)
+# rsmodels.ltri %<>%
+#   mutate(
+#     x = factor(x, levels = sort(bias.items)),
+#     y = factor(y, levels = rev(sort(bias.items)))
+#   )
+
 
 ## write ----
 
-write.csv(target.rsm, here("out", "rsa", "mods", "bias_target.csv"))
-write.csv(distractor.rsm, here("out", "rsa", "mods", "bias_distractor.csv"))
-write.csv(congruency.rsm, here("out", "rsa", "mods", "bias_congruency.csv"))
-write.csv(incongruency.rsm, here("out", "rsa", "mods", "bias_incongruency.csv"))
-write.csv(models.wide, here("out", "rsa", "mods", "bias_full_matrix.csv"), row.names = FALSE)
+write.csv(rsm.target, here("out", "rsa", "mods", "rsm_bias_target.csv"))
+write.csv(rsm.distractor, here("out", "rsa", "mods", "rsm_bias_distractor.csv"))
+write.csv(rsm.congruency, here("out", "rsa", "mods", "rsm_bias_congruency.csv"))
+write.csv(rsm.incongruency, here("out", "rsa", "mods", "rsm_bias_incongruency.csv"))
+write.csv(rsv.models.full, here("out", "rsa", "mods", "rsv_bias_full-matrices.csv"), row.names = FALSE)
+write.csv(rsv.models.ltri, here("out", "rsa", "mods", "rsv_bias_lower-triangles.csv"), row.names = FALSE)
 
 ## run model ----
 
@@ -71,9 +85,10 @@ counts$proactive1 <- counts$proactive1 > 3
 counts$proactive2 <- counts$proactive2 > 3
 run1.items <- counts$stimulus[counts$proactive1]
 run2.items <- counts$stimulus[counts$proactive2]
-run.rsm <- matrix(0, ncol = 16, nrow = 16, dimnames = list(bias.items, bias.items))
-run.rsm[run1.items, run1.items] <- 1
-run.rsm[run2.items, run2.items] <- 1
-qcor(run.rsm, "run model", tl.cex = 0.5)  ## all looks good with schemes:
+rsm.run <- matrix(0, ncol = 16, nrow = 16, dimnames = list(bias.items, bias.items))
+rsm.run[run1.items, run1.items] <- 1
+rsm.run[run2.items, run2.items] <- 1
+qcor(rsm.run, "run model", tl.cex = 0.5)  ## all looks good with schemes:
 
-write.csv(run.rsm, here("out", "rsa", "mods", "bias_run.csv"))
+write.csv(rsm.run, here("out", "rsa", "mods", "rsm_bias_run.csv"))
+

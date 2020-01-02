@@ -32,7 +32,7 @@ for (atlas.i in seq_along(atlas.key)) {
     )
   )
   
-  run.rsm <- as.matrix(read.csv(here("out", "rsa", "mods", "bias_run.csv"), row.names = 1))
+  run.rsm <- as.matrix(read.csv(here("out", "rsa", "mods", "rsm_bias_run.csv"), row.names = 1))
   
   
   ## regress ----
