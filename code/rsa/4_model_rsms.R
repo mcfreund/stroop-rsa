@@ -21,7 +21,6 @@ library(purrr)
 library(magrittr)
 library(data.table)
 source(here("code", "_strings.R"))
-source(here("code", "_funs.R"))
 source(here("code", "_get_atlas.R"))
 
 ## read models

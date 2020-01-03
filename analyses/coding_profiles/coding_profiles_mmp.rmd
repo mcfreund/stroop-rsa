@@ -1,0 +1,218 @@
+---
+  title: "assessing coding profiles for MMP"
+  output: html_document
+---
+
+Conducts RSA model comparisons and sorts parcels into groups with different _coding profiles_.
+Displays results.
+
+```{r setup}
+
+library(here)
+library(magrittr)
+library(dplyr)
+library(data.table)
+library(ggplot2)
+library(mikeutils)
+source(here("code", "_strings.R"))
+source(here("code", "_funs.R"))
+source(here("code", "_get_atlas.R"))
+
+stats.subjs <- fread(here("out", "rsa", "stats", paste0("subjs_pro_bias_acc-only_mmp_pearson_residual.csv")))
+stats.subjs <- stats.subjs[is.analysis.group == TRUE]  ## EXCLUDE HELD OUT SUBJECTS!
+
+## for printing results
+
+mmp <- atlas.key$mmp
+mmp <- bind_rows(
+  mmp %>% mutate(parcel.hemi = paste0(roi, "_l")),
+  mmp %>% mutate(parcel.hemi = paste0(roi, "_r"))
+)
+mmp %<>% select(parcel.hemi, community) %>% arrange(community, parcel.hemi)
+
+```
+
+
+## test each model against zero
+
+- Models (params) tested:
+  - **tdi**: $\textbf{rank}_{ij} \sim \beta_{targ}\textbf{x}_{targ} + \beta_{distr}\textbf{x}_{distr} + \beta_{incon}\textbf{x}_{incon}$
+  - **tdc**: $\text{RSM}_{ij} \sim \beta_{targ}\textbf{x}_{targ} + \beta_{distr}\textbf{x}_{distr} + \beta_{con}\textbf{x}_{con}$
+  - **txi**: $\text{RSM}_{ij} \sim \beta_{targ}\textbf{x}_{targ} + \beta_{distr}\textbf{x}_{distr} + \beta_{incon}\textbf{x}_{incon} + \beta_{ti}\textbf{x}_{ti}$
+  - **dxi**: $\text{RSM}_{ij} \sim \beta_{targ}\textbf{x}_{targ} + \beta_{distr}\textbf{x}_{distr} + \beta_{incon} + \beta_{di}\textbf{x}_{di}$
+  - coefficients from all models were standardized (betas)
+  - all models contained intercept
+  - for interaction models (**txi** and **dxi**), only the interaction terms were tested
+  
+- Inferential tests: wilcoxon sign-rank test on estimated betas
+  - per parcel and model
+  - subjects as random effect
+  - two-sided
+  - p-values FDR corrected across all ROIs (bilateral), within each model
+
+```{r extract}
+
+stats.subjs <- stats.subjs[
+  !(model %in% c("txi", "dxi") & param %in% c("target", "distractor", "incongruency")) & 
+    y == "rank"
+  ]
+
+```
+
+
+```{r against-zero}
+
+betas.group <- stats.subjs %>%
+  group_by(roi.hemi, model, param) %>%
+  summarize(
+    v    = wilcox.test(beta, alternative = "greater")$statistic,
+    p    = wilcox.test(beta, alternative = "greater")$p.value,
+    beta = tanh(mean(atanh(beta))),  ## must be last in this summarize()
+  )
+
+```
+
+
+#### results: parcels coding (> 0) for task dimensions
+
+##### target coding
+
+```{r}
+
+filter(betas.group, param == "target", model == "tdc", p < 0.05)$roi.hemi
+filter(betas.group, param == "target", model == "tdi", p < 0.05)$roi.hemi
+
+```
+
+
+## interactions
+
+```{r}
+
+filter(betas.group, param == "ti", model == "txc", p < 0.05)
+filter(betas.group, param == "ti", model == "txi", p < 0.05)
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## pairwise tests: **tdi** versus **tdc**
+
+#### target
+
+
+```{r pairwise-td-vs-td-target}
+
+## get mean diffs:
+paircomps <- stats.subjs %>%
+  filter(model %in% c("tdi", "tdc"), param == "target") %>%
+  group_by(roi.hemi) %>%
+  summarize(
+    p = pairwise.wilcox.test(
+      beta, model, paired = TRUE, alternative = "two.sided", p.adjust.method = "fdr"
+      )$p.value,
+    beta = tanh(mean(atanh(beta[model == "tdc"]) - atanh(beta[model == "tdi"])))
+  )
+
+paircomps[paircomps$p < 0.05, ] %>% View
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## pairwise tests: **tdi**
+
+
+
+```{r pairwise-comps}
+
+stats.subjs %>%
+  filter(model == "tdi") %>%
+  group_by(roi.hemi, model, param) %>%
+  tidyr::spread(variable, rho) %>%
+  melt %>%
+  group_by(parcel, hemi) %>%
+  summarize(
+    pairwise = list(
+      pairwise.wilcox.test(value, variable, paired = TRUE, alternative = "two.sided", p.adjust.method = "fdr")
+    )
+  )  ## warnings indicate non-exact p-values
+pvals <- sapply(paircomps$pairwise, function(.) .$p.value[lower.tri(diag(2), diag = TRUE)])
+pvals <- t(pvals)
+# paircomps$pairwise[[1]]$p.value
+# paircomps$pairwise[[1]]$p.value[lower.tri(diag(2), diag = TRUE)]
+colnames(pvals) <- c("cong.dist", "targ.cong", "targ.dist")
+paircomps <- cbind(as.data.frame(paircomps[c("parcel", "hemi")]), as.data.frame(pvals))
+paircomps$parcel.hemi <- paste0(paircomps$parcel, "_", paircomps$hemi)
+
+write.csv(
+  paircomps,
+  file.path(
+    dir.box.stroop.stats,
+    "parcel-pairwise_pcor_rsm-pearson_mmp_group-201902_pro_bias_acc-only_residual.csv"
+    ),
+  row.names = FALSE
+  )
+
+## get pairwise incongruency stats
+
+pairwise.i <- read.csv(
+  file.path(
+    dir.box.stroop.stats,
+    "parcel-coefs_pairwise-incon_pcor_rsm-pearson_mmp_group-201902_pro_bias_acc-only_residual.csv"
+    )
+  )
+
+results.i <- read.csv(
+  file.path(
+    dir.box.stroop.stats,
+    "parcel-coefs_pcor_rsm-pearson_mmp_group-201902_pro_bias_acc-only_residual_congruency-schemes.csv"
+    )
+  ) %>%
+  filter(variable == "incongruency") %>%
+  dplyr::full_join(atlas.key$mmp %>% dplyr::rename(parcel = "roi"), by = "parcel")  %>%  ## need ROI numbers
+  dplyr::mutate(parcel.hemi = paste0(parcel, "_", hemi)) %>%
+  ## create p.adjusted col:
+  dplyr::group_by(variable) %>%
+  dplyr::mutate(
+    p.adj.wb = p.adjust(rho.srtest.p, method = "fdr"),
+  )
+  #   is.roi   = parcel.hemi %in% rois.mmp$roi.hemi[rois.mmp$dmcc2.taskgen > 1]  ## dmcc2.taskgen == 2 -> most conserv.
+  # ) %>%
+  # dplyr::group_by(variable, is.roi) %>%
+  # dplyr::mutate(
+  #   p.adj.roi = p.adjust(rho.srtest.p, method = "fdr"),
+  #   p.adj.roi = ifelse(is.roi, p.adj.roi, p.adj.wb)
+  # )
+
+```
