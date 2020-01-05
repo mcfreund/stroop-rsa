@@ -1,5 +1,6 @@
 ## development directory for project involving RSA of color-word Stroop
-## WORK IN PROGRESS
+
+___WORK IN PROGRESS___
 
 ### ./data
 * contains behavioral data assembled by stroop-rsa/write_behav_stroop_rsa.R.
