@@ -8,6 +8,8 @@ ___WORK IN PROGRESS___
 
 ### ./code
 * primary analysis pipeline
+* reads from ./data, nil-bluearc (for 3D+t images), ./out
+* writes to ./out
 
 ### ./out
 * all output of scripts are directed to this directory
