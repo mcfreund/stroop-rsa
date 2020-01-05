@@ -7,7 +7,7 @@ ___WORK IN PROGRESS___
 * no other script writes to this directory.
 
 ### ./code
-* reads from ./data, nil-bluearc, 
+* primary analysis pipeline
 
 ### ./out
 * all output of scripts are directed to this directory
