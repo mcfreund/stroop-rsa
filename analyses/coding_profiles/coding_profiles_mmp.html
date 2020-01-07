@@ -367,7 +367,12 @@ summary {
 
 
 <p>Conducts RSA model comparisons and sorts parcels into groups with different <em>coding profiles</em>. Displays results.</p>
-<pre class="r"><code>library(here)</code></pre>
+<pre class="r"><code>## TODO
+##  - results to tables
+##  - revise intro
+##  - TOST procedures
+
+library(here)</code></pre>
 <pre><code>## here() starts at C:/Users/mcf/Box/global/proj/stroop-rsa</code></pre>
 <pre class="r"><code>library(magrittr)
 library(dplyr)</code></pre>
@@ -388,112 +393,1328 @@ library(dplyr)</code></pre>
 <pre class="r"><code>library(ggplot2)
 library(mikeutils)
 source(here(&quot;code&quot;, &quot;_strings.R&quot;))
-source(here(&quot;code&quot;, &quot;_funs.R&quot;))
 source(here(&quot;code&quot;, &quot;_get_atlas.R&quot;))
-
-stats.subjs &lt;- fread(here(&quot;out&quot;, &quot;rsa&quot;, &quot;stats&quot;, paste0(&quot;subjs_pro_bias_acc-only_mmp_pearson_residual.csv&quot;)))
-stats.subjs &lt;- stats.subjs[is.analysis.group == TRUE]  ## EXCLUDE HELD OUT SUBJECTS!
 
 ## for printing results
 
 mmp &lt;- atlas.key$mmp
 mmp &lt;- bind_rows(
-  mmp %&gt;% mutate(parcel.hemi = paste0(roi, &quot;_l&quot;)),
-  mmp %&gt;% mutate(parcel.hemi = paste0(roi, &quot;_r&quot;))
+  mmp %&gt;% mutate(roi.hemi = paste0(roi, &quot;_l&quot;)),
+  mmp %&gt;% mutate(roi.hemi = paste0(roi, &quot;_r&quot;))
 )
-mmp %&lt;&gt;% select(parcel.hemi, community) %&gt;% arrange(community, parcel.hemi)</code></pre>
-<div id="test-each-model-against-zero" class="section level2">
-<h2>test each model against zero</h2>
+mmp %&lt;&gt;% select(roi.hemi, community) %&gt;% arrange(community, roi.hemi)</code></pre>
+<div id="code" class="section level1">
+<h1><strong>CODE</strong></h1>
+<div id="description" class="section level2">
+<h2>description</h2>
+<p>the <strong>tdic</strong> model: <span class="math display">\[
+  rank(\textbf{r}) \sim 
+  \textbf{x}_{\text{targt}}\beta_{\text{targt}} + 
+  \textbf{x}_{\text{distr}}\beta_{\text{distr}} + 
+  \textbf{x}_{\text{incon}}\beta_{\text{incon}} +
+  \textbf{x}_{\text{congr}}\beta_{\text{congr}}
+\]</span></p>
 <ul>
-<li>Models (params) tested:
+<li>rank transformed response variable</li>
+<li>coefficients standardized (betas)</li>
+<li>subjects as random effect for all inferential tests</li>
+</ul>
+<pre class="r"><code>stats.subjs.tdic &lt;- fread(
+  here(&quot;out&quot;, &quot;rsa&quot;, &quot;stats&quot;, paste0(&quot;subjs_pro_bias_acc-only_mmp_pearson_residual_glm-tdic.csv&quot;))
+  )
+stats.subjs.tdic &lt;- stats.subjs.tdic[is.analysis.group == TRUE &amp; y == &quot;rank&quot;, ]  ## EXCLUDE HELD OUT SUBJECTS!
+stats.subjs.tdic &lt;- stats.subjs.tdic[, &quot;coef&quot; := NULL]
+
+params.interest &lt;- c(&quot;target&quot;, &quot;distractor&quot;, &quot;incongruency&quot;)</code></pre>
+</div>
+<div id="task-coding-analysis-test-each-regressor-against-zero-baseline" class="section level2">
+<h2><strong>task coding analysis</strong>: test each regressor against zero (baseline)</h2>
 <ul>
-<li><strong>tdi</strong>: <span class="math inline">\(\textbf{rank}_{ij} \sim \beta_{targ}\textbf{x}_{targ} + \beta_{distr}\textbf{x}_{distr} + \beta_{incon}\textbf{x}_{incon}\)</span></li>
-<li><strong>tdc</strong>: <span class="math inline">\(\text{RSM}_{ij} \sim \beta_{targ}\textbf{x}_{targ} + \beta_{distr}\textbf{x}_{distr} + \beta_{con}\textbf{x}_{con}\)</span></li>
-<li><strong>txi</strong>: <span class="math inline">\(\text{RSM}_{ij} \sim \beta_{targ}\textbf{x}_{targ} + \beta_{distr}\textbf{x}_{distr} + \beta_{incon}\textbf{x}_{incon} + \beta_{incon*targ}\textbf{x}_{incon*targ}\)</span></li>
-<li><strong>dxi</strong>: <span class="math inline">\(\text{RSM}_{ij} \sim \beta_{targ}\textbf{x}_{targ} + \beta_{distr}\textbf{x}_{distr} + \beta_{incon} + \beta_{incon*distr}\textbf{x}_{incon*targ}\)</span></li>
-<li>coefficients from all models were standardized (betas)</li>
-<li>all models contained intercept</li>
-<li>for interaction models (<strong>txi</strong> and <strong>dxi</strong>), only the interaction terms were tested</li>
-</ul></li>
-<li>Inferential tests: wilcoxon sign-rank test on estimated betas
+<li>wilcoxon sign-rank test on estimated betas
 <ul>
 <li>per parcel and model</li>
-<li>subjects as random effect</li>
-<li>two-sided</li>
-<li>p-values FDR corrected across all ROIs (bilateral), within each model</li>
+<li>one-sided (greater than zero)</li>
+<li>p-values FDR corrected across all ROIs (bilateral), within each regressor</li>
 </ul></li>
 </ul>
-<!-- ```{r against-zero} -->
-<!-- stats.subjs %>% -->
-<!--   filter() -->
-<!--   group_by(roi.hemi, param) %>% -->
-<!--   summarize( -->
-<!--     mean.rho     = mean.rzr(rho),  ## tanh(mean(atanh(x))) -->
-<!--     mean.r       = mean.rzr(r), -->
-<!--     rho.srtest.v = wilcox.test(rho, alternative = "greater")$statistic, -->
-<!--     r.srtest.v   = wilcox.test(r, alternative = "greater")$statistic, -->
-<!--     rho.srtest.p = wilcox.test(rho, alternative = "greater")$p.value, -->
-<!--     r.srtest.p   = wilcox.test(r, alternative = "greater")$p.value -->
-<!--   ) %>% -->
-<!--   rename(rho = mean.rho, r = mean.r)  ## for consistency -->
-<!-- ``` -->
-<!-- ## pairwise tests -->
-<!-- Wilcoxon sign-rank test, two-sided, p-values FDR corrected among multiple comparisons within parcel (i.e., among 3 comparisons). -->
-<!-- ```{r pairwise-comps, warning = FALSE} -->
-<!-- paircomps <- coefs %>% -->
-<!--   select(subj, parcel, hemi, variable, rho) %>% -->
-<!--   tidyr::spread(variable, rho) %>% -->
-<!--   melt %>% -->
-<!--   group_by(parcel, hemi) %>% -->
-<!--   summarize( -->
-<!--     pairwise = list( -->
-<!--       pairwise.wilcox.test(value, variable, paired = TRUE, alternative = "two.sided", p.adjust.method = "fdr") -->
-<!--     ) -->
-<!--   )  ## warnings indicate non-exact p-values -->
-<!-- pvals <- sapply(paircomps$pairwise, function(.) .$p.value[lower.tri(diag(2), diag = TRUE)]) -->
-<!-- pvals <- t(pvals) -->
-<!-- # paircomps$pairwise[[1]]$p.value -->
-<!-- # paircomps$pairwise[[1]]$p.value[lower.tri(diag(2), diag = TRUE)] -->
-<!-- colnames(pvals) <- c("cong.dist", "targ.cong", "targ.dist") -->
-<!-- paircomps <- cbind(as.data.frame(paircomps[c("parcel", "hemi")]), as.data.frame(pvals)) -->
-<!-- paircomps$parcel.hemi <- paste0(paircomps$parcel, "_", paircomps$hemi) -->
-<!-- write.csv( -->
-<!--   paircomps, -->
-<!--   file.path( -->
-<!--     dir.box.stroop.stats,  -->
-<!--     "parcel-pairwise_pcor_rsm-pearson_mmp_group-201902_pro_bias_acc-only_residual.csv" -->
-<!--     ), -->
-<!--   row.names = FALSE -->
-<!--   ) -->
-<!-- ## get pairwise incongruency stats -->
-<!-- pairwise.i <- read.csv( -->
-<!--   file.path( -->
-<!--     dir.box.stroop.stats,  -->
-<!--     "parcel-coefs_pairwise-incon_pcor_rsm-pearson_mmp_group-201902_pro_bias_acc-only_residual.csv" -->
-<!--     ) -->
-<!--   ) -->
-<!-- results.i <- read.csv( -->
-<!--   file.path( -->
-<!--     dir.box.stroop.stats,  -->
-<!--     "parcel-coefs_pcor_rsm-pearson_mmp_group-201902_pro_bias_acc-only_residual_congruency-schemes.csv" -->
-<!--     ) -->
-<!--   ) %>% -->
-<!--   filter(variable == "incongruency") %>% -->
-<!--   dplyr::full_join(atlas.key$mmp %>% dplyr::rename(parcel = "roi"), by = "parcel")  %>%  ## need ROI numbers -->
-<!--   dplyr::mutate(parcel.hemi = paste0(parcel, "_", hemi)) %>% -->
-<!--   ## create p.adjusted col: -->
-<!--   dplyr::group_by(variable) %>% -->
-<!--   dplyr::mutate( -->
-<!--     p.adj.wb = p.adjust(rho.srtest.p, method = "fdr"), -->
-<!--   ) -->
-<!--   #   is.roi   = parcel.hemi %in% rois.mmp$roi.hemi[rois.mmp$dmcc2.taskgen > 1]  ## dmcc2.taskgen == 2 -> most conserv. -->
-<!--   # ) %>% -->
-<!--   # dplyr::group_by(variable, is.roi) %>% -->
-<!--   # dplyr::mutate( -->
-<!--   #   p.adj.roi = p.adjust(rho.srtest.p, method = "fdr"), -->
-<!--   #   p.adj.roi = ifelse(is.roi, p.adj.roi, p.adj.wb) -->
-<!--   # ) -->
-<!-- ``` -->
+<pre class="r"><code>stats.group.tdic &lt;- stats.subjs.tdic %&gt;%
+  group_by(roi.hemi, model, param) %&gt;%
+  summarize(
+    v    = wilcox.test(beta, alternative = &quot;greater&quot;)$statistic,
+    p    = wilcox.test(beta, alternative = &quot;greater&quot;)$p.value,
+    beta = tanh(mean(atanh(beta))),  ## must be last in this summarize()
+  ) %&gt;%
+  mutate(p.fdr = p.adjust(p, method = &quot;fdr&quot;), p.holm = p.adjust(p, method = &quot;holm&quot;)) %&gt;%
+  ungroup
+
+stats.group.tdic %&lt;&gt;% full_join(mmp, by = &quot;roi.hemi&quot;) %&gt;% select(roi.hemi, community, param, v, p, beta, p.fdr, p.holm)
+
+stats.group.tdic %&lt;&gt;% as.data.table</code></pre>
+</div>
+<div id="preference-analysis-pairwise-comparisons" class="section level2">
+<h2><strong>preference analysis</strong>: pairwise comparisons</h2>
+<ul>
+<li>paired wilcoxon sign-rank test on estimated betas
+<ul>
+<li>3 tests per parcel (t vs d, t vs i, d vs i)</li>
+<li>two-sided</li>
+<li>p-values FDR corrected across all comparisons, within each roi.hemi</li>
+</ul></li>
+</ul>
+<pre class="r"><code>## get p vals
+
+stats.pairs.tdic &lt;- stats.subjs.tdic %&gt;%
+  filter(param %in% params.interest) %&gt;%
+  group_by(roi.hemi) %&gt;%
+  summarize(
+    out = list(
+      pairwise.wilcox.test(beta, param, paired = TRUE, alternative = &quot;two.sided&quot;, p.adjust.method = &quot;fdr&quot;)
+    )
+  )
+pvals &lt;- vapply(stats.pairs.tdic$out, function(.) .$p.value[lower.tri(diag(2), diag = TRUE)], numeric(3))
+pvals &lt;- t(pvals)
+colnames(pvals) &lt;- c(&quot;p.incon.distr&quot;, &quot;p.targt.distr&quot;, &quot;p.targt.incon&quot;)
+stats.pairs.tdic &lt;- as.data.frame(cbind(roi.hemi = stats.pairs.tdic$roi.hemi, pvals), stringsAsFactors = FALSE)
+
+## get mean diffs
+
+stats.pairs.tdic %&lt;&gt;% full_join(
+  stats.subjs.tdic %&gt;%
+    filter(param %in% params.interest) %&gt;%
+    group_by(roi.hemi) %&gt;%
+    summarize(
+      b.incon.distr = tanh(mean(atanh(beta[param == &quot;incongruency&quot;]) - atanh(beta[param == &quot;distractor&quot;]))),
+      b.targt.distr = tanh(mean(atanh(beta[param == &quot;target&quot;]) - atanh(beta[param == &quot;distractor&quot;]))),
+      b.targt.incon = tanh(mean(atanh(beta[param == &quot;target&quot;]) - atanh(beta[param == &quot;incongruency&quot;]))),
+    ),
+  by = &quot;roi.hemi&quot;
+)
+
+stats.pairs.tdic %&lt;&gt;% full_join(mmp, by = &quot;roi.hemi&quot;) %&gt;% as.data.table</code></pre>
+</div>
+</div>
+<div id="results" class="section level1">
+<h1><strong>RESULTS</strong></h1>
+<div id="task-coding-analysis-test-each-regressor-against-zero-baseline-1" class="section level2">
+<h2><strong>task coding analysis</strong>: test each regressor against zero (baseline)</h2>
+<p>These values represent a (standardized) contrast of within-group correlations (e.g., within <strong>target</strong> correlations) against between-group correlations (i.e., between items with no common target, distractor, or congruency status).</p>
+<pre class="r"><code>rois.targt &lt;- stats.group.tdic[param == &quot;target&quot; &amp; p.fdr &lt; 0.05, roi.hemi]
+rois.distr &lt;- stats.group.tdic[param == &quot;distractor&quot; &amp; p.fdr &lt; 0.05, roi.hemi]
+rois.incon &lt;- stats.group.tdic[param == &quot;incongruency&quot; &amp; p.fdr &lt; 0.05, roi.hemi]</code></pre>
+<p>Sorted (descending) by beta.</p>
+<div id="target-coding" class="section level4">
+<h4>target coding</h4>
+<pre class="r"><code>stats.group.tdic[param == &quot;target&quot; &amp; roi.hemi %in% rois.targt] %&gt;% arrange(-beta)</code></pre>
+<pre><code>##     roi.hemi                                       community  param    v
+## 1       3b_l                  somatosensory and motor cortex target 1108
+## 2       3a_l                  somatosensory and motor cortex target 1009
+## 3        4_l                  somatosensory and motor cortex target 1097
+## 4       3b_r                  somatosensory and motor cortex target 1047
+## 5        4_r                  somatosensory and motor cortex target 1049
+## 6      OP4_l                      posterior opercular cortex target 1033
+## 7       6v_r                                 premotor cortex target  969
+## 8      FEF_r                                 premotor cortex target 1063
+## 9   p9-46v_r                  dorsolateral prefrontal cortex target  971
+## 10   PBelt_r                           early auditory cortex target  936
+## 11    PFop_l                        inferior parietal cortex target 1008
+## 12    p10p_l                orbital and polar frontal cortex target  978
+## 13     55b_l                                 premotor cortex target  976
+## 14     8BM_r anterior cingulate and medial prefrontal cortex target  912
+## 15    FOP5_l            insular and frontal opercular cortex target  952
+## 16     5mv_r    paracentral lobular and mid cingulate cortex target  977
+## 17   STSda_l                     auditory association cortex target  942
+## 18     23c_l                      posterior cingulate cortex target  953
+## 19    POS2_l                      posterior cingulate cortex target  970
+## 20    FOP5_r            insular and frontal opercular cortex target  889
+## 21    FOP4_r            insular and frontal opercular cortex target  938
+## 22     AIP_r                        superior parietal cortex target  945
+## 23      8C_r                  dorsolateral prefrontal cortex target  974
+## 24    SCEF_r    paracentral lobular and mid cingulate cortex target  937
+## 25      43_r                      posterior opercular cortex target  963
+## 26      MI_r            insular and frontal opercular cortex target  957
+## 27    IFSp_r                         inferior frontal cortex target  904
+## 28   LBelt_l                           early auditory cortex target  978
+## 29    IFJa_r                         inferior frontal cortex target  893
+## 30      3a_r                  somatosensory and motor cortex target  993
+## 31      V8_l                    ventral stream visual cortex target  982
+## 32     55b_r                                 premotor cortex target  965
+## 33      5m_l    paracentral lobular and mid cingulate cortex target  934
+## 34      9p_l                  dorsolateral prefrontal cortex target  919
+## 35      V6_r                     dorsal stream visual cortex target  981
+## 36    a47r_l                orbital and polar frontal cortex target  985
+## 37     IP0_r                        inferior parietal cortex target  943
+## 38      6r_r                                 premotor cortex target  932
+## 39    POS2_r                      posterior cingulate cortex target  928
+## 40     7PC_l                        superior parietal cortex target  947
+## 41    PFop_r                        inferior parietal cortex target  989
+## 42  a9-46v_r                  dorsolateral prefrontal cortex target  877
+## 43      6d_l                                 premotor cortex target  949
+## 44   a32pr_r anterior cingulate and medial prefrontal cortex target  950
+## 45     11l_r                orbital and polar frontal cortex target 1000
+## 46    STGa_l                     auditory association cortex target  963
+## 47       2_l                  somatosensory and motor cortex target  927
+## 48    FOP3_l            insular and frontal opercular cortex target  885
+## 49   MBelt_r                           early auditory cortex target  943
+## 50   STSda_r                     auditory association cortex target  989
+## 51     VVC_l                    ventral stream visual cortex target  935
+## 52     IP1_r                        inferior parietal cortex target  915
+## 53      A4_r                     auditory association cortex target  945
+## 54     TGd_r                         lateral temporal cortex target  937
+## 55     11l_l                orbital and polar frontal cortex target 1004
+## 56    24dd_l    paracentral lobular and mid cingulate cortex target  891
+## 57      RI_l                           early auditory cortex target  870
+## 58    PFcm_l                      posterior opercular cortex target  966
+## 59     6ma_r    paracentral lobular and mid cingulate cortex target  933
+## 60     7PC_r                        superior parietal cortex target  957
+## 61     IP2_r                        inferior parietal cortex target  875
+## 62    TE1a_r                         lateral temporal cortex target  882
+## 63    PeEc_l                          medial temporal cortex target  872
+## 64    FOP3_r            insular and frontal opercular cortex target  908
+## 65     VVC_r                    ventral stream visual cortex target  906
+## 66    31pv_r                      posterior cingulate cortex target  889
+## 67     47s_l                orbital and polar frontal cortex target  903
+## 68     FEF_l                                 premotor cortex target  893
+## 69     TGd_l                         lateral temporal cortex target  905
+## 70   p32pr_r anterior cingulate and medial prefrontal cortex target  917
+## 71     OP4_r                      posterior opercular cortex target  907
+## 72     6mp_l    paracentral lobular and mid cingulate cortex target  909
+## 73     d32_r anterior cingulate and medial prefrontal cortex target  906
+## 74      6v_l                                 premotor cortex target  931
+## 75    PoI2_l            insular and frontal opercular cortex target  883
+## 76     SFL_l                  dorsolateral prefrontal cortex target  878
+## 77  p9-46v_l                  dorsolateral prefrontal cortex target  847
+## 78     TGv_r                         lateral temporal cortex target  951
+## 79   PBelt_l                           early auditory cortex target  902
+## 80     DVT_r                      posterior cingulate cortex target  923
+## 81     FST_r                       MT+ complex and neighbors target  872
+## 82     V3B_l                     dorsal stream visual cortex target  933
+## 83      45_l                         inferior frontal cortex target  899
+## 84    TE2a_l                         lateral temporal cortex target  886
+## 85     AIP_l                        superior parietal cortex target  879
+## 86     47l_l                         inferior frontal cortex target  935
+## 87     PFm_r                        inferior parietal cortex target  912
+## 88     AVI_l            insular and frontal opercular cortex target  883
+## 89    24dv_r    paracentral lobular and mid cingulate cortex target  884
+## 90     PGi_l                        inferior parietal cortex target  920
+## 91   OP2-3_l                      posterior opercular cortex target  910
+## 92    TE1a_l                         lateral temporal cortex target  869
+## 93      Ig_l            insular and frontal opercular cortex target  845
+## 94     V4t_l                       MT+ complex and neighbors target  908
+## 95       1_r                  somatosensory and motor cortex target  847
+## 96      44_r                         inferior frontal cortex target  895
+## 97     8Ad_r                  dorsolateral prefrontal cortex target  879
+## 98    SCEF_l    paracentral lobular and mid cingulate cortex target  956
+## 99    TE2p_l                         lateral temporal cortex target  882
+## 100    VIP_l                        superior parietal cortex target  892
+## 101  TPOJ1_l                tempo-parieto-occipital junction target  885
+## 102    FST_l                       MT+ complex and neighbors target  878
+## 103   IFJp_r                         inferior frontal cortex target  865
+## 104    OFC_r                orbital and polar frontal cortex target  871
+## 105    PEF_r                                 premotor cortex target  836
+## 106    TGv_l                         lateral temporal cortex target  840
+## 107    STV_r                tempo-parieto-occipital junction target  857
+## 108   10pp_l                orbital and polar frontal cortex target  874
+## 109   LIPv_r                        superior parietal cortex target  835
+## 110   p47r_l                         inferior frontal cortex target  864
+## 111     V2_l                             early visual cortex target  857
+## 112     V7_l                     dorsal stream visual cortex target  880
+## 113    5mv_l    paracentral lobular and mid cingulate cortex target  862
+## 114    PEF_l                                 premotor cortex target  857
+## 115    TA2_l                     auditory association cortex target  899
+## 116     43_l                      posterior opercular cortex target  905
+## 117     PI_r            insular and frontal opercular cortex target  858
+## 118   24dd_r    paracentral lobular and mid cingulate cortex target  855
+## 119   IFJa_l                         inferior frontal cortex target  834
+## 120    PSL_r                tempo-parieto-occipital junction target  856
+## 121    10d_l                orbital and polar frontal cortex target  879
+## 122   VMV3_r                    ventral stream visual cortex target  845
+## 123     MI_l            insular and frontal opercular cortex target  941
+## 124   FOP1_l                      posterior opercular cortex target  882
+## 125    8Av_r                  dorsolateral prefrontal cortex target  864
+## 126    PCV_r                      posterior cingulate cortex target  845
+## 127    8BL_r                  dorsolateral prefrontal cortex target  858
+## 128    47m_r                orbital and polar frontal cortex target  891
+## 129    d32_l anterior cingulate and medial prefrontal cortex target  896
+## 130  OP2-3_r                      posterior opercular cortex target  837
+## 131     A5_r                     auditory association cortex target  847
+## 132     V3_l                             early visual cortex target  856
+## 133    V6A_r                     dorsal stream visual cortex target  899
+## 134    8Ad_l                  dorsolateral prefrontal cortex target  874
+## 135   a10p_l                orbital and polar frontal cortex target  868
+## 136    FFC_l                    ventral stream visual cortex target  872
+## 137   i6-8_l                  dorsolateral prefrontal cortex target  864
+## 138   FOP1_r                      posterior opercular cortex target  885
+## 139    OP1_l                      posterior opercular cortex target  851
+## 140   FOP4_l            insular and frontal opercular cortex target  916
+## 141  STSdp_r                     auditory association cortex target  856
+## 142     46_l                  dorsolateral prefrontal cortex target  855
+## 143    7AL_r                        superior parietal cortex target  855
+## 144   a10p_r                orbital and polar frontal cortex target  928
+## 145    AVI_r            insular and frontal opercular cortex target  890
+## 146  a24pr_r anterior cingulate and medial prefrontal cortex target  897
+## 147    10r_r anterior cingulate and medial prefrontal cortex target  850
+## 148    8BM_l anterior cingulate and medial prefrontal cortex target  821
+## 149     6a_r                                 premotor cortex target  930
+## 150    PHT_l                         lateral temporal cortex target  869
+## 151     PH_l                       MT+ complex and neighbors target  848
+## 152     6r_l                                 premotor cortex target  850
+## 153    V6A_l                     dorsal stream visual cortex target  854
+## 154      1_l                  somatosensory and motor cortex target  853
+## 155    TA2_r                     auditory association cortex target  882
+## 156    PGi_r                        inferior parietal cortex target  867
+## 157   IPS1_r                     dorsal stream visual cortex target  875
+## 158    LO2_l                       MT+ complex and neighbors target  844
+## 159     V2_r                             early visual cortex target  854
+## 160    STV_l                tempo-parieto-occipital junction target  876
+## 161     A5_l                     auditory association cortex target  851
+## 162   IFSa_l                         inferior frontal cortex target  854
+## 163     MT_r                       MT+ complex and neighbors target  842
+## 164     44_l                         inferior frontal cortex target  818
+## 165    OP1_r                      posterior opercular cortex target  851
+## 166    FFC_r                    ventral stream visual cortex target  862
+## 167    OFC_l                orbital and polar frontal cortex target  856
+## 168     TF_r                         lateral temporal cortex target  842
+## 169   PFcm_r                      posterior opercular cortex target  850
+## 170    6mp_r    paracentral lobular and mid cingulate cortex target  840
+##                p       beta        p.fdr       p.holm
+## 1   3.584486e-08 0.08453540 1.433795e-07 1.433795e-07
+## 2   1.866069e-05 0.06868080 7.464274e-05 7.464274e-05
+## 3   8.284144e-08 0.06837859 3.313657e-07 3.313657e-07
+## 4   2.286525e-06 0.06445467 9.146101e-06 9.146101e-06
+## 5   2.028914e-06 0.05957355 8.115657e-06 8.115657e-06
+## 6   5.141099e-06 0.05769024 2.056440e-05 2.056440e-05
+## 7   1.252216e-04 0.05330170 5.008863e-04 5.008863e-04
+## 8   8.542962e-07 0.05318203 3.417185e-06 3.417185e-06
+## 9   1.146053e-04 0.05221659 4.584212e-04 4.584212e-04
+## 10  4.933577e-04 0.05220251 1.973431e-03 1.973431e-03
+## 11  1.964038e-05 0.05046144 7.856153e-05 7.856153e-05
+## 12  8.361358e-05 0.04960195 3.344543e-04 3.344543e-04
+## 13  9.157196e-05 0.04895789 3.662878e-04 3.662878e-04
+## 14  1.210227e-03 0.04892053 2.420454e-03 4.670598e-03
+## 15  2.591103e-04 0.04844266 1.036441e-03 1.036441e-03
+## 16  8.750973e-05 0.04838998 3.500389e-04 3.500389e-04
+## 17  3.892347e-04 0.04820479 1.556939e-03 1.556939e-03
+## 18  2.485714e-04 0.04761237 9.942856e-04 9.942856e-04
+## 19  1.198057e-04 0.04733021 4.792229e-04 4.792229e-04
+## 20  2.660758e-03 0.04652880 1.064303e-02 1.064303e-02
+## 21  4.561398e-04 0.04637052 1.824559e-03 1.824559e-03
+## 22  3.450450e-04 0.04602487 1.380180e-03 1.380180e-03
+## 23  1.002204e-04 0.04525546 4.008817e-04 4.008817e-04
+## 24  4.744182e-04 0.04516111 1.897673e-03 1.897673e-03
+## 25  1.627083e-04 0.04454719 6.508333e-04 6.508333e-04
+## 26  2.102075e-04 0.04444705 8.408300e-04 8.408300e-04
+## 27  1.604109e-03 0.04397246 6.416436e-03 6.416436e-03
+## 28  8.361358e-05 0.04395599 3.344543e-04 3.344543e-04
+## 29  2.331359e-03 0.04394818 9.325437e-03 9.325437e-03
+## 30  4.135899e-05 0.04374308 1.654360e-04 1.654360e-04
+## 31  6.956962e-05 0.04354234 2.782785e-04 2.782785e-04
+## 32  1.492036e-04 0.04352304 5.968145e-04 5.968145e-04
+## 33  5.333046e-04 0.04302172 2.133219e-03 2.133219e-03
+## 34  9.392081e-04 0.04296052 3.756833e-03 3.756833e-03
+## 35  7.286106e-05 0.04286738 2.914442e-04 2.914442e-04
+## 36  6.049808e-05 0.04285388 2.419923e-04 2.419923e-04
+## 37  3.739646e-04 0.04249323 1.495859e-03 1.495859e-03
+## 38  5.761559e-04 0.04243624 2.304624e-03 2.304624e-03
+## 39  6.713204e-04 0.04229558 2.685282e-03 2.685282e-03
+## 40  3.181723e-04 0.04211645 1.272689e-03 1.272689e-03
+## 41  5.009261e-05 0.04177975 2.003704e-04 2.003704e-04
+## 42  3.908875e-03 0.04154084 1.563550e-02 1.563550e-02
+## 43  2.932165e-04 0.04135893 1.172866e-03 1.172866e-03
+## 44  2.814188e-04 0.04086000 1.125675e-03 1.125675e-03
+## 45  2.937113e-05 0.04077184 1.174845e-04 1.174845e-04
+## 46  1.627083e-04 0.04067673 6.508333e-04 6.508333e-04
+## 47  6.972274e-04 0.04013626 2.788910e-03 2.788910e-03
+## 48  3.030666e-03 0.03986726 1.212266e-02 1.212266e-02
+## 49  3.739646e-04 0.03984729 1.495859e-03 1.495859e-03
+## 50  5.009261e-05 0.03958309 2.003704e-04 2.003704e-04
+## 51  5.129793e-04 0.03947016 2.051917e-03 2.051917e-03
+## 52  1.086500e-03 0.03910085 4.346000e-03 4.346000e-03
+## 53  3.450450e-04 0.03897699 1.380180e-03 1.380180e-03
+## 54  4.744182e-04 0.03892819 1.897673e-03 1.897673e-03
+## 55  2.405461e-05 0.03853841 9.621843e-05 9.621843e-05
+## 56  2.491242e-03 0.03844761 9.964967e-03 9.964967e-03
+## 57  4.852992e-03 0.03824025 1.941197e-02 1.941197e-02
+## 58  1.428432e-04 0.03807504 5.713729e-04 5.713729e-04
+## 59  5.543559e-04 0.03799667 1.948485e-03 2.217424e-03
+## 60  2.102075e-04 0.03781933 8.408300e-04 8.408300e-04
+## 61  4.160596e-03 0.03776089 1.664239e-02 1.664239e-02
+## 62  3.337158e-03 0.03760429 1.334863e-02 1.334863e-02
+## 63  4.564808e-03 0.03758323 1.825923e-02 1.825923e-02
+## 64  1.394785e-03 0.03753910 5.579141e-03 5.579141e-03
+## 65  1.496181e-03 0.03749854 5.984724e-03 5.984724e-03
+## 66  2.660758e-03 0.03749184 1.064303e-02 1.064303e-02
+## 67  1.660634e-03 0.03745436 6.642537e-03 6.642537e-03
+## 68  2.331359e-03 0.03725407 9.325437e-03 9.325437e-03
+## 69  1.549306e-03 0.03715752 6.197225e-03 6.197225e-03
+## 70  1.010446e-03 0.03706438 2.889377e-03 4.041786e-03
+## 71  1.444688e-03 0.03676038 5.778754e-03 5.778754e-03
+## 72  1.346429e-03 0.03653095 5.385714e-03 5.385714e-03
+## 73  1.496181e-03 0.03640262 5.984724e-03 5.984724e-03
+## 74  5.987281e-04 0.03617785 2.394912e-03 2.394912e-03
+## 75  3.232091e-03 0.03617624 1.292836e-02 1.292836e-02
+## 76  3.788102e-03 0.03604175 1.063008e-02 1.515241e-02
+## 77  9.491053e-03 0.03590115 2.363807e-02 3.796421e-02
+## 78  2.700549e-04 0.03577580 1.080219e-03 1.080219e-03
+## 79  1.718929e-03 0.03560667 6.875715e-03 6.875715e-03
+## 80  8.101167e-04 0.03558408 3.240467e-03 3.240467e-03
+## 81  4.564808e-03 0.03541159 1.557601e-02 1.825923e-02
+## 82  5.543559e-04 0.03529385 2.217424e-03 2.217424e-03
+## 83  1.904907e-03 0.03523558 7.619627e-03 7.619627e-03
+## 84  2.934170e-03 0.03503796 1.173668e-02 1.173668e-02
+## 85  3.670619e-03 0.03494418 1.198089e-02 1.468248e-02
+## 86  5.129793e-04 0.03494173 2.051917e-03 2.051917e-03
+## 87  1.210227e-03 0.03480676 4.840908e-03 4.840908e-03
+## 88  3.232091e-03 0.03471379 1.292836e-02 1.292836e-02
+## 89  3.129950e-03 0.03468946 1.251980e-02 1.251980e-02
+## 90  9.053103e-04 0.03463457 3.621241e-03 3.621241e-03
+## 91  1.299577e-03 0.03460918 5.198308e-03 5.198308e-03
+## 92  5.002951e-03 0.03421872 2.001180e-02 2.001180e-02
+## 93  1.003271e-02 0.03416819 4.013083e-02 4.013083e-02
+## 94  1.394785e-03 0.03413160 5.579141e-03 5.579141e-03
+## 95  9.491053e-03 0.03388999 3.796421e-02 3.796421e-02
+## 96  2.180641e-03 0.03383120 8.722564e-03 8.722564e-03
+## 97  3.670619e-03 0.03377542 1.468248e-02 1.468248e-02
+## 98  2.192551e-04 0.03367154 8.770204e-04 8.770204e-04
+## 99  3.337158e-03 0.03356481 1.334863e-02 1.334863e-02
+## 100 2.410126e-03 0.03334596 9.640504e-03 9.640504e-03
+## 101 3.030666e-03 0.03319015 1.212266e-02 1.212266e-02
+## 102 3.788102e-03 0.03302395 1.515241e-02 1.515241e-02
+## 103 5.643960e-03 0.03290456 2.257584e-02 2.257584e-02
+## 104 4.706973e-03 0.03256338 1.882789e-02 1.882789e-02
+## 105 1.280927e-02 0.03242302 3.590306e-02 5.123707e-02
+## 106 1.150377e-02 0.03240882 4.601508e-02 4.601508e-02
+## 107 7.143047e-03 0.03235502 2.857219e-02 2.857219e-02
+## 108 4.291702e-03 0.03233677 1.716681e-02 1.716681e-02
+## 109 1.315460e-02 0.03230203 2.773796e-02 5.261842e-02
+## 110 5.814960e-03 0.03227285 2.325984e-02 2.325984e-02
+## 111 7.143047e-03 0.03227132 1.428609e-02 2.142914e-02
+## 112 3.556349e-03 0.03223741 1.422540e-02 1.422540e-02
+## 113 6.170515e-03 0.03212909 2.468206e-02 2.468206e-02
+## 114 7.143047e-03 0.03204501 2.239139e-02 2.857219e-02
+## 115 1.904907e-03 0.03196853 7.619627e-03 7.619627e-03
+## 116 1.549306e-03 0.03186163 6.197225e-03 6.197225e-03
+## 117 6.938579e-03 0.03141740 2.775431e-02 2.775431e-02
+## 118 7.567654e-03 0.03138330 2.239139e-02 3.027062e-02
+## 119 1.350780e-02 0.03138206 2.701559e-02 4.052339e-02
+## 120 7.352704e-03 0.03132995 2.941081e-02 2.941081e-02
+## 121 3.670619e-03 0.03128470 1.468248e-02 1.468248e-02
+## 122 1.003271e-02 0.03115231 4.013083e-02 4.013083e-02
+## 123 4.050685e-04 0.03100426 1.620274e-03 1.620274e-03
+## 124 3.337158e-03 0.03089825 1.334863e-02 1.334863e-02
+## 125 5.814960e-03 0.03056740 2.325984e-02 2.325984e-02
+## 126 1.003271e-02 0.03048264 4.013083e-02 4.013083e-02
+## 127 6.938579e-03 0.03048068 2.775431e-02 2.775431e-02
+## 128 2.491242e-03 0.03040457 9.964967e-03 9.964967e-03
+## 129 2.108576e-03 0.03032087 8.434306e-03 8.434306e-03
+## 130 1.247165e-02 0.03004214 4.988660e-02 4.988660e-02
+## 131 9.491053e-03 0.03000419 3.796421e-02 3.796421e-02
+## 132 7.352704e-03 0.03000128 1.470541e-02 2.205811e-02
+## 133 1.904907e-03 0.02993951 7.619627e-03 7.619627e-03
+## 134 4.291702e-03 0.02980062 1.716681e-02 1.716681e-02
+## 135 5.156938e-03 0.02975423 2.062775e-02 2.062775e-02
+## 136 4.564808e-03 0.02971681 1.825923e-02 1.825923e-02
+## 137 5.814960e-03 0.02950064 2.325984e-02 2.325984e-02
+## 138 3.030666e-03 0.02948975 1.212266e-02 1.212266e-02
+## 139 8.482570e-03 0.02945448 3.393028e-02 3.393028e-02
+## 140 1.047854e-03 0.02936346 4.191416e-03 4.191416e-03
+## 141 7.352704e-03 0.02924519 2.941081e-02 2.941081e-02
+## 142 7.567654e-03 0.02862530 3.027062e-02 3.027062e-02
+## 143 7.567654e-03 0.02857116 3.027062e-02 3.027062e-02
+## 144 6.713204e-04 0.02855350 2.685282e-03 2.685282e-03
+## 145 2.574766e-03 0.02842322 1.029906e-02 1.029906e-02
+## 146 2.038635e-03 0.02831784 8.154539e-03 8.154539e-03
+## 147 8.725632e-03 0.02806771 3.490253e-02 3.490253e-02
+## 148 1.887834e-02 0.02730478 3.775668e-02 5.663502e-02
+## 149 6.220963e-04 0.02728749 2.488385e-03 2.488385e-03
+## 150 5.002951e-03 0.02700190 2.001180e-02 2.001180e-02
+## 151 9.229757e-03 0.02693755 3.691903e-02 3.691903e-02
+## 152 8.725632e-03 0.02627044 3.490253e-02 3.490253e-02
+## 153 7.788007e-03 0.02597639 3.115203e-02 3.115203e-02
+## 154 8.013869e-03 0.02592719 3.205548e-02 3.205548e-02
+## 155 3.337158e-03 0.02504545 1.334863e-02 1.334863e-02
+## 156 5.315041e-03 0.02501684 2.126016e-02 2.126016e-02
+## 157 4.160596e-03 0.02478771 1.664239e-02 1.664239e-02
+## 158 1.031331e-02 0.02435219 4.125323e-02 4.125323e-02
+## 159 7.788007e-03 0.02435018 1.557601e-02 2.468206e-02
+## 160 4.033014e-03 0.02421638 1.613205e-02 1.613205e-02
+## 161 8.482570e-03 0.02421232 3.393028e-02 3.393028e-02
+## 162 7.788007e-03 0.02379958 3.115203e-02 3.115203e-02
+## 163 1.089468e-02 0.02330711 4.357870e-02 4.357870e-02
+## 164 2.034315e-02 0.02287911 4.068629e-02 6.102944e-02
+## 165 8.482570e-03 0.02275770 3.393028e-02 3.393028e-02
+## 166 6.170515e-03 0.02271689 2.468206e-02 2.468206e-02
+## 167 7.352704e-03 0.02263038 2.941081e-02 2.941081e-02
+## 168 1.089468e-02 0.02175763 4.357870e-02 4.357870e-02
+## 169 8.725632e-03 0.02173676 3.490253e-02 3.490253e-02
+## 170 1.150377e-02 0.02036075 4.601508e-02 4.601508e-02</code></pre>
+</div>
+<div id="distractor-coding" class="section level4">
+<h4>distractor coding</h4>
+<pre class="rtaskcoding_distr"><code>stats.group.tdic[param == &quot;distractor&quot; &amp; roi.hemi %in% rois.distr] %&gt;% arrange(-beta)</code></pre>
+</div>
+<div id="incongruency-coding" class="section level4">
+<h4>incongruency coding</h4>
+<pre class="r"><code>stats.group.tdic[param == &quot;incongruency&quot; &amp; roi.hemi %in% rois.incon] %&gt;% arrange(-beta)</code></pre>
+<pre><code>##    roi.hemi                                       community        param   v
+## 1     IP1_l                        inferior parietal cortex incongruency 956
+## 2     MIP_l                        superior parietal cortex incongruency 967
+## 3    LIPd_l                        superior parietal cortex incongruency 978
+## 4    SCEF_l    paracentral lobular and mid cingulate cortex incongruency 888
+## 5     IP0_r                        inferior parietal cortex incongruency 920
+## 6     AIP_l                        superior parietal cortex incongruency 863
+## 7     MIP_r                        superior parietal cortex incongruency 868
+## 8     RSC_l                      posterior cingulate cortex incongruency 937
+## 9     6ma_l    paracentral lobular and mid cingulate cortex incongruency 937
+## 10    LO2_r                       MT+ complex and neighbors incongruency 914
+## 11   IPS1_l                     dorsal stream visual cortex incongruency 900
+## 12    8BM_r anterior cingulate and medial prefrontal cortex incongruency 913
+## 13   s6-8_r                  dorsolateral prefrontal cortex incongruency 961
+## 14    IP2_l                        inferior parietal cortex incongruency 886
+## 15    PEF_l                                 premotor cortex incongruency 841
+## 16   FOP4_l            insular and frontal opercular cortex incongruency 847
+## 17  p32pr_r anterior cingulate and medial prefrontal cortex incongruency 907
+## 18    6ma_r    paracentral lobular and mid cingulate cortex incongruency 918
+## 19    FST_r                       MT+ complex and neighbors incongruency 854
+## 20   IPS1_r                     dorsal stream visual cortex incongruency 833
+## 21   IFJa_l                         inferior frontal cortex incongruency 890
+## 22   IFJp_l                         inferior frontal cortex incongruency 883
+## 23   i6-8_l                  dorsolateral prefrontal cortex incongruency 815
+## 24  a32pr_r anterior cingulate and medial prefrontal cortex incongruency 844
+## 25    8BM_l anterior cingulate and medial prefrontal cortex incongruency 848
+## 26   POS1_l                      posterior cingulate cortex incongruency 838
+## 27    IP2_r                        inferior parietal cortex incongruency 822
+## 28     44_l                         inferior frontal cortex incongruency 848
+## 29   24dd_r    paracentral lobular and mid cingulate cortex incongruency 841
+## 30     V2_r                             early visual cortex incongruency 808
+## 31    SFL_l                  dorsolateral prefrontal cortex incongruency 867
+## 32 p9-46v_l                  dorsolateral prefrontal cortex incongruency 839
+## 33  9-46d_l                  dorsolateral prefrontal cortex incongruency 934
+## 34    V3B_r                     dorsal stream visual cortex incongruency 851
+## 35     Ig_l            insular and frontal opercular cortex incongruency 814
+## 36   31pd_r                      posterior cingulate cortex incongruency 838
+## 37   VMV2_r                    ventral stream visual cortex incongruency 876
+## 38     6a_r                                 premotor cortex incongruency 828
+## 39    FST_l                       MT+ complex and neighbors incongruency 852
+## 40   IFSa_l                         inferior frontal cortex incongruency 812
+## 41    PEF_r                                 premotor cortex incongruency 823
+## 42   LIPv_r                        superior parietal cortex incongruency 833
+## 43   VMV3_r                    ventral stream visual cortex incongruency 817
+##               p       beta        p.fdr       p.holm
+## 1  2.192551e-04 0.15048270 0.0008770204 0.0008770204
+## 2  1.367319e-04 0.14041629 0.0005469277 0.0005469277
+## 3  8.361358e-05 0.12113690 0.0003344543 0.0003344543
+## 4  2.749281e-03 0.10595659 0.0054985617 0.0082478425
+## 5  9.053103e-04 0.10560744 0.0018106207 0.0027159310
+## 6  5.990446e-03 0.10377251 0.0119808926 0.0179713388
+## 7  5.156938e-03 0.09835530 0.0206277510 0.0206277510
+## 8  4.744182e-04 0.09614687 0.0018976729 0.0018976729
+## 9  4.744182e-04 0.09553802 0.0018976729 0.0018976729
+## 10 1.126420e-03 0.09480535 0.0045056786 0.0045056786
+## 11 1.841016e-03 0.09314530 0.0073640642 0.0073640642
+## 12 1.167650e-03 0.09302085 0.0024204538 0.0046705982
+## 13 1.773223e-04 0.08993387 0.0007092890 0.0007092890
+## 14 2.934170e-03 0.08690848 0.0117366799 0.0117366799
+## 15 1.119569e-02 0.08648395 0.0223913856 0.0335870785
+## 16 9.491053e-03 0.08505483 0.0189821056 0.0284731584
+## 17 1.444688e-03 0.08410075 0.0028893769 0.0043340653
+## 18 9.742425e-04 0.08153650 0.0019484849 0.0029227274
+## 19 7.788007e-03 0.07721379 0.0155760131 0.0233640196
+## 20 1.386898e-02 0.07710542 0.0277379570 0.0416069355
+## 21 2.574766e-03 0.07646219 0.0102990621 0.0102990621
+## 22 3.232091e-03 0.07629816 0.0129283642 0.0129283642
+## 23 2.190120e-02 0.07401804 0.0438024091 0.0657036136
+## 24 1.031331e-02 0.07227156 0.0206266163 0.0309399245
+## 25 9.229757e-03 0.07146538 0.0369190280 0.0369190280
+## 26 1.214162e-02 0.07117747 0.0485664677 0.0485664677
+## 27 1.841006e-02 0.07103543 0.0368201293 0.0552301940
+## 28 9.229757e-03 0.07006815 0.0369190280 0.0369190280
+## 29 1.119569e-02 0.06956604 0.0223913856 0.0335870785
+## 30 2.592353e-02 0.06951829 0.0345647068 0.0518470602
+## 31 5.315041e-03 0.06757564 0.0106300821 0.0159451232
+## 32 1.181903e-02 0.06653064 0.0236380675 0.0379642112
+## 33 5.333046e-04 0.06608153 0.0021332186 0.0021332186
+## 34 8.482570e-03 0.06596209 0.0339302783 0.0339302783
+## 35 2.244202e-02 0.06483939 0.0448840372 0.0673260558
+## 36 1.214162e-02 0.06467589 0.0485664677 0.0485664677
+## 37 4.033014e-03 0.06448365 0.0161320545 0.0161320545
+## 38 1.579967e-02 0.06199238 0.0315993494 0.0473990241
+## 39 8.245353e-03 0.06053043 0.0164907060 0.0247360590
+## 40 2.355680e-02 0.05781091 0.0471136007 0.0706704011
+## 41 1.795153e-02 0.05557912 0.0359030611 0.0538545916
+## 42 1.386898e-02 0.05137502 0.0277379570 0.0526184187
+## 43 2.085193e-02 0.05057554 0.0417038542 0.0625557813</code></pre>
+</div>
+<div id="congruency-coding" class="section level4">
+<h4>congruency coding</h4>
+<pre class="r"><code>stats.group.tdic[param == &quot;congruency&quot; &amp; p.fdr &lt; 0.05] %&gt;% arrange(-beta)</code></pre>
+<pre><code>##   roi.hemi               community      param   v           p       beta
+## 1   TE1a_r lateral temporal cortex congruency 858 0.006938579 0.04140733
+##        p.fdr     p.holm
+## 1 0.01387716 0.02081574</code></pre>
+</div>
+</div>
+<div id="preference-analysis-pairwise-comparisons-1" class="section level2">
+<h2><strong>preference analysis</strong>: pairwise comparisons</h2>
+<p>Of the task coding parcels, which show preferece for certain task dimensions over others? In this section, each task dimension is considered in turn. ROIs are identified in each subsection that meet criteria for having certain representational ‘preferences’. Within each subsection, these criteria get progressively more stringent.</p>
+<div id="target" class="section level4">
+<h4><strong>target</strong></h4>
+<div id="target-distractor-0" class="section level6">
+<h6><strong>target</strong> &gt; {<strong>distractor</strong>, 0}</h6>
+<pre class="r"><code>rois.pref.targt.vs.distr &lt;- stats.pairs.tdic[
+  roi.hemi %in% rois.targt &amp;
+  p.targt.distr &lt; 0.05 &amp;
+  b.targt.distr &gt; 0,
+  roi.hemi
+  ]
+
+stats.group.tdic[param == &quot;target&quot; &amp; roi.hemi %in% rois.pref.targt.vs.distr]</code></pre>
+<pre><code>##     roi.hemi                                       community  param    v
+##  1:      1_l                  somatosensory and motor cortex target  853
+##  2:    11l_l                orbital and polar frontal cortex target 1004
+##  3:    11l_r                orbital and polar frontal cortex target 1000
+##  4:      2_l                  somatosensory and motor cortex target  927
+##  5:    23c_l                      posterior cingulate cortex target  953
+##  6:     3b_r                  somatosensory and motor cortex target 1047
+##  7:      4_r                  somatosensory and motor cortex target 1049
+##  8:     43_l                      posterior opercular cortex target  905
+##  9:     43_r                      posterior opercular cortex target  963
+## 10:     44_l                         inferior frontal cortex target  818
+## 11:     45_l                         inferior frontal cortex target  899
+## 12:     46_l                  dorsolateral prefrontal cortex target  855
+## 13:    47l_l                         inferior frontal cortex target  935
+## 14:    55b_l                                 premotor cortex target  976
+## 15:    55b_r                                 premotor cortex target  965
+## 16:     5m_l    paracentral lobular and mid cingulate cortex target  934
+## 17:    5mv_r    paracentral lobular and mid cingulate cortex target  977
+## 18:     6d_l                                 premotor cortex target  949
+## 19:     6v_l                                 premotor cortex target  931
+## 20:     6v_r                                 premotor cortex target  969
+## 21:    7PC_l                        superior parietal cortex target  947
+## 22:    8Ad_l                  dorsolateral prefrontal cortex target  874
+## 23:    8BL_r                  dorsolateral prefrontal cortex target  858
+## 24:    8BM_r anterior cingulate and medial prefrontal cortex target  912
+## 25:     8C_r                  dorsolateral prefrontal cortex target  974
+## 26:     9p_l                  dorsolateral prefrontal cortex target  919
+## 27:     A4_r                     auditory association cortex target  945
+## 28:     A5_r                     auditory association cortex target  847
+## 29: a9-46v_r                  dorsolateral prefrontal cortex target  877
+## 30:    AIP_l                        superior parietal cortex target  879
+## 31:    AIP_r                        superior parietal cortex target  945
+## 32:    AVI_l            insular and frontal opercular cortex target  883
+## 33:    AVI_r            insular and frontal opercular cortex target  890
+## 34:    d32_r anterior cingulate and medial prefrontal cortex target  906
+## 35:    FEF_l                                 premotor cortex target  893
+## 36:    FEF_r                                 premotor cortex target 1063
+## 37:    FFC_l                    ventral stream visual cortex target  872
+## 38:   FOP1_r                      posterior opercular cortex target  885
+## 39:   FOP3_l            insular and frontal opercular cortex target  885
+## 40:   FOP3_r            insular and frontal opercular cortex target  908
+## 41:   FOP4_l            insular and frontal opercular cortex target  916
+## 42:   FOP5_r            insular and frontal opercular cortex target  889
+## 43:    FST_r                       MT+ complex and neighbors target  872
+## 44:   IFJa_l                         inferior frontal cortex target  834
+## 45:   IFSp_r                         inferior frontal cortex target  904
+## 46:     Ig_l            insular and frontal opercular cortex target  845
+## 47:    IP2_r                        inferior parietal cortex target  875
+## 48:  LBelt_l                           early auditory cortex target  978
+## 49:  MBelt_r                           early auditory cortex target  943
+## 50:     MI_l            insular and frontal opercular cortex target  941
+## 51:     MI_r            insular and frontal opercular cortex target  957
+## 52:    OFC_l                orbital and polar frontal cortex target  856
+## 53:    OFC_r                orbital and polar frontal cortex target  871
+## 54:    OP1_l                      posterior opercular cortex target  851
+## 55:  OP2-3_l                      posterior opercular cortex target  910
+## 56:    OP4_r                      posterior opercular cortex target  907
+## 57:   p10p_l                orbital and polar frontal cortex target  978
+## 58:  p32pr_r anterior cingulate and medial prefrontal cortex target  917
+## 59: p9-46v_l                  dorsolateral prefrontal cortex target  847
+## 60: p9-46v_r                  dorsolateral prefrontal cortex target  971
+## 61:  PBelt_r                           early auditory cortex target  936
+## 62:   PeEc_l                          medial temporal cortex target  872
+## 63:   PFcm_l                      posterior opercular cortex target  966
+## 64:    PGi_l                        inferior parietal cortex target  920
+## 65:    PHT_l                         lateral temporal cortex target  869
+## 66:     PI_r            insular and frontal opercular cortex target  858
+## 67:   PoI2_l            insular and frontal opercular cortex target  883
+## 68:   POS2_r                      posterior cingulate cortex target  928
+## 69:    PSL_r                tempo-parieto-occipital junction target  856
+## 70:     RI_l                           early auditory cortex target  870
+## 71:   SCEF_l    paracentral lobular and mid cingulate cortex target  956
+## 72:   SCEF_r    paracentral lobular and mid cingulate cortex target  937
+## 73:   STGa_l                     auditory association cortex target  963
+## 74:  STSda_l                     auditory association cortex target  942
+## 75:  STSda_r                     auditory association cortex target  989
+## 76:   TE1a_l                         lateral temporal cortex target  869
+## 77:   TE1a_r                         lateral temporal cortex target  882
+## 78:   TE2a_l                         lateral temporal cortex target  886
+## 79:   TE2p_l                         lateral temporal cortex target  882
+## 80:     TF_r                         lateral temporal cortex target  842
+## 81:    TGd_l                         lateral temporal cortex target  905
+## 82:    TGd_r                         lateral temporal cortex target  937
+## 83:    TGv_r                         lateral temporal cortex target  951
+## 84:    V4t_l                       MT+ complex and neighbors target  908
+## 85:    V6A_r                     dorsal stream visual cortex target  899
+## 86:     V8_l                    ventral stream visual cortex target  982
+## 87:    VVC_l                    ventral stream visual cortex target  935
+## 88:    VVC_r                    ventral stream visual cortex target  906
+##     roi.hemi                                       community  param    v
+##                p       beta        p.fdr       p.holm
+##  1: 8.013869e-03 0.02592719 3.205548e-02 3.205548e-02
+##  2: 2.405461e-05 0.03853841 9.621843e-05 9.621843e-05
+##  3: 2.937113e-05 0.04077184 1.174845e-04 1.174845e-04
+##  4: 6.972274e-04 0.04013626 2.788910e-03 2.788910e-03
+##  5: 2.485714e-04 0.04761237 9.942856e-04 9.942856e-04
+##  6: 2.286525e-06 0.06445467 9.146101e-06 9.146101e-06
+##  7: 2.028914e-06 0.05957355 8.115657e-06 8.115657e-06
+##  8: 1.549306e-03 0.03186163 6.197225e-03 6.197225e-03
+##  9: 1.627083e-04 0.04454719 6.508333e-04 6.508333e-04
+## 10: 2.034315e-02 0.02287911 4.068629e-02 6.102944e-02
+## 11: 1.904907e-03 0.03523558 7.619627e-03 7.619627e-03
+## 12: 7.567654e-03 0.02862530 3.027062e-02 3.027062e-02
+## 13: 5.129793e-04 0.03494173 2.051917e-03 2.051917e-03
+## 14: 9.157196e-05 0.04895789 3.662878e-04 3.662878e-04
+## 15: 1.492036e-04 0.04352304 5.968145e-04 5.968145e-04
+## 16: 5.333046e-04 0.04302172 2.133219e-03 2.133219e-03
+## 17: 8.750973e-05 0.04838998 3.500389e-04 3.500389e-04
+## 18: 2.932165e-04 0.04135893 1.172866e-03 1.172866e-03
+## 19: 5.987281e-04 0.03617785 2.394912e-03 2.394912e-03
+## 20: 1.252216e-04 0.05330170 5.008863e-04 5.008863e-04
+## 21: 3.181723e-04 0.04211645 1.272689e-03 1.272689e-03
+## 22: 4.291702e-03 0.02980062 1.716681e-02 1.716681e-02
+## 23: 6.938579e-03 0.03048068 2.775431e-02 2.775431e-02
+## 24: 1.210227e-03 0.04892053 2.420454e-03 4.670598e-03
+## 25: 1.002204e-04 0.04525546 4.008817e-04 4.008817e-04
+## 26: 9.392081e-04 0.04296052 3.756833e-03 3.756833e-03
+## 27: 3.450450e-04 0.03897699 1.380180e-03 1.380180e-03
+## 28: 9.491053e-03 0.03000419 3.796421e-02 3.796421e-02
+## 29: 3.908875e-03 0.04154084 1.563550e-02 1.563550e-02
+## 30: 3.670619e-03 0.03494418 1.198089e-02 1.468248e-02
+## 31: 3.450450e-04 0.04602487 1.380180e-03 1.380180e-03
+## 32: 3.232091e-03 0.03471379 1.292836e-02 1.292836e-02
+## 33: 2.574766e-03 0.02842322 1.029906e-02 1.029906e-02
+## 34: 1.496181e-03 0.03640262 5.984724e-03 5.984724e-03
+## 35: 2.331359e-03 0.03725407 9.325437e-03 9.325437e-03
+## 36: 8.542962e-07 0.05318203 3.417185e-06 3.417185e-06
+## 37: 4.564808e-03 0.02971681 1.825923e-02 1.825923e-02
+## 38: 3.030666e-03 0.02948975 1.212266e-02 1.212266e-02
+## 39: 3.030666e-03 0.03986726 1.212266e-02 1.212266e-02
+## 40: 1.394785e-03 0.03753910 5.579141e-03 5.579141e-03
+## 41: 1.047854e-03 0.02936346 4.191416e-03 4.191416e-03
+## 42: 2.660758e-03 0.04652880 1.064303e-02 1.064303e-02
+## 43: 4.564808e-03 0.03541159 1.557601e-02 1.825923e-02
+## 44: 1.350780e-02 0.03138206 2.701559e-02 4.052339e-02
+## 45: 1.604109e-03 0.04397246 6.416436e-03 6.416436e-03
+## 46: 1.003271e-02 0.03416819 4.013083e-02 4.013083e-02
+## 47: 4.160596e-03 0.03776089 1.664239e-02 1.664239e-02
+## 48: 8.361358e-05 0.04395599 3.344543e-04 3.344543e-04
+## 49: 3.739646e-04 0.03984729 1.495859e-03 1.495859e-03
+## 50: 4.050685e-04 0.03100426 1.620274e-03 1.620274e-03
+## 51: 2.102075e-04 0.04444705 8.408300e-04 8.408300e-04
+## 52: 7.352704e-03 0.02263038 2.941081e-02 2.941081e-02
+## 53: 4.706973e-03 0.03256338 1.882789e-02 1.882789e-02
+## 54: 8.482570e-03 0.02945448 3.393028e-02 3.393028e-02
+## 55: 1.299577e-03 0.03460918 5.198308e-03 5.198308e-03
+## 56: 1.444688e-03 0.03676038 5.778754e-03 5.778754e-03
+## 57: 8.361358e-05 0.04960195 3.344543e-04 3.344543e-04
+## 58: 1.010446e-03 0.03706438 2.889377e-03 4.041786e-03
+## 59: 9.491053e-03 0.03590115 2.363807e-02 3.796421e-02
+## 60: 1.146053e-04 0.05221659 4.584212e-04 4.584212e-04
+## 61: 4.933577e-04 0.05220251 1.973431e-03 1.973431e-03
+## 62: 4.564808e-03 0.03758323 1.825923e-02 1.825923e-02
+## 63: 1.428432e-04 0.03807504 5.713729e-04 5.713729e-04
+## 64: 9.053103e-04 0.03463457 3.621241e-03 3.621241e-03
+## 65: 5.002951e-03 0.02700190 2.001180e-02 2.001180e-02
+## 66: 6.938579e-03 0.03141740 2.775431e-02 2.775431e-02
+## 67: 3.232091e-03 0.03617624 1.292836e-02 1.292836e-02
+## 68: 6.713204e-04 0.04229558 2.685282e-03 2.685282e-03
+## 69: 7.352704e-03 0.03132995 2.941081e-02 2.941081e-02
+## 70: 4.852992e-03 0.03824025 1.941197e-02 1.941197e-02
+## 71: 2.192551e-04 0.03367154 8.770204e-04 8.770204e-04
+## 72: 4.744182e-04 0.04516111 1.897673e-03 1.897673e-03
+## 73: 1.627083e-04 0.04067673 6.508333e-04 6.508333e-04
+## 74: 3.892347e-04 0.04820479 1.556939e-03 1.556939e-03
+## 75: 5.009261e-05 0.03958309 2.003704e-04 2.003704e-04
+## 76: 5.002951e-03 0.03421872 2.001180e-02 2.001180e-02
+## 77: 3.337158e-03 0.03760429 1.334863e-02 1.334863e-02
+## 78: 2.934170e-03 0.03503796 1.173668e-02 1.173668e-02
+## 79: 3.337158e-03 0.03356481 1.334863e-02 1.334863e-02
+## 80: 1.089468e-02 0.02175763 4.357870e-02 4.357870e-02
+## 81: 1.549306e-03 0.03715752 6.197225e-03 6.197225e-03
+## 82: 4.744182e-04 0.03892819 1.897673e-03 1.897673e-03
+## 83: 2.700549e-04 0.03577580 1.080219e-03 1.080219e-03
+## 84: 1.394785e-03 0.03413160 5.579141e-03 5.579141e-03
+## 85: 1.904907e-03 0.02993951 7.619627e-03 7.619627e-03
+## 86: 6.956962e-05 0.04354234 2.782785e-04 2.782785e-04
+## 87: 5.129793e-04 0.03947016 2.051917e-03 2.051917e-03
+## 88: 1.496181e-03 0.03749854 5.984724e-03 5.984724e-03
+##                p       beta        p.fdr       p.holm</code></pre>
+<pre class="r"><code>stats.pairs.tdic[roi.hemi %in% rois.pref.targt.vs.distr]</code></pre>
+<pre><code>##     roi.hemi       p.incon.distr        p.targt.distr      p.targt.incon
+##  1:      1_l   0.358271068342701   0.0099638054822826  0.744902481126058
+##  2:    11l_l   0.835999695141812   0.0181839932651471 0.0689814901748278
+##  3:    11l_r   0.373889623041155   0.0135293000675887 0.0427148764544416
+##  4:      2_l   0.243145676906957 0.000857059418677864  0.650058760440643
+##  5:    23c_l   0.418033036960942  0.00143054720143354  0.418033036960942
+##  6:     3b_r   0.835999695141812  0.00190903379233731  0.229863753234715
+##  7:      4_r    0.76740362427525  0.00807857140661739   0.11730430345931
+##  8:     43_l   0.805328189287153   0.0300177058728686  0.715856208561373
+##  9:     43_r   0.327763332352514    0.016495685023191 0.0706704011083979
+## 10:     44_l 0.00481232672651366  0.00468269564897739  0.156152999092271
+## 11:     45_l   0.271399958313216 0.000117842298330118  0.812970469384972
+## 12:     46_l   0.678737063263331 0.000248153925696215  0.352335010992951
+## 13:    47l_l    0.42375505603421   0.0381315757834244   0.17495275182514
+## 14:    55b_l   0.364276025653958 0.000718834286271175  0.685980614144526
+## 15:    55b_r  0.0261768970338743 0.000159541931708418  0.744902481126058
+## 16:     5m_l     0.4011373299121   0.0309399244771829 0.0309399244771829
+## 17:    5mv_r   0.921481471832507   0.0234532496057156  0.119901588887752
+## 18:     6d_l   0.421448898121099   0.0206713194779091  0.952840962910774
+## 19:     6v_l   0.477237472374249  0.00155466203359467  0.296714228910537
+## 20:     6v_r   0.594236303924014  0.00131553065288159  0.127969346026179
+## 21:    7PC_l   0.587412423440188  0.00332613550827787  0.358271068342701
+## 22:    8Ad_l   0.238656671768938  0.00101923004924487  0.693252604522478
+## 23:    8BL_r  0.0136944232702625  0.00486070010881079    0.5212176151805
+## 24:    8BM_r 0.00209168218072975  0.00115875936906562  0.332701480638981
+## 25:     8C_r   0.462720645697724  0.00468269564897739  0.607989661165867
+## 26:     9p_l   0.401762577305952  0.00115875936906562  0.483395709524977
+## 27:     A4_r   0.322872125703512  0.00700589733403234 0.0136944232702625
+## 28:     A5_r   0.347797114906555   0.0438476298050858 0.0438476298050858
+## 29: a9-46v_r   0.534149002417831 0.000549431761378116  0.276332524831831
+## 30:    AIP_l  0.0103356597389546  0.00962465345302732  0.289949590005577
+## 31:    AIP_r   0.453031469070215  0.00836871095637903  0.453031469070215
+## 32:    AVI_l    0.20894185321877   0.0467280391762017  0.671522532970055
+## 33:    AVI_r   0.373889623041155  0.00296014630200858  0.373889623041155
+## 34:    d32_r   0.185773118769406  0.00962465345302732  0.929311998594734
+## 35:    FEF_l   0.527663479442477 0.000194510832145056  0.527663479442477
+## 36:    FEF_r   0.527663479442477  0.00296014630200858  0.499052220958472
+## 37:    FFC_l   0.573872618298729    0.011429440448687  0.573872618298729
+## 38:   FOP1_r    0.76740362427525    0.011429440448687  0.593394252830127
+## 39:   FOP3_l   0.506529793801608   0.0381315757834244  0.913658411817487
+## 40:   FOP3_r   0.685980614144526  0.00752513833375446  0.685980614144526
+## 41:   FOP4_l   0.034511307620317  0.00929583780878929  0.133992167727346
+## 42:   FOP5_r   0.707879541796597  0.00486070010881079  0.261727866669187
+## 43:    FST_r  0.0450056195900164   0.0450056195900164  0.255137434887168
+## 44:   IFJa_l  0.0181839932651471    0.028473158410673  0.103183856167536
+## 45:   IFSp_r   0.573872618298729   0.0206713194779091  0.544969755691135
+## 46:     Ig_l  0.0498985591166825   0.0139881561500417  0.459018352174951
+## 47:    IP2_r   0.010011472868305   0.0018327757339307  0.447088119223633
+## 48:  LBelt_l   0.568870874393673   0.0126514586952489   0.77494803999209
+## 49:  MBelt_r   0.882455576709727 0.000785165290544399  0.119901588887752
+## 50:     MI_l   0.421448898121099  0.00359236833459065  0.642965967726678
+## 51:     MI_r    0.16462468685218   0.0041833643614595  0.874680881437659
+## 52:    OFC_l   0.234229498638406   0.0220237128856873  0.913658411817487
+## 53:    OFC_r   0.671522532970055   0.0154485931542681  0.340668776719838
+## 54:    OP1_l   0.171456006756825   0.0086681305944758                  1
+## 55:  OP2-3_l   0.280965932080733   0.0438476298050858 0.0106742392182717
+## 56:    OP4_r   0.429521796251873   0.0144607565390196 0.0741506037283308
+## 57:   p10p_l   0.107361239117497 0.000628920327102378    0.5212176151805
+## 58:  p32pr_r  0.0103356597389546 0.000895221768992372  0.150372683231776
+## 59: p9-46v_l 0.00552304812111437  0.00131553065288159  0.441188560378528
+## 60: p9-46v_r   0.401762577305952   0.0054318620948699  0.607989661165867
+## 61:  PBelt_r   0.722613077833614   0.0106742392182717 0.0625557813486353
+## 62:   PeEc_l   0.790098960861137   0.0086681305944758  0.291520429358215
+## 63:   PFcm_l    0.75238019179298   0.0106742392182717   0.75238019179298
+## 64:    PGi_l   0.568870874393673  0.00726136134331768  0.671522532970055
+## 65:    PHT_l  0.0854458048968248   0.0392687331242811    0.4011373299121
+## 66:     PI_r   0.388988507740729  0.00373257790508319  0.976410360440696
+## 67:   PoI2_l   0.594236303924014  0.00675851784582093  0.401762577305952
+## 68:   POS2_r   0.642965967726678  0.00162032912750121 0.0759428771120145
+## 69:    PSL_r   0.484308188555268   0.0416314722705025  0.722613077833614
+## 70:     RI_l   0.229863753234715   0.0392687331242811  0.921481471832507
+## 71:   SCEF_l  0.0120990408915134   0.0120990408915134  0.050628584741343
+## 72:   SCEF_r   0.382706152330751   0.0187797000521499  0.905843557195151
+## 73:   STGa_l   0.635904983181629   0.0292759879295428 0.0292759879295428
+## 74:  STSda_l   0.635904983181629  0.00168851288831462 0.0741506037283308
+## 75:  STSda_r   0.797704125217873  0.00468269564897739  0.154775784251305
+## 76:   TE1a_l   0.790098960861137  0.00243041119823673  0.139389328040478
+## 77:   TE1a_r   0.406723981611982  0.00700589733403234 0.0309399244771829
+## 78:   TE2a_l    0.76740362427525  0.00807857140661739 0.0815343247329796
+## 79:   TE2p_l   0.685980614144526   0.0020702701839781  0.521695672359833
+## 80:     TF_r   0.441188560378528   0.0149474502438025 0.0689814901748278
+## 81:    TGd_l   0.976410360440696   0.0328641068893028  0.281329901983478
+## 82:    TGd_r   0.495838146245763  0.00224378782629131  0.495838146245763
+## 83:    TGv_r   0.621880562471883   0.0416314722705025 0.0741506037283308
+## 84:    V4t_l   0.382706152330751  0.00675851784582093  0.587412423440188
+## 85:    V6A_r   0.373889623041155  0.00836871095637903 0.0981071332377344
+## 86:     V8_l   0.730018289938958  0.00504477493269562  0.469845984669979
+## 87:    VVC_l   0.434924385008365  0.00296014630200858  0.489596040166003
+## 88:    VVC_r   0.715233289306152  0.00402792235858485  0.491644998528772
+##     roi.hemi       p.incon.distr        p.targt.distr      p.targt.incon
+##     b.incon.distr b.targt.distr b.targt.incon
+##  1:  0.0406044260    0.03931787 -0.0012886147
+##  2: -0.0025069228    0.02744503  0.0299498903
+##  3: -0.0139864557    0.03289148  0.0468563807
+##  4:  0.0468739537    0.05453287  0.0076785422
+##  5:  0.0337605364    0.04902436  0.0152891274
+##  6:  0.0246340415    0.04688784  0.0222795294
+##  7:  0.0127784390    0.05404377  0.0412938466
+##  8:  0.0117977836    0.02599479  0.0142013654
+##  9: -0.0185665595    0.03097728  0.0495153608
+## 10:  0.0848201108    0.03770647 -0.0472648036
+## 11:  0.0469765387    0.04593306 -0.0010457331
+## 12:  0.0224423495    0.03699859  0.0145683356
+## 13: -0.0085387151    0.02864275  0.0371723695
+## 14:  0.0408287349    0.05232751  0.0115233968
+## 15:  0.0530286458    0.05377690  0.0007503963
+## 16: -0.0175679274    0.03713374  0.0546660054
+## 17:  0.0034813496    0.03375810  0.0302803098
+## 18:  0.0271205243    0.03704510  0.0099345579
+## 19:  0.0146920900    0.04880521  0.0341375941
+## 20:  0.0186009736    0.05693183  0.0383714928
+## 21:  0.0170535497    0.03967634  0.0226381034
+## 22:  0.0564189267    0.04290344 -0.0135482794
+## 23:  0.0700651005    0.04655283 -0.0235892165
+## 24:  0.0944371085    0.05034582 -0.0443019204
+## 25:  0.0341463465    0.04226349  0.0081288755
+## 26:  0.0360409328    0.04930987  0.0132925628
+## 27: -0.0065346731    0.04489343  0.0514130185
+## 28: -0.0263224991    0.03358625  0.0598558341
+## 29:  0.0179543053    0.04560130  0.0276696518
+## 30:  0.1102410775    0.04147812 -0.0690788270
+## 31:  0.0351968002    0.04276647  0.0075810782
+## 32:  0.0508674683    0.02806158 -0.0228384852
+## 33:  0.0456421634    0.03964115 -0.0060118932
+## 34:  0.0452112840    0.03584096 -0.0093855298
+## 35:  0.0436568939    0.04669606  0.0030453779
+## 36:  0.0218304496    0.04693379  0.0251290823
+## 37:  0.0269013235    0.02825053  0.0013502310
+## 38:  0.0230389954    0.03522306  0.0121939599
+## 39:  0.0382894870    0.03731536 -0.0009755199
+## 40:  0.0263395439    0.03348160  0.0071483577
+## 41:  0.0841424990    0.02844532 -0.0558308118
+## 42:  0.0332787871    0.04015759  0.0068880070
+## 43:  0.0749298932    0.03311709 -0.0419168154
+## 44:  0.0815990097    0.03654520 -0.0451885625
+## 45:  0.0192956786    0.03839714  0.0191156284
+## 46:  0.0747650304    0.04412714 -0.0307393043
+## 47:  0.0829861064    0.04975984 -0.0333640345
+## 48:  0.0439605968    0.03942752 -0.0045409441
+## 49:  0.0110383997    0.04621824  0.0351977935
+## 50:  0.0336639785    0.04121518  0.0075616951
+## 51:  0.0538363870    0.04246484 -0.0113976055
+## 52:  0.0471727667    0.03213248 -0.0150631184
+## 53:  0.0097514930    0.03789302  0.0281519289
+## 54:  0.0405227707    0.03570996 -0.0048197868
+## 55: -0.0099156847    0.02806018  0.0379653039
+## 56:  0.0011857164    0.04058385  0.0394000265
+## 57:  0.0378315465    0.04727340  0.0094587652
+## 58:  0.0839090346    0.03687157 -0.0471834468
+## 59:  0.0816934248    0.05111882 -0.0307028226
+## 60:  0.0419203638    0.04912349  0.0072179907
+## 61:  0.0082312284    0.04896619  0.0407513870
+## 62:  0.0132023267    0.04262949  0.0294437353
+## 63:  0.0257251912    0.03081122  0.0050900666
+## 64:  0.0372604494    0.03712288 -0.0001377559
+## 65:  0.0583403546    0.02873761 -0.0296524573
+## 66:  0.0340526419    0.03227520 -0.0017793929
+## 67:  0.0161516783    0.04571828  0.0295884538
+## 68:  0.0042903633    0.04556296  0.0412806656
+## 69:  0.0327074910    0.03139873 -0.0013101062
+## 70:  0.0352292553    0.03020517 -0.0050294355
+## 71:  0.1012302212    0.02889858 -0.0725438667
+## 72:  0.0460456858    0.03999132 -0.0060655345
+## 73: -0.0006568248    0.03270837  0.0333644785
+## 74:  0.0110753294    0.05453885  0.0434897921
+## 75: -0.0008095371    0.04238139  0.0431894483
+## 76: -0.0033453065    0.04381453  0.0471529214
+## 77: -0.0139720126    0.04555450  0.0594886455
+## 78: -0.0100673293    0.04071601  0.0507625312
+## 79:  0.0196272374    0.04433809  0.0247323732
+## 80: -0.0061733236    0.03138004  0.0375460873
+## 81:  0.0014977170    0.03605363  0.0345577767
+## 82:  0.0182816667    0.04439761  0.0261371584
+## 83:  0.0017812776    0.03048116  0.0287014431
+## 84:  0.0282604531    0.04076592  0.0125198868
+## 85: -0.0052072932    0.03633306  0.0415324916
+## 86:  0.0245522303    0.03723687  0.0126962477
+## 87:  0.0382857836    0.04653042  0.0082593489
+## 88:  0.0197106668    0.03656670  0.0168681929
+##     b.incon.distr b.targt.distr b.targt.incon
+##                                           community
+##  1:                  somatosensory and motor cortex
+##  2:                orbital and polar frontal cortex
+##  3:                orbital and polar frontal cortex
+##  4:                  somatosensory and motor cortex
+##  5:                      posterior cingulate cortex
+##  6:                  somatosensory and motor cortex
+##  7:                  somatosensory and motor cortex
+##  8:                      posterior opercular cortex
+##  9:                      posterior opercular cortex
+## 10:                         inferior frontal cortex
+## 11:                         inferior frontal cortex
+## 12:                  dorsolateral prefrontal cortex
+## 13:                         inferior frontal cortex
+## 14:                                 premotor cortex
+## 15:                                 premotor cortex
+## 16:    paracentral lobular and mid cingulate cortex
+## 17:    paracentral lobular and mid cingulate cortex
+## 18:                                 premotor cortex
+## 19:                                 premotor cortex
+## 20:                                 premotor cortex
+## 21:                        superior parietal cortex
+## 22:                  dorsolateral prefrontal cortex
+## 23:                  dorsolateral prefrontal cortex
+## 24: anterior cingulate and medial prefrontal cortex
+## 25:                  dorsolateral prefrontal cortex
+## 26:                  dorsolateral prefrontal cortex
+## 27:                     auditory association cortex
+## 28:                     auditory association cortex
+## 29:                  dorsolateral prefrontal cortex
+## 30:                        superior parietal cortex
+## 31:                        superior parietal cortex
+## 32:            insular and frontal opercular cortex
+## 33:            insular and frontal opercular cortex
+## 34: anterior cingulate and medial prefrontal cortex
+## 35:                                 premotor cortex
+## 36:                                 premotor cortex
+## 37:                    ventral stream visual cortex
+## 38:                      posterior opercular cortex
+## 39:            insular and frontal opercular cortex
+## 40:            insular and frontal opercular cortex
+## 41:            insular and frontal opercular cortex
+## 42:            insular and frontal opercular cortex
+## 43:                       MT+ complex and neighbors
+## 44:                         inferior frontal cortex
+## 45:                         inferior frontal cortex
+## 46:            insular and frontal opercular cortex
+## 47:                        inferior parietal cortex
+## 48:                           early auditory cortex
+## 49:                           early auditory cortex
+## 50:            insular and frontal opercular cortex
+## 51:            insular and frontal opercular cortex
+## 52:                orbital and polar frontal cortex
+## 53:                orbital and polar frontal cortex
+## 54:                      posterior opercular cortex
+## 55:                      posterior opercular cortex
+## 56:                      posterior opercular cortex
+## 57:                orbital and polar frontal cortex
+## 58: anterior cingulate and medial prefrontal cortex
+## 59:                  dorsolateral prefrontal cortex
+## 60:                  dorsolateral prefrontal cortex
+## 61:                           early auditory cortex
+## 62:                          medial temporal cortex
+## 63:                      posterior opercular cortex
+## 64:                        inferior parietal cortex
+## 65:                         lateral temporal cortex
+## 66:            insular and frontal opercular cortex
+## 67:            insular and frontal opercular cortex
+## 68:                      posterior cingulate cortex
+## 69:                tempo-parieto-occipital junction
+## 70:                           early auditory cortex
+## 71:    paracentral lobular and mid cingulate cortex
+## 72:    paracentral lobular and mid cingulate cortex
+## 73:                     auditory association cortex
+## 74:                     auditory association cortex
+## 75:                     auditory association cortex
+## 76:                         lateral temporal cortex
+## 77:                         lateral temporal cortex
+## 78:                         lateral temporal cortex
+## 79:                         lateral temporal cortex
+## 80:                         lateral temporal cortex
+## 81:                         lateral temporal cortex
+## 82:                         lateral temporal cortex
+## 83:                         lateral temporal cortex
+## 84:                       MT+ complex and neighbors
+## 85:                     dorsal stream visual cortex
+## 86:                    ventral stream visual cortex
+## 87:                    ventral stream visual cortex
+## 88:                    ventral stream visual cortex
+##                                           community</code></pre>
+</div>
+<div id="target-incongruency-0" class="section level6">
+<h6><strong>target</strong> &gt; {<strong>incongruency</strong>, 0}</h6>
+<pre class="r"><code>rois.pref.targt.vs.incon &lt;- stats.pairs.tdic[
+  roi.hemi %in% rois.targt &amp;
+  p.targt.incon &lt; 0.05 &amp;
+  b.targt.incon &gt; 0,
+  roi.hemi
+  ]
+
+stats.group.tdic[param == &quot;target&quot; &amp; roi.hemi %in% rois.pref.targt.vs.incon]</code></pre>
+<pre><code>##     roi.hemi                                    community  param    v
+##  1:    11l_r             orbital and polar frontal cortex target 1000
+##  2:     3a_l               somatosensory and motor cortex target 1009
+##  3:     3b_l               somatosensory and motor cortex target 1108
+##  4:      4_l               somatosensory and motor cortex target 1097
+##  5:     5m_l paracentral lobular and mid cingulate cortex target  934
+##  6:     A4_r                  auditory association cortex target  945
+##  7:     A5_r                  auditory association cortex target  847
+##  8:  OP2-3_l                   posterior opercular cortex target  910
+##  9:   STGa_l                  auditory association cortex target  963
+## 10:    TA2_l                  auditory association cortex target  899
+## 11:   TE1a_r                      lateral temporal cortex target  882
+##                p       beta        p.fdr       p.holm
+##  1: 2.937113e-05 0.04077184 1.174845e-04 1.174845e-04
+##  2: 1.866069e-05 0.06868080 7.464274e-05 7.464274e-05
+##  3: 3.584486e-08 0.08453540 1.433795e-07 1.433795e-07
+##  4: 8.284144e-08 0.06837859 3.313657e-07 3.313657e-07
+##  5: 5.333046e-04 0.04302172 2.133219e-03 2.133219e-03
+##  6: 3.450450e-04 0.03897699 1.380180e-03 1.380180e-03
+##  7: 9.491053e-03 0.03000419 3.796421e-02 3.796421e-02
+##  8: 1.299577e-03 0.03460918 5.198308e-03 5.198308e-03
+##  9: 1.627083e-04 0.04067673 6.508333e-04 6.508333e-04
+## 10: 1.904907e-03 0.03196853 7.619627e-03 7.619627e-03
+## 11: 3.337158e-03 0.03760429 1.334863e-02 1.334863e-02</code></pre>
+<pre class="r"><code>stats.pairs.tdic[roi.hemi %in% rois.pref.targt.vs.incon]</code></pre>
+<pre><code>##     roi.hemi     p.incon.distr        p.targt.distr       p.targt.incon
+##  1:    11l_r 0.373889623041155   0.0135293000675887  0.0427148764544416
+##  2:     3a_l 0.109749791234787 3.45057059085718e-05 0.00131550582072393
+##  3:     3b_l  0.94499248756896  6.9015907655512e-08 0.00363068067165884
+##  4:      4_l 0.502121699727265 1.02523083356232e-06 0.00217209876695712
+##  5:     5m_l   0.4011373299121   0.0309399244771829  0.0309399244771829
+##  6:     A4_r 0.322872125703512  0.00700589733403234  0.0136944232702625
+##  7:     A5_r 0.347797114906555   0.0438476298050858  0.0438476298050858
+##  8:  OP2-3_l 0.280965932080733   0.0438476298050858  0.0106742392182717
+##  9:   STGa_l 0.635904983181629   0.0292759879295428  0.0292759879295428
+## 10:    TA2_l 0.107526090142862   0.0777705903016575 0.00359236833459065
+## 11:   TE1a_r 0.406723981611982  0.00700589733403234  0.0309399244771829
+##     b.incon.distr b.targt.distr b.targt.incon
+##  1: -0.0139864557    0.03289148    0.04685638
+##  2: -0.0202843961    0.07235278    0.09250141
+##  3:  0.0070188708    0.09278037    0.08581739
+##  4: -0.0032121259    0.07472705    0.07792047
+##  5: -0.0175679274    0.03713374    0.05466601
+##  6: -0.0065346731    0.04489343    0.05141302
+##  7: -0.0263224991    0.03358625    0.05985583
+##  8: -0.0099156847    0.02806018    0.03796530
+##  9: -0.0006568248    0.03270837    0.03336448
+## 10: -0.0371765286    0.02251653    0.05964314
+## 11: -0.0139720126    0.04555450    0.05948865
+##                                        community
+##  1:             orbital and polar frontal cortex
+##  2:               somatosensory and motor cortex
+##  3:               somatosensory and motor cortex
+##  4:               somatosensory and motor cortex
+##  5: paracentral lobular and mid cingulate cortex
+##  6:                  auditory association cortex
+##  7:                  auditory association cortex
+##  8:                   posterior opercular cortex
+##  9:                  auditory association cortex
+## 10:                  auditory association cortex
+## 11:                      lateral temporal cortex</code></pre>
+</div>
+<div id="target-distractor-incongruency-0" class="section level6">
+<h6><strong>target</strong> &gt; {<strong>distractor</strong>, <strong>incongruency</strong>, 0}</h6>
+<pre class="r"><code>rois.pref.targt.vs.all &lt;- stats.pairs.tdic[
+  roi.hemi %in% rois.targt &amp;
+  p.targt.incon &lt; 0.05 &amp; p.targt.distr &lt; 0.05 &amp;
+  b.targt.incon &gt; 0 &amp; b.targt.distr &gt; 0,
+  roi.hemi
+  ]
+
+stats.group.tdic[param == &quot;target&quot; &amp; roi.hemi %in% rois.pref.targt.vs.all]</code></pre>
+<pre><code>##    roi.hemi                                    community  param    v
+## 1:    11l_r             orbital and polar frontal cortex target 1000
+## 2:     5m_l paracentral lobular and mid cingulate cortex target  934
+## 3:     A4_r                  auditory association cortex target  945
+## 4:     A5_r                  auditory association cortex target  847
+## 5:  OP2-3_l                   posterior opercular cortex target  910
+## 6:   STGa_l                  auditory association cortex target  963
+## 7:   TE1a_r                      lateral temporal cortex target  882
+##               p       beta        p.fdr       p.holm
+## 1: 2.937113e-05 0.04077184 0.0001174845 0.0001174845
+## 2: 5.333046e-04 0.04302172 0.0021332186 0.0021332186
+## 3: 3.450450e-04 0.03897699 0.0013801801 0.0013801801
+## 4: 9.491053e-03 0.03000419 0.0379642112 0.0379642112
+## 5: 1.299577e-03 0.03460918 0.0051983080 0.0051983080
+## 6: 1.627083e-04 0.04067673 0.0006508333 0.0006508333
+## 7: 3.337158e-03 0.03760429 0.0133486305 0.0133486305</code></pre>
+<pre class="r"><code>stats.pairs.tdic[roi.hemi %in% rois.pref.targt.vs.all]</code></pre>
+<pre><code>##    roi.hemi     p.incon.distr       p.targt.distr      p.targt.incon
+## 1:    11l_r 0.373889623041155  0.0135293000675887 0.0427148764544416
+## 2:     5m_l   0.4011373299121  0.0309399244771829 0.0309399244771829
+## 3:     A4_r 0.322872125703512 0.00700589733403234 0.0136944232702625
+## 4:     A5_r 0.347797114906555  0.0438476298050858 0.0438476298050858
+## 5:  OP2-3_l 0.280965932080733  0.0438476298050858 0.0106742392182717
+## 6:   STGa_l 0.635904983181629  0.0292759879295428 0.0292759879295428
+## 7:   TE1a_r 0.406723981611982 0.00700589733403234 0.0309399244771829
+##    b.incon.distr b.targt.distr b.targt.incon
+## 1: -0.0139864557    0.03289148    0.04685638
+## 2: -0.0175679274    0.03713374    0.05466601
+## 3: -0.0065346731    0.04489343    0.05141302
+## 4: -0.0263224991    0.03358625    0.05985583
+## 5: -0.0099156847    0.02806018    0.03796530
+## 6: -0.0006568248    0.03270837    0.03336448
+## 7: -0.0139720126    0.04555450    0.05948865
+##                                       community
+## 1:             orbital and polar frontal cortex
+## 2: paracentral lobular and mid cingulate cortex
+## 3:                  auditory association cortex
+## 4:                  auditory association cortex
+## 5:                   posterior opercular cortex
+## 6:                  auditory association cortex
+## 7:                      lateral temporal cortex</code></pre>
+</div>
+</div>
+<div id="distractor" class="section level4">
+<h4><strong>distractor</strong></h4>
+<div id="distractor-target-0" class="section level5">
+<h5><strong>distractor</strong> &gt; {<strong>target</strong>, 0}</h5>
+<pre class="r"><code>rois.pref.distr.vs.targt &lt;- stats.pairs.tdic[
+  roi.hemi %in% rois.distr &amp;
+  p.targt.distr &lt; 0.05 &amp;
+  b.targt.distr &lt; 0,
+  roi.hemi
+  ]
+
+stats.group.tdic[param == &quot;distractor&quot; &amp; roi.hemi %in% rois.pref.distr.vs.targt]</code></pre>
+<pre><code>## Empty data.table (0 rows and 8 cols): roi.hemi,community,param,v,p,beta...</code></pre>
+<pre class="r"><code>stats.pairs.tdic[roi.hemi %in% rois.pref.distr.vs.targt]</code></pre>
+<pre><code>## Empty data.table (0 rows and 8 cols): roi.hemi,p.incon.distr,p.targt.distr,p.targt.incon,b.incon.distr,b.targt.distr...</code></pre>
+</div>
+<div id="distractor-incongruency-0" class="section level5">
+<h5><strong>distractor</strong> &gt; {<strong>incongruency</strong>, 0}</h5>
+<pre class="r"><code>rois.pref.distr.vs.incon &lt;- stats.pairs.tdic[
+  roi.hemi %in% rois.distr &amp;
+  b.incon.distr &lt; 0.05 &amp;
+  b.incon.distr &lt; 0,
+  roi.hemi
+  ]
+
+stats.group.tdic[param == &quot;distractor&quot; &amp; roi.hemi %in% rois.pref.distr.vs.incon]</code></pre>
+<pre><code>##    roi.hemi           community      param    v            p       beta
+## 1:     V2_l early visual cortex distractor 1029 6.427483e-06 0.04984664
+##           p.fdr       p.holm
+## 1: 2.570993e-05 2.570993e-05</code></pre>
+<pre class="r"><code>stats.pairs.tdic[roi.hemi %in% rois.pref.distr.vs.incon]</code></pre>
+<pre><code>##    roi.hemi    p.incon.distr     p.targt.distr     p.targt.incon b.incon.distr
+## 1:     V2_l 0.94499248756896 0.692935302909813 0.781826422770751  -0.001392892
+##    b.targt.distr b.targt.incon           community
+## 1:   -0.01760364   -0.01621114 early visual cortex</code></pre>
+</div>
+<div id="distractor-target-incongruency-0" class="section level5">
+<h5><strong>distractor</strong> &gt; {<strong>target</strong>, <strong>incongruency</strong>, 0}</h5>
+<p>No parcels meet criteria (no parcels distractor &gt; target).</p>
+</div>
+</div>
+<div id="incongruency" class="section level4">
+<h4><strong>incongruency</strong></h4>
+<div id="incongruency-distractor-0" class="section level6">
+<h6><strong>incongruency</strong> &gt; {<strong>distractor</strong>, 0}</h6>
+<pre class="r"><code>rois.pref.incon.vs.distr &lt;- stats.pairs.tdic[
+  roi.hemi %in% rois.incon &amp;
+  b.incon.distr &lt; 0.05 &amp;
+  b.incon.distr &gt; 0,
+  roi.hemi
+  ]
+
+stats.group.tdic[param == &quot;incongruency&quot; &amp; roi.hemi %in% rois.pref.incon.vs.distr]</code></pre>
+<pre><code>##    roi.hemi                    community        param   v           p
+## 1:    FST_l    MT+ complex and neighbors incongruency 852 0.008245353
+## 2:   IFSa_l      inferior frontal cortex incongruency 812 0.023556800
+## 3:    PEF_r              premotor cortex incongruency 823 0.017951531
+## 4:     V2_r          early visual cortex incongruency 808 0.025923530
+## 5:   VMV3_r ventral stream visual cortex incongruency 817 0.020851927
+##          beta      p.fdr     p.holm
+## 1: 0.06053043 0.01649071 0.02473606
+## 2: 0.05781091 0.04711360 0.07067040
+## 3: 0.05557912 0.03590306 0.05385459
+## 4: 0.06951829 0.03456471 0.05184706
+## 5: 0.05057554 0.04170385 0.06255578</code></pre>
+<pre class="r"><code>stats.pairs.tdic[roi.hemi %in% rois.pref.incon.vs.distr]</code></pre>
+<pre><code>##    roi.hemi     p.incon.distr     p.targt.distr     p.targt.incon b.incon.distr
+## 1:    FST_l  0.42375505603421  0.42375505603421  0.42375505603421    0.04043842
+## 2:   IFSa_l 0.421448898121099 0.421448898121099  0.42375505603421    0.04225466
+## 3:    PEF_r 0.533063713615793 0.560479793561278 0.560479793561278    0.04088012
+## 4:     V2_r 0.527663479442477 0.527663479442477 0.527663479442477    0.03982004
+## 5:   VMV3_r 0.334938163090603 0.334938163090603 0.573872618298729    0.03317737
+##    b.targt.distr b.targt.incon                    community
+## 1:   0.012891214   -0.02756158    MT+ complex and neighbors
+## 2:   0.008208283   -0.03405819      inferior frontal cortex
+## 3:   0.017699000   -0.02319790              premotor cortex
+## 4:  -0.005434453   -0.04524470          early visual cortex
+## 5:   0.013732365   -0.01945387 ventral stream visual cortex</code></pre>
+</div>
+<div id="incongruency-target-0" class="section level6">
+<h6><strong>incongruency</strong> &gt; {<strong>target</strong>, 0}</h6>
+<pre class="r"><code>rois.pref.incon.vs.targt &lt;- stats.pairs.tdic[
+  roi.hemi %in% rois.incon &amp;
+  p.targt.incon &lt; 0.05 &amp;
+  b.targt.incon &lt; 0,
+  roi.hemi
+  ]
+
+stats.group.tdic[param == &quot;incongruency&quot; &amp; roi.hemi %in% rois.pref.incon.vs.targt]</code></pre>
+<pre><code>##    roi.hemi                                    community        param   v
+## 1:    6ma_l paracentral lobular and mid cingulate cortex incongruency 937
+## 2:  9-46d_l               dorsolateral prefrontal cortex incongruency 934
+## 3:    IP1_l                     inferior parietal cortex incongruency 956
+## 4:   IPS1_l                  dorsal stream visual cortex incongruency 900
+## 5:   LIPd_l                     superior parietal cortex incongruency 978
+## 6:    LO2_r                    MT+ complex and neighbors incongruency 914
+## 7:    MIP_l                     superior parietal cortex incongruency 967
+## 8:    RSC_l                   posterior cingulate cortex incongruency 937
+## 9:   s6-8_r               dorsolateral prefrontal cortex incongruency 961
+##               p       beta        p.fdr       p.holm
+## 1: 4.744182e-04 0.09553802 0.0018976729 0.0018976729
+## 2: 5.333046e-04 0.06608153 0.0021332186 0.0021332186
+## 3: 2.192551e-04 0.15048270 0.0008770204 0.0008770204
+## 4: 1.841016e-03 0.09314530 0.0073640642 0.0073640642
+## 5: 8.361358e-05 0.12113690 0.0003344543 0.0003344543
+## 6: 1.126420e-03 0.09480535 0.0045056786 0.0045056786
+## 7: 1.367319e-04 0.14041629 0.0005469277 0.0005469277
+## 8: 4.744182e-04 0.09614687 0.0018976729 0.0018976729
+## 9: 1.773223e-04 0.08993387 0.0007092890 0.0007092890</code></pre>
+<pre class="r"><code>stats.pairs.tdic[roi.hemi %in% rois.pref.incon.vs.targt]</code></pre>
+<pre><code>##    roi.hemi       p.incon.distr      p.targt.distr       p.targt.incon
+## 1:    6ma_l 0.00880250989403031  0.913658411817487 0.00880250989403031
+## 2:  9-46d_l 0.00198816658670253 0.0307928491704672 0.00533711960913586
+## 3:    IP1_l 0.00111042205472245  0.194346952905477 0.00179618416729532
+## 4:   IPS1_l  0.0461892737557008  0.976410360440696  0.0461892737557008
+## 5:   LIPd_l 0.00271593104743495  0.594236303924014 0.00271593104743495
+## 6:    LO2_r 0.00387771204241005  0.144753963537905  0.0061159045365784
+## 7:    MIP_l 0.00153893793274129   0.75238019179298 0.00153893793274129
+## 8:    RSC_l 0.00700589733403234  0.308480430465149  0.0124817888372135
+## 9:   s6-8_r 0.00143054720143354 0.0109547022964343  0.0109547022964343
+##    b.incon.distr b.targt.distr b.targt.incon
+## 1:    0.08716713   0.002077870   -0.08510467
+## 2:    0.08458046   0.026531573   -0.05817945
+## 3:    0.15466710   0.013836277   -0.14113285
+## 4:    0.08223902  -0.003129249   -0.08534630
+## 5:    0.10848837   0.002796225   -0.10572422
+## 6:    0.10433320   0.014086997   -0.09037904
+## 7:    0.13454225   0.002105364   -0.13247441
+## 8:    0.09369878   0.014663421   -0.07914410
+## 9:    0.09407198   0.030504252   -0.06375067
+##                                       community
+## 1: paracentral lobular and mid cingulate cortex
+## 2:               dorsolateral prefrontal cortex
+## 3:                     inferior parietal cortex
+## 4:                  dorsal stream visual cortex
+## 5:                     superior parietal cortex
+## 6:                    MT+ complex and neighbors
+## 7:                     superior parietal cortex
+## 8:                   posterior cingulate cortex
+## 9:               dorsolateral prefrontal cortex</code></pre>
+</div>
+<div id="incongruency-distractor-target-0" class="section level6">
+<h6><strong>incongruency</strong> &gt; {<strong>distractor</strong>, <strong>target</strong>, 0}</h6>
+<pre class="r"><code>rois.pref.incon.vs.all &lt;- stats.pairs.tdic[
+  roi.hemi %in% rois.incon &amp;
+  p.targt.incon &lt; 0.05 &amp; b.incon.distr &lt; 0.05 &amp;
+  b.targt.incon &lt; 0 &amp; p.incon.distr &gt; 0,
+  roi.hemi
+  ]
+
+stats.group.tdic[param == &quot;incongruency&quot; &amp; roi.hemi %in% rois.pref.incon.vs.all]</code></pre>
+<pre><code>## Empty data.table (0 rows and 8 cols): roi.hemi,community,param,v,p,beta...</code></pre>
+<pre class="r"><code>stats.pairs.tdic[roi.hemi %in% rois.pref.incon.vs.all]</code></pre>
+<pre><code>## Empty data.table (0 rows and 8 cols): roi.hemi,p.incon.distr,p.targt.distr,p.targt.incon,b.incon.distr,b.targt.distr...</code></pre>
+</div>
+</div>
+</div>
+<div id="selectivity-analysis-equivalence-testing" class="section level2">
+<h2><strong>selectivity analysis</strong>: equivalence testing</h2>
+<p>ADD DESCRIPTION</p>
+<div id="target-1" class="section level4">
+<h4><strong>target</strong></h4>
+</div>
+<div id="distractor-1" class="section level4">
+<h4><strong>distractor</strong></h4>
+</div>
+<div id="incongruency-1" class="section level4">
+<h4><strong>incongruency</strong></h4>
+</div>
+</div>
 </div>
 
 
