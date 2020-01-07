@@ -1,0 +1,167 @@
+---
+  title: "assessing coding profiles for MMP"
+  output: html_document
+---
+
+Conducts RSA model comparisons and sorts parcels into groups with different _coding profiles_.
+Displays results.
+
+```{r setup}
+
+library(here)
+library(magrittr)
+library(dplyr)
+library(data.table)
+library(ggplot2)
+library(mikeutils)
+source(here("code", "_strings.R"))
+source(here("code", "_funs.R"))
+source(here("code", "_get_atlas.R"))
+
+stats.subjs <- fread(here("out", "rsa", "stats", paste0("subjs_pro_bias_acc-only_mmp_pearson_residual_glm.csv")))
+stats.subjs <- stats.subjs[is.analysis.group == TRUE & y == "rank", ]  ## EXCLUDE HELD OUT SUBJECTS!
+stats.subjs <- stats.subjs[, "coef" := NULL]
+
+params.interest <- c("target", "distractor", "incongruency")
+
+## for printing results
+
+mmp <- atlas.key$mmp
+mmp <- bind_rows(
+  mmp %>% mutate(roi.hemi = paste0(roi, "_l")),
+  mmp %>% mutate(roi.hemi = paste0(roi, "_r"))
+)
+mmp %<>% select(roi.hemi, community) %>% arrange(community, roi.hemi)
+
+```
+
+# __tdic__ coding results: test regressors against zero
+
+## description
+
+the __tdic__ model:
+\[
+  rank(\textbf{r}) \sim 
+  \textbf{x}_{\text{targt}}\beta_{\text{targt}} + 
+  \textbf{x}_{\text{distr}}\beta_{\text{distr}} + 
+  \textbf{x}_{\text{incon}}\beta_{\text{incon}} +
+  \textbf{x}_{\text{congr}}\beta_{\text{congr}} +
+\]
+- rank transformed response variable
+- coefficients standardized (betas)
+- Inferential tests: wilcoxon sign-rank test on estimated betas
+  - per parcel and model
+  - subjects as random effect
+  - two-sided
+  - p-values FDR corrected across all ROIs (bilateral), within each model
+
+```{r extract}
+stats.subjs.tdic <- stats.subjs[model == "tdic"]
+```
+
+```{r against-zero}
+
+betas.group.tdic <- stats.subjs.tdic %>%
+  group_by(roi.hemi, param) %>%
+  summarize(
+    v    = wilcox.test(beta, alternative = "greater")$statistic,
+    p    = wilcox.test(beta, alternative = "greater")$p.value,
+    beta = tanh(mean(atanh(beta))),  ## must be last in this summarize()
+  ) %>%
+  mutate(p.fdr = p.adjust(p, method = "fdr"), p.holm = p.adjust(p, method = "holm"))
+
+betas.group.tdic %<>% full_join(mmp, by = "roi.hemi") %>% select(roi.hemi, community, param, v, p, beta, p.fdr, p.holm)
+
+```
+
+
+## results: parcels coding (> 0) for task dimensions
+
+Sorted (descending) by beta.
+
+#### target coding
+
+```{r}
+betas.group.tdic %>% filter(param == "target", p.fdr < 0.05) %>% arrange(-beta)
+```
+
+#### distractor coding
+
+```{r}
+betas.group.tdic %>% filter(param == "distractor", p.fdr < 0.05) %>% arrange(-beta)
+```
+
+#### incongruency coding
+
+```{r}
+betas.group.tdic %>% filter(param == "incongruency", p.fdr < 0.05) %>% arrange(-beta)
+```
+
+#### congruency coding
+
+```{r}
+betas.group.tdic %>% filter(param == "congruency", p.fdr < 0.05) %>% arrange(-beta)
+```
+
+
+# pairwise tests: __target__, __distractor__, __incongruency__
+
+
+## description
+
+```{r pairwise-td-vs-td-target}
+
+## get p vals
+
+pairwise.tdic <- stats.subjs.tdic %>%
+  filter(param %in% params.interest) %>%
+  group_by(roi.hemi) %>%
+  summarize(
+    out = list(
+      pairwise.wilcox.test(beta, param, paired = TRUE, alternative = "two.sided", p.adjust.method = "fdr")
+    )
+  )
+pvals <- vapply(pairwise.tdic$out, function(.) .$p.value[lower.tri(diag(2), diag = TRUE)], numeric(3))
+pvals <- t(pvals)
+colnames(pvals) <- c("p.incon.distr", "p.targt.distr", "p.targt.incon")
+pairwise.tdic <- as.data.frame(cbind(roi.hemi = pairwise.tdic$roi.hemi, pvals), stringsAsFactors = FALSE)
+
+## get mean diffs
+
+pairwise.tdic %<>% full_join(
+  stats.subjs.tdic %>%
+    filter(param %in% params.interest) %>%
+    group_by(roi.hemi) %>%
+    summarize(
+      b.incon.distr = tanh(mean(atanh(beta[param == "incongruency"]) - atanh(beta[param == "distractor"]))),
+      b.targt.distr = tanh(mean(atanh(beta[param == "target"]) - atanh(beta[param == "distractor"]))),
+      b.targt.incon = tanh(mean(atanh(beta[param == "target"]) - atanh(beta[param == "incongruency"]))),
+    ),
+  by = "roi.hemi"
+)
+
+pairwise.tdic %<>% full_join(mmp, by = "roi.hemi")
+
+pairwise.tdic[pairwise.tdic$p < 0.05, ] %>% View
+
+```
+
+
+## results
+
+#### target
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -6,10 +6,7 @@
 
 ## TODO
 ## about
-## add continuous models
-## add tau a
 ## loop for statistic (euclidean)
-## loop for atlas
 
 
 ## setup ----
@@ -21,35 +18,37 @@ library(purrr)
 library(magrittr)
 library(data.table)
 source(here("code", "_strings.R"))
-source(here("code", "_funs.R"))
 source(here("code", "_get_atlas.R"))
 
 ## read models
 
-rsv.models.ltri <- fread(here("out", "rsa", "mods", "rsv_bias_lower-triangles.csv"))
+rsv.models.ltri <- fread(here("out", "rsa", "mods", "rsv_bias_lower-triangles.csv"), data.table = FALSE)
 
 ## create design matrices
 
 ## models will be variants upon these main effects:
-tdc <- as.matrix(rsv.models.ltri[, c("target", "distractor", "congruency")])
-tdi <- as.matrix(rsv.models.ltri[, c("target", "distractor", "incongruency")])
-tdc.std <- scale(tdc)
-tdi.std <- scale(tdi)
+variables <- as.matrix(rsv.models.ltri[sapply(rsv.models.ltri, is.numeric)])
+variables <- cbind(variables, conclust = variables[, "incongruency"] | variables[, "congruency"])
+
+variables.std <- scale(variables)
+
+## models will contain variables with these names:
+structures <- list(
+  tdic    = c("target", "distractor", "incongruency", "congruency"),
+  tdi     = c("target", "distractor", "incongruency"),
+  tdclust = c("target", "distractor", "conclust"),
+  all     = c("target", "cielab", "tphono", "distractor", "silhou", "orthog", "dphono", "incongruency", "congruency"),
+  continu = c("target", "cielab", "tphono", "distractor", "silhou", "dphono", "incongruency", "congruency")
+)
 
 m <- list(
-  tdc = cbind(b0 = 1, tdc),
-  tdi = cbind(b0 = 1, tdi),
-  txi = cbind(b0 = 1, tdi, ti = rsv.models.ltri$target * rsv.models.ltri$incongruency),
-  dxi = cbind(b0 = 1, tdi, di = rsv.models.ltri$distractor * rsv.models.ltri$incongruency)
-  # all = cbind(b0 = 1, tdi, )  ## continuous and categorical
+  tdic    = cbind(b0 = 1, variables[, structures$tdic]),
+  tdi     = cbind(b0 = 1, variables[, structures$tdi]),
+  tdclust = cbind(b0 = 1, variables[, structures$tdclust]),
+  all     = cbind(b0 = 1, variables[, structures$all]),  ## continuous and categorical
+  continu = cbind(b0 = 1, variables[, structures$continu])  ## perceptual and phonological for target and distractor
   )
-m.std <- list(
-  tdc = tdc.std,
-  tdi = tdi.std,
-  txi = cbind(tdi.std, ti = tdi.std[, "incongruency"] * tdi.std[, "target"]),
-  dxi = cbind(tdi.std, di = tdi.std[, "incongruency"] * tdi.std[, "distractor"])
-  # all = cbind(b0 = 1, tdi, )  ## continuous and categorical
-)  ## get interaction btw standardized MEs, not standardized interaction
+m.std <- lapply(m, function(x) scale(x[, -1]))  ## drop the intercept
 
 
 ## loop over atlases ----
@@ -125,10 +124,10 @@ for (atlas.i in seq_along(atlas.key)) {
   
   ## scale
   
-  rsvectors.std <- rsvectors %>% map(scale)
+  rsvectors.std <- lapply(rsvectors, scale)
   
   
-  ## fit models ----
+  ## fit glms ----
   
   stats.subjs <- setNames(vector("list", length(m)), names(m))
   
@@ -151,6 +150,8 @@ for (atlas.i in seq_along(atlas.key)) {
     coefs <- melt(as.data.table(coefs), id.vars = c("id", "param"), variable = "y", value.name = "coef")
     
     ## get betas
+    ## NB: refitting model (with standardized coefficients), as opposed to scaling estimated coefficients,
+    ## allows interactions to be specified (not applicable, however)
     
     fits.std <- rsvectors.std %>% map(~ .lm.fit( x = X.std, y = .))
     betas <- as.data.frame(do.call(rbind, lapply(fits.std, coef)))
@@ -173,11 +174,6 @@ for (atlas.i in seq_along(atlas.key)) {
   
   stats.subjs <- bind_rows(stats.subjs, .id = "model")
   
-  ## remove colons from values of param col (and shorten)
-  
-  stats.subjs$param[grepl("target:incongruency", stats.subjs$param)] <- "ti"
-  stats.subjs$param[grepl("distractor:incongruency", stats.subjs$param)] <- "di"
-  
   ## create subj, roi, and hemi cols from id col
   
   stats.subjs <- bind_cols(
@@ -199,11 +195,22 @@ for (atlas.i in seq_along(atlas.key)) {
   
   
   ## write ----
+  ## NB. break into smaller files to keep within github limit of 100 MB / file
+  ## break by model structure
   
-  fwrite(
-    stats.subjs,
-    here("out", "rsa", "stats", paste0("subjs_pro_bias_acc-only_", name.atlas.i, "_pearson_residual.csv"))
-  )
+  for (ii in seq_along(structures)) {
+    
+    model.i <- names(structures)[ii]
+    stats.i <- filter(stats.subjs, model == model.i)
+    fwrite(
+      stats.i,
+      here(
+        "out", "rsa", "stats", 
+        paste0("subjs_pro_bias_acc-only_", name.atlas.i, "_pearson_residual_glm-", model.i, ".csv")
+        )
+    )
+    
+  }
 
 }
 
