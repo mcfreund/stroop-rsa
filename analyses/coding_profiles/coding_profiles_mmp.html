@@ -392,6 +392,14 @@ library(dplyr)</code></pre>
 ##     between, first, last</code></pre>
 <pre class="r"><code>library(ggplot2)
 library(mikeutils)
+library(doParallel)</code></pre>
+<pre><code>## Warning: package &#39;doParallel&#39; was built under R version 3.6.2</code></pre>
+<pre><code>## Loading required package: foreach</code></pre>
+<pre><code>## Warning: package &#39;foreach&#39; was built under R version 3.6.2</code></pre>
+<pre><code>## Loading required package: iterators</code></pre>
+<pre><code>## Warning: package &#39;iterators&#39; was built under R version 3.6.2</code></pre>
+<pre><code>## Loading required package: parallel</code></pre>
+<pre class="r"><code>library(foreach)
 source(here(&quot;code&quot;, &quot;_strings.R&quot;))
 source(here(&quot;code&quot;, &quot;_get_atlas.R&quot;))
 
@@ -1704,17 +1712,187 @@ stats.group.tdic[param == &quot;incongruency&quot; &amp; roi.hemi %in% rois.pref
 </div>
 <div id="selectivity-analysis-equivalence-testing" class="section level2">
 <h2><strong>selectivity analysis</strong>: equivalence testing</h2>
-<p>ADD DESCRIPTION</p>
+<p>Here I establish which (if any) ROIs previously identified as having a <em>preference</em> for a task dimension(s), are <em>selective</em> for said task dimension(s). Establishing selectivity involves “confirming the null”: e.g., “this ROI was only coding for target information, not distractor or incongruency”. To perform such a test of equivalence, I use the two-one sided significance testing procedure (TOST).</p>
+<p>Given an effect size <span class="math inline">\(\Delta\)</span>, the TOST requires specifiying two criteria: an <span class="math inline">\(\alpha\)</span>, and a smallest effect size of interest, <span class="math inline">\(\Delta_U\)</span>. In TOST, two one-sided tests are performed: <span class="math inline">\(H_1: \Delta \geq -\Delta_U\)</span> and <span class="math inline">\(H_2: \Delta \leq \Delta_U\)</span>. Note that the null hypothesis in each of these tests is the <em>presence</em> of an effect. Thus, if both are rejected (p-values are <span class="math inline">\(&lt; \alpha\)</span>), the test provides positive evidence for the absence of a “meaningful” effect size. TOST is the frequentist’s alterntive to bayesian analysis.</p>
+<p>In the absence of an a priori effect size of interest, I use a simulated one. Given <span class="math inline">\(\alpha = 0.05\)</span>, <span class="math inline">\(N = 49\)</span>, and the deisred power level of <span class="math inline">\(1 - \beta = 0.8\)</span>, I simulate the smallest effect size observable via wilcoxon signed rank.</p>
+<pre class="r"><code>powersim &lt;- function(es, n = 49, a = 0.05, nsim = 5000) {
+  
+  out &lt;- numeric(nsim)
+  
+  for (sim.i in seq_len(nsim)) {
+    x &lt;- rnorm(n, es)
+    p &lt;- wilcox.test(x, alternative = &quot;greater&quot;)$p.value
+    out[sim.i] &lt;- p &lt; a
+  }
+  
+  sum(out) / nsim
+  
+}
+
+es &lt;- seq(0, 0.5, 0.001)  ## range of effect sizes to simulate
+
+n.cores &lt;- detectCores()
+cl &lt;- makeCluster(n.cores - 1)
+registerDoParallel(cl)
+res &lt;- foreach(ii = es, .combine = c) %dopar% {
+  set.seed(ii * 1000)  ## set seed anew each iteraion (on each worker)
+  powersim(ii)  ## power
+}
+stopCluster(cl)
+
+plot(es, res, main = &quot;effect size (cohen&#39;s d) by power level of signed rank&quot;)</code></pre>
+<p><img src="data:image/png;base64,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9aO+5ATU98JUn8q5nqVMVkA9M7OvPy/1z8WmRWRAASAFBBQAAhFQAAhEQAEgEAEFgEAEFAACEVAACERAASAQAQWAQAQUAAIRUAAIREABIBABBYBABBQAAhFQAAhEQAEgEAEFgEAEFAACEVAACERAASAQAQWAQAQUAAIRUAAIREABIBABBYBABBQAAhFQAAhEQAEgEAEFgEAEFAACEVAACERAASAQAQWAQAQUAAIRUAAIREABIBABBYBABBQAAhFQAAhEQAEgEAEFgEAEFAACEVAACERAASAQAQWAQAQUAAIRUAAIREABIBABBYBABBQAAhFQAAhEQAEgEAEFgEAEFAACEVAACERAASAQAQWAQAQUAAIRUAAIREABIBABhUz7d/eyLPvuxSft+28e/xl1qrAxBBQifT7LKrff6t9nDyJPGbaEgEKirpfZrd8P33992H6fPY09cdgOAgqBil7eflFstx9Cevfwg6vD928O/715lmV3Pg39OTATAgqBrttMHlK6e5nnF83Ac/+sGpICSyCgEOiirGbputzreRiB3nkbdZKwSQQU8hyGne12+uezYhv+utj5ufv+72y9Y1EEFPKoh4yyamv+ov56x3lMWBABhTzKMfgmoPvXnMeE5RFQyHMIqOVQ+/vnFBQLI6CQ57AJbz/U/uXX5xnnMWE5BBTy7J8Zp8srJy854wrMj4BCoKssu/W2/fJBeQyp3nAnoFgQAYVAxWH43ZPDlvqXV1l5SmhxGtMPxfH3D4+qtyYBSyCgkOhaOQhfDj0vuu8ZgGIxBBQiXRtnLRW7RevLM70c+FNgNgQUMu1fG9f//PD8TLtAKHB6BBQAAhFQAAhEQAEgEAEFgEAEFAACEVAACERAASAQAQWAQAQUAAIRUAAIREABIBABBYBABBQAAhFQAAhEQAEgEAEFgEAEFAACEVAACERAASAQAQWAQAQUAAIRUAAIREABIBABBYBABBQAAhFQAAhEQAEgEAEFgEAEFAACEVAACERAASAQAQWAQAQUAAIRUAAIREABIBABBYBABBQAAhFQAAhEQAEgEAEFgEAEFAACEVAACERAASAQAQWAQAQUAAIRUAAIREABIBABBYBABBQAAv1/v+UEnouhNAYAAAAASUVORK5CYII=" width="672" /></p>
+<pre class="r"><code>min.d &lt;- min(es[res &gt;= 0.8])  ## minimum effect size detectable at 0.8 power
+
+min.d</code></pre>
+<pre><code>## [1] 0.371</code></pre>
+<pre class="r"><code>write.table(min.d, here(&quot;analyses&quot;, &quot;coding_profiles&quot;, &quot;smallest-effect-size-of-interest.txt&quot;))</code></pre>
+<p>Now this minimum effect size serves as the reference (null) value in two non-central sign-rank tests. Note that I use the standardized betas (divisively normalized by their standard deviation) to conduct this test (this puts the model fits / betas in the same unit as the reference effect size).</p>
+<pre class="r"><code>stats.tosts &lt;- stats.subjs.tdic %&gt;%
+  filter(param %in% params.interest) %&gt;%
+  group_by(param, roi.hemi) %&gt;%
+  summarize(
+    du = wilcox.test(beta / sd(beta), alternative = &quot;less&quot;, mu = min.d)$p.value,  ## less than upward bound?
+    dl = wilcox.test(beta / sd(beta), alternative = &quot;greater&quot;, mu = -min.d)$p.value,  ## greater than lower bound?
+    p = max(du, dl)  ## take largest p-value
+  ) %&gt;%
+  as.data.table</code></pre>
 <div id="target-1" class="section level4">
 <h4><strong>target</strong></h4>
+<div id="target-distractor-0-distractor-0" class="section level6">
+<h6><strong>target</strong> &gt; {<strong>distractor</strong>, 0} &amp; <strong>distractor</strong> ~ 0</h6>
+<p>Establish absence of <strong>distractor</strong> coding:</p>
+<pre class="r"><code>rois.tost.targt.vs.distr &lt;- stats.tosts[roi.hemi %in% rois.pref.targt.vs.distr &amp; param == &quot;distractor&quot;, ] %&gt;%
+  ungroup %&gt;%
+  mutate(p.fdr = p.adjust(p, method = &quot;fdr&quot;), p.holm = p.adjust(p, method = &quot;holm&quot;)) %&gt;%
+  filter(p.fdr &lt; 0.05) %&gt;%
+  .$roi.hemi
+
+stats.tosts[param == &quot;distractor&quot; &amp; roi.hemi %in% rois.tost.targt.vs.distr]</code></pre>
+<pre><code>##          param roi.hemi           du           dl           p
+##  1: distractor    23c_l 0.0018410160 0.0111956928 0.011195693
+##  2: distractor     43_l 0.0124716507 0.0024101261 0.012471651
+##  3: distractor    47l_l 0.0039088749 0.0037881022 0.003908875
+##  4: distractor     6d_l 0.0166328530 0.0032320911 0.016632853
+##  5: distractor    7PC_l 0.0063552626 0.0071430472 0.007143047
+##  6: distractor    8BM_r 0.0048529918 0.0124716507 0.012471651
+##  7: distractor     A5_r 0.0011264196 0.0108946754 0.010894675
+##  8: distractor    AIP_l 0.0018410160 0.0162117687 0.016211769
+##  9: distractor    AIP_r 0.0094910528 0.0011264196 0.009491053
+## 10: distractor    d32_r 0.0077880065 0.0097586626 0.009758663
+## 11: distractor    FEF_r 0.0108946754 0.0005761559 0.010894675
+## 12: distractor    FFC_l 0.0058149599 0.0142382922 0.014238292
+## 13: distractor   FOP3_l 0.0075676543 0.0033371576 0.007567654
+## 14: distractor   FOP3_r 0.0075676543 0.0061705147 0.007567654
+## 15: distractor   FOP4_l 0.0020386348 0.0121416169 0.012141617
+## 16: distractor   FOP5_r 0.0089746561 0.0012102269 0.008974656
+## 17: distractor    FST_r 0.0036706188 0.0077880065 0.007788007
+## 18: distractor   IFSp_r 0.0089746561 0.0003313611 0.008974656
+## 19: distractor     MI_r 0.0067391936 0.0067391936 0.006739194
+## 20: distractor  OP2-3_l 0.0162117687 0.0018410160 0.016211769
+## 21: distractor   p10p_l 0.0100327071 0.0067391936 0.010032707
+## 22: distractor  p32pr_r 0.0065447889 0.0100327071 0.010032707
+## 23: distractor p9-46v_r 0.0118190337 0.0045648078 0.011819034
+## 24: distractor  PBelt_r 0.0124716507 0.0037881022 0.012471651
+## 25: distractor    PGi_l 0.0005129793 0.0067391936 0.006739194
+## 26: distractor    PHT_l 0.0031299500 0.0128092684 0.012809268
+## 27: distractor     PI_r 0.0030306655 0.0115037692 0.011503769
+## 28: distractor    PSL_r 0.0029341700 0.0089746561 0.008974656
+## 29: distractor   STGa_l 0.0059904463 0.0010864999 0.005990446
+## 30: distractor    TGd_l 0.0065447889 0.0056439597 0.006544789
+## 31: distractor    VVC_r 0.0058149599 0.0053150411 0.005814960
+##          param roi.hemi           du           dl           p</code></pre>
+</div>
+<div id="target-incongruency-0-incongruency-0" class="section level6">
+<h6><strong>target</strong> &gt; {<strong>incongruency</strong>, 0} &amp; <strong>incongruency</strong> ~ 0</h6>
+<p>Establish absence of <strong>incongruency</strong> coding:</p>
+<pre class="r"><code>rois.tost.targt.vs.incon &lt;- stats.tosts[roi.hemi %in% rois.pref.targt.vs.incon &amp; param == &quot;incongruency&quot;, ] %&gt;%
+  ungroup %&gt;%
+  mutate(p.fdr = p.adjust(p, method = &quot;fdr&quot;), p.holm = p.adjust(p, method = &quot;holm&quot;)) %&gt;%
+  filter(p.fdr &lt; 0.05) %&gt;%
+  .$roi.hemi
+
+
+stats.tosts[param == &quot;incongruency&quot; &amp; roi.hemi %in% rois.tost.targt.vs.incon]</code></pre>
+<pre><code>##           param roi.hemi           du          dl           p
+## 1: incongruency    11l_r 0.0044264120 0.019844724 0.019844724
+## 2: incongruency     3b_l 0.0047069728 0.007788007 0.007788007
+## 3: incongruency      4_l 0.0008101167 0.016632853 0.016632853
+## 4: incongruency     5m_l 0.0012995770 0.024131092 0.024131092
+## 5: incongruency  OP2-3_l 0.0005543559 0.021901205 0.021901205
+## 6: incongruency   STGa_l 0.0019707625 0.006355263 0.006355263</code></pre>
+</div>
+<div id="target-incongruency-distractor-0-incongruency-distractor-0" class="section level6">
+<h6><strong>target</strong> &gt; {<strong>incongruency</strong>, <strong>distractor</strong>, 0} &amp; {<strong>incongruency</strong>, <strong>distractor</strong>} ~ 0</h6>
+<p>The intersection of those sets:</p>
+<pre class="r"><code>rois.target.selective &lt;- intersect(rois.tost.targt.vs.incon, rois.tost.targt.vs.distr)
+
+rois.target.selective</code></pre>
+<pre><code>## [1] &quot;OP2-3_l&quot; &quot;STGa_l&quot;</code></pre>
+</div>
 </div>
 <div id="distractor-1" class="section level4">
 <h4><strong>distractor</strong></h4>
+<div id="distractor-target-0-target-0" class="section level6">
+<h6><strong>distractor</strong> &gt; {<strong>target</strong>, 0} &amp; <strong>target</strong> ~ 0</h6>
+<p>None with preference for distractor.</p>
+</div>
+<div id="distractor-incongruency-0-incongruency-0" class="section level6">
+<h6><strong>distractor</strong> &gt; {<strong>incongruency</strong>, 0} &amp; <strong>incongruency</strong> ~ 0</h6>
+<p>Establish absence of <strong>incongruency</strong> coding:</p>
+<pre class="r"><code>rois.tost.distr.vs.incon &lt;- stats.tosts[roi.hemi %in% rois.pref.distr.vs.incon &amp; param == &quot;incongruency&quot;, ] %&gt;%
+  ungroup %&gt;%
+  mutate(p.fdr = p.adjust(p, method = &quot;fdr&quot;), p.holm = p.adjust(p, method = &quot;holm&quot;)) %&gt;%
+  filter(p.fdr &lt; 0.05) %&gt;%
+  .$roi.hemi
+
+
+stats.tosts[param == &quot;incongruency&quot; &amp; roi.hemi %in% rois.tost.distr.vs.incon]</code></pre>
+<pre><code>## Empty data.table (0 rows and 5 cols): param,roi.hemi,du,dl,p</code></pre>
+</div>
+<div id="distractor-incongruency-distractor-0-incongruency-distractor-0" class="section level6">
+<h6><strong>distractor</strong> &gt; {<strong>incongruency</strong>, <strong>distractor</strong>, 0} &amp; {<strong>incongruency</strong>, <strong>distractor</strong>} ~ 0</h6>
+<p>The intersection of those sets:</p>
+<p>None.</p>
+</div>
 </div>
 <div id="incongruency-1" class="section level4">
 <h4><strong>incongruency</strong></h4>
+<div id="incongruency-distractor-0-distractor-0" class="section level6">
+<h6><strong>incongruency</strong> &gt; {<strong>distractor</strong>, 0} &amp; <strong>distractor</strong> ~ 0</h6>
+<p>Establish absence of <strong>distractor</strong> coding:</p>
+<pre class="r"><code>rois.tost.incon.vs.distr &lt;- stats.tosts[roi.hemi %in% rois.pref.incon.vs.distr &amp; param == &quot;distractor&quot;, ] %&gt;%
+  ungroup %&gt;%
+  mutate(p.fdr = p.adjust(p, method = &quot;fdr&quot;), p.holm = p.adjust(p, method = &quot;holm&quot;)) %&gt;%
+  filter(p.fdr &lt; 0.05) %&gt;%
+  .$roi.hemi
+
+stats.tosts[param == &quot;distractor&quot; &amp; roi.hemi %in% rois.tost.incon.vs.distr]</code></pre>
+<pre><code>## Empty data.table (0 rows and 5 cols): param,roi.hemi,du,dl,p</code></pre>
+</div>
+<div id="incongruency-target-0-target-0" class="section level6">
+<h6><strong>incongruency</strong> &gt; {<strong>target</strong>, 0} &amp; <strong>target</strong> ~ 0</h6>
+<p>Establish absence of <strong>target</strong> coding:</p>
+<pre class="r"><code>rois.tost.incon.vs.targt &lt;- stats.tosts[roi.hemi %in% rois.pref.incon.vs.targt &amp; param == &quot;target&quot;, ] %&gt;%
+  ungroup %&gt;%
+  mutate(p.fdr = p.adjust(p, method = &quot;fdr&quot;), p.holm = p.adjust(p, method = &quot;holm&quot;)) %&gt;%
+  filter(p.fdr &lt; 0.05) %&gt;%
+  .$roi.hemi
+
+
+stats.tosts[param == &quot;target&quot; &amp; roi.hemi %in% rois.tost.incon.vs.targt]</code></pre>
+<pre><code>## Empty data.table (0 rows and 5 cols): param,roi.hemi,du,dl,p</code></pre>
+</div>
+<div id="incongruency-incongruency-distractor-0-incongruency-distractor-0" class="section level6">
+<h6><strong>incongruency</strong> &gt; {<strong>incongruency</strong>, <strong>distractor</strong>, 0} &amp; {<strong>incongruency</strong>, <strong>distractor</strong>} ~ 0</h6>
+<p>The intersection of those sets:</p>
+<p>None.</p>
 </div>
 </div>
+</div>
+</div>
+<div id="conclusions" class="section level1">
+<h1><strong>CONCLUSIONS</strong></h1>
 </div>
 
 

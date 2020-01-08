@@ -336,7 +336,7 @@ Given $\alpha = 0.05$, $N = 49$, and the deisred power level of $1 - \beta = 0.8
 
 ```{r tost_sesi, cache = TRUE}
 
-powersim <- function(es, n = 49, a = 0.05, nsim = 1E4) {
+powersim <- function(es, n = 49, a = 0.05, nsim = 5000) {
   
   out <- numeric(nsim)
   
@@ -355,14 +355,19 @@ es <- seq(0, 0.5, 0.001)  ## range of effect sizes to simulate
 n.cores <- detectCores()
 cl <- makeCluster(n.cores - 1)
 registerDoParallel(cl)
-res <- foreach(ii = es, .combine = c) %dopar% powersim(ii)  ## power
+res <- foreach(ii = es, .combine = c) %dopar% {
+  set.seed(ii * 1000)  ## set seed anew each iteraion (on each worker)
+  powersim(ii)  ## power
+}
 stopCluster(cl)
 
 plot(es, res, main = "effect size (cohen's d) by power level of signed rank")
 
-min.d <- min(es[res > 0.8])  ## minimum effect size detectable at 0.8 power
+min.d <- min(es[res >= 0.8])  ## minimum effect size detectable at 0.8 power
 
 min.d
+
+write.table(min.d, here("analyses", "coding_profiles", "smallest-effect-size-of-interest.txt"))
 
 ```
 
