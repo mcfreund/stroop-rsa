@@ -18,6 +18,8 @@ library(dplyr)
 library(data.table)
 library(ggplot2)
 library(mikeutils)
+library(doParallel)
+library(foreach)
 source(here("code", "_strings.R"))
 source(here("code", "_get_atlas.R"))
 
@@ -321,11 +323,191 @@ stats.pairs.tdic[roi.hemi %in% rois.pref.incon.vs.all]
 
 ## __selectivity analysis__: equivalence testing
 
+Here I establish which (if any) ROIs previously identified as having a *preference* for a task dimension(s), are *selective* for said task dimension(s).
+Establishing selectivity involves "confirming the null": e.g., "this ROI was only coding for target information, not distractor or incongruency".
+To perform such a test of equivalence, I use the two-one sided significance testing procedure (TOST).
 
-ADD DESCRIPTION
+Given an effect size $\Delta$, the TOST requires specifiying two criteria: an $\alpha$, and a smallest effect size of interest, $\Delta_U$. In TOST, two one-sided tests are performed: $H_1: \Delta \geq -\Delta_U$ and $H_2: \Delta \leq \Delta_U$. Note that the null hypothesis in each of these tests is the *presence* of an effect.
+Thus, if both are rejected (p-values are  $< \alpha$), the test provides positive evidence for the absence of a "meaningful" effect size.
+TOST is the frequentist's alterntive to bayesian analysis.
+
+In the absence of an a priori effect size of interest, I use a simulated one.
+Given $\alpha = 0.05$, $N = 49$, and the deisred power level of $1 - \beta = 0.8$, I simulate the smallest effect size observable via wilcoxon signed rank.
+
+```{r tost_sesi, cache = TRUE}
+
+powersim <- function(es, n = 49, a = 0.05, nsim = 1E4) {
+  
+  out <- numeric(nsim)
+  
+  for (sim.i in seq_len(nsim)) {
+    x <- rnorm(n, es)
+    p <- wilcox.test(x, alternative = "greater")$p.value
+    out[sim.i] <- p < a
+  }
+  
+  sum(out) / nsim
+  
+}
+
+es <- seq(0, 0.5, 0.001)  ## range of effect sizes to simulate
+
+n.cores <- detectCores()
+cl <- makeCluster(n.cores - 1)
+registerDoParallel(cl)
+res <- foreach(ii = es, .combine = c) %dopar% powersim(ii)  ## power
+stopCluster(cl)
+
+plot(es, res, main = "effect size (cohen's d) by power level of signed rank")
+
+min.d <- min(es[res > 0.8])  ## minimum effect size detectable at 0.8 power
+
+min.d
+
+```
+
+Now this minimum effect size serves as the reference (null) value in two non-central sign-rank tests.
+Note that I use the standardized betas (divisively normalized by their standard deviation) to conduct this test (this puts the model fits / betas in the same unit as the reference effect size).
+
+```{r tost}
+
+stats.tosts <- stats.subjs.tdic %>%
+  filter(param %in% params.interest) %>%
+  group_by(param, roi.hemi) %>%
+  summarize(
+    du = wilcox.test(beta / sd(beta), alternative = "less", mu = min.d)$p.value,  ## less than upward bound?
+    dl = wilcox.test(beta / sd(beta), alternative = "greater", mu = -min.d)$p.value,  ## greater than lower bound?
+    p = max(du, dl)  ## take largest p-value
+  ) %>%
+  as.data.table
+
+```
+
 
 #### __target__
 
+
+###### __target__ > \{__distractor__, 0\} & __distractor__ ~ 0
+
+Establish absence of __distractor__ coding:
+
+```{r tost_targt-vs-distr}
+
+rois.tost.targt.vs.distr <- stats.tosts[roi.hemi %in% rois.pref.targt.vs.distr & param == "distractor", ] %>%
+  ungroup %>%
+  mutate(p.fdr = p.adjust(p, method = "fdr"), p.holm = p.adjust(p, method = "holm")) %>%
+  filter(p.fdr < 0.05) %>%
+  .$roi.hemi
+
+stats.tosts[param == "distractor" & roi.hemi %in% rois.tost.targt.vs.distr]
+
+```
+
+
+###### __target__ > \{__incongruency__, 0\} & __incongruency__ ~ 0
+
+Establish absence of __incongruency__ coding:
+
+```{r tost_targt-vs-incon}
+
+rois.tost.targt.vs.incon <- stats.tosts[roi.hemi %in% rois.pref.targt.vs.incon & param == "incongruency", ] %>%
+  ungroup %>%
+  mutate(p.fdr = p.adjust(p, method = "fdr"), p.holm = p.adjust(p, method = "holm")) %>%
+  filter(p.fdr < 0.05) %>%
+  .$roi.hemi
+
+
+stats.tosts[param == "incongruency" & roi.hemi %in% rois.tost.targt.vs.incon]
+
+```
+
+###### __target__ > \{__incongruency__, __distractor__, 0\} & \{__incongruency__, __distractor__\} ~ 0
+
+The intersection of those sets:
+
+```{r tost_targt-vs-all}
+
+rois.target.selective <- intersect(rois.tost.targt.vs.incon, rois.tost.targt.vs.distr)
+
+rois.target.selective
+
+```
+
+
 #### __distractor__
 
+###### __distractor__ > \{__target__, 0\} & __target__ ~ 0
+
+None with preference for distractor.
+
+###### __distractor__ > \{__incongruency__, 0\} & __incongruency__ ~ 0
+
+Establish absence of __incongruency__ coding:
+
+```{r tost_distr-vs-incon}
+
+rois.tost.distr.vs.incon <- stats.tosts[roi.hemi %in% rois.pref.distr.vs.incon & param == "incongruency", ] %>%
+  ungroup %>%
+  mutate(p.fdr = p.adjust(p, method = "fdr"), p.holm = p.adjust(p, method = "holm")) %>%
+  filter(p.fdr < 0.05) %>%
+  .$roi.hemi
+
+
+stats.tosts[param == "incongruency" & roi.hemi %in% rois.tost.distr.vs.incon]
+
+```
+
+###### __distractor__ > \{__incongruency__, __distractor__, 0\} & \{__incongruency__, __distractor__\} ~ 0
+
+The intersection of those sets:
+
+None.
+
+
+
 #### __incongruency__
+
+###### __incongruency__ > \{__distractor__, 0\} & __distractor__ ~ 0
+
+Establish absence of __distractor__ coding:
+
+```{r tost_incon-vs-distr}
+
+rois.tost.incon.vs.distr <- stats.tosts[roi.hemi %in% rois.pref.incon.vs.distr & param == "distractor", ] %>%
+  ungroup %>%
+  mutate(p.fdr = p.adjust(p, method = "fdr"), p.holm = p.adjust(p, method = "holm")) %>%
+  filter(p.fdr < 0.05) %>%
+  .$roi.hemi
+
+stats.tosts[param == "distractor" & roi.hemi %in% rois.tost.incon.vs.distr]
+
+```
+
+###### __incongruency__ > \{__target__, 0\} & __target__ ~ 0
+
+Establish absence of __target__ coding:
+
+```{r tost_incon-vs-targt}
+
+rois.tost.incon.vs.targt <- stats.tosts[roi.hemi %in% rois.pref.incon.vs.targt & param == "target", ] %>%
+  ungroup %>%
+  mutate(p.fdr = p.adjust(p, method = "fdr"), p.holm = p.adjust(p, method = "holm")) %>%
+  filter(p.fdr < 0.05) %>%
+  .$roi.hemi
+
+
+stats.tosts[param == "target" & roi.hemi %in% rois.tost.incon.vs.targt]
+
+```
+
+###### __incongruency__ > \{__incongruency__, __distractor__, 0\} & \{__incongruency__, __distractor__\} ~ 0
+
+The intersection of those sets:
+
+None.
+
+
+
+# __CONCLUSIONS__
+
+
