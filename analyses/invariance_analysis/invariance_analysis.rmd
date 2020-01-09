@@ -25,15 +25,21 @@ source(here("code", "_strings.R"))
 source(here("code", "_funs.R"))
 source(here("code", "_get_atlas.R"))
 
-stats.subjs <- fread(here("out", "rsa", "stats", paste0("subjs_pro_bias_acc-only_mmp_pearson_residual_glm.csv")))
+stats.subjs <- rbind(
+  fread(here("out", "rsa", "stats", paste0("subjs_pro_bias_acc-only_mmp_pearson_residual_glm-tdic.csv"))),
+  fread(here("out", "rsa", "stats", paste0("subjs_pro_bias_acc-only_mmp_pearson_residual_glm-tdi.csv"))),
+  fread(here("out", "rsa", "stats", paste0("subjs_pro_bias_acc-only_mmp_pearson_residual_glm-tdclust.csv")))
+  )
 stats.subjs <- stats.subjs[is.analysis.group == TRUE]  ## EXCLUDE HELD OUT SUBJECTS!
+
+stats.subjs.taua <- fread(
+  here("out", "rsa", "stats", paste0("subjs_pro_bias_acc-only_mmp_pearson_residual_taua.csv"))
+  )[is.analysis.group == TRUE]  ## EXCLUDE HELD OUT SUBJECTS!
 
 ```
 
 
 # model structure: __tdi__ versus __tdic__ (rank betas)
-
-## description
 
 The __tdi__ model 
 \[
@@ -355,7 +361,7 @@ abline(0, 1)
 title("by subject")
 
 rank.vs.line.wide %>%
-  group_by(subj) %>%
+  group_by(roi.hemi) %>%
   summarize_if(is.numeric, function(x) tanh(mean(atanh(x)))) %>%
   select(z, rank) %>%
   plot
@@ -373,7 +379,7 @@ rank.vs.line.wide %>%
   cor
 
 rank.vs.line.wide %>%
-  group_by(subj) %>%
+  group_by(roi.hemi) %>%
   summarize_if(is.numeric, function(x) tanh(mean(atanh(x)))) %>%
   select(z, rank) %>%
   cor
@@ -391,5 +397,331 @@ Further the effect sizes of the difference are quite small.
 This loss of sensitivity is expected with rank procedures. But because it is the default for RSA model fitting, and it does not seem to be massively obscuring many positive results, it is preferrable.
 
 
+# model fit method: betas from rank regression versus bivariate correlations from kendall's $\tau_A$
 
-# rank betas versus tau-a
+## stats
+
+#### __task coding analysis__: test each regressor against zero (baseline)
+
+```{r rank-vs-taua_est}
+
+d.tdic.rank <- d.tdic[y == "rank"]
+
+stats.group.taua <- stats.subjs.taua %>%
+  filter(param %in% params) %>%
+  group_by(param, roi.hemi) %>%
+  summarize(
+    v    = wilcox.test(taua, alternative = "greater")$statistic,
+    p    = wilcox.test(taua, alternative = "greater")$p.value,
+    taua = tanh(mean(atanh(taua))),  ## must be last in this summarize()
+  ) %>%
+  group_by(param) %>%
+  mutate(p.fdr = p.adjust(p, method = "fdr"), p.holm = p.adjust(p, method = "holm"))
+
+```
+
+#### __preference analysis__: pairwise comparisons
+
+```{r preference_tdic}
+
+stats.pairs.tdic <- d.tdic.rank %>%
+  filter(param %in% params) %>%
+  group_by(roi.hemi) %>%
+  summarize(
+    out = list(
+      pairwise.wilcox.test(beta, param, paired = TRUE, alternative = "two.sided", p.adjust.method = "fdr")
+    )
+  )
+pvals <- vapply(stats.pairs.tdic$out, function(.) .$p.value[lower.tri(diag(2), diag = TRUE)], numeric(3))
+pvals <- t(pvals)
+colnames(pvals) <- c("p.incon.distr", "p.targt.distr", "p.targt.incon")
+stats.pairs.tdic <- as.data.frame(cbind(roi.hemi = stats.pairs.tdic$roi.hemi, pvals), stringsAsFactors = FALSE)
+
+## get mean diffs
+
+stats.pairs.tdic %<>% full_join(
+  d.tdic.rank %>%
+    filter(param %in% params) %>%
+    group_by(roi.hemi) %>%
+    summarize(
+      b.incon.distr = tanh(mean(atanh(beta[param == "incongruency"]) - atanh(beta[param == "distractor"]))),
+      b.targt.distr = tanh(mean(atanh(beta[param == "target"]) - atanh(beta[param == "distractor"]))),
+      b.targt.incon = tanh(mean(atanh(beta[param == "target"]) - atanh(beta[param == "incongruency"]))),
+    ),
+  by = "roi.hemi"
+)
+
+# stats.pairs.tdic %<>% full_join(mmp, by = "roi.hemi") %>% as.data.table
+
+```
+
+
+```{r preference_taua}
+
+stats.pairs.taua <- stats.subjs.taua %>%
+  filter(param %in% params) %>%
+  group_by(roi.hemi) %>%
+  summarize(
+    out = list(
+      pairwise.wilcox.test(taua, param, paired = TRUE, alternative = "two.sided", p.adjust.method = "fdr")
+    )
+  )
+pvals <- vapply(stats.pairs.taua$out, function(.) .$p.value[lower.tri(diag(2), diag = TRUE)], numeric(3))
+pvals <- t(pvals)
+colnames(pvals) <- c("p.incon.distr", "p.targt.distr", "p.targt.incon")
+stats.pairs.taua <- as.data.frame(cbind(roi.hemi = stats.pairs.taua$roi.hemi, pvals), stringsAsFactors = FALSE)
+
+## get mean diffs
+
+stats.pairs.taua %<>% full_join(
+  stats.subjs.taua %>%
+    filter(param %in% params) %>%
+    group_by(roi.hemi) %>%
+    summarize(
+      b.incon.distr = tanh(mean(atanh(taua[param == "incongruency"]) - atanh(taua[param == "distractor"]))),
+      b.targt.distr = tanh(mean(atanh(taua[param == "target"]) - atanh(taua[param == "distractor"]))),
+      b.targt.incon = tanh(mean(atanh(taua[param == "target"]) - atanh(taua[param == "incongruency"]))),
+    ),
+  by = "roi.hemi"
+)
+
+# stats.pairs.tdic %<>% full_join(mmp, by = "roi.hemi") %>% as.data.table
+
+```
+
+
+## results
+
+#### __task coding analysis__: test each regressor against zero (baseline)
+
+ROIs identified by both __rank__ and __$\tau_A$__.
+
+```{r rank-vs-taua_results_intersect}
+
+rank.vs.taua.intersect <- lapply(
+  params, function(x) {
+    intersect(
+      filter(stats.group.tdic, p.fdr < 0.05, param == x, y == "rank")$roi.hemi,
+      filter(stats.group.tdic, p.fdr < 0.05, param == x)$roi.hemi
+      )
+  }
+)
+rank.vs.taua.intersect <- setNames(rank.vs.taua.intersect, params)
+
+rank.vs.taua.intersect
+
+```
+
+ROIs in __rank__ but not in __$\tau_A$__.
+
+```{r rank-vs-taua_results_not-in-linear}
+
+rank.vs.taua.notintaua <- lapply(
+  params, function(x) {
+    setdiff(
+      filter(stats.group.tdic, p.fdr < 0.05, param == x, y == "rank")$roi.hemi,
+      filter(stats.group.tdic, p.fdr < 0.05, param == x)$roi.hemi
+      )
+  }
+)
+rank.vs.taua.notintaua <- setNames(rank.vs.taua.notintaua, params)
+
+rank.vs.taua.notintaua
+
+```
+
+ROIs in __$\tau_A$__ but not in __rank__.
+
+```{r rank-vs-taua_results_not-in-rank}
+
+rank.vs.taua.notinrank <- lapply(
+  params, function(x) {
+    setdiff(
+      filter(stats.group.tdic, p.fdr < 0.05, param == x)$roi.hemi,
+      filter(stats.group.tdic, p.fdr < 0.05, param == x, y == "rank")$roi.hemi
+      )
+  }
+)
+rank.vs.taua.notinrank <- setNames(rank.vs.taua.notinrank, params)
+
+rank.vs.taua.notinrank
+
+```
+
+##### Direct comparison.
+
+ROIs where __rank__ and __$\tau_A$__ model betas are significantly different.
+
+```{r rank-vs-taua_results_comparison}
+
+d.tdic.taua <- stats.subjs.taua %>%
+  filter(param %in% c("incongruency", "target", "distractor", "congruency")) %>%
+  full_join(d.tdic.rank %>% select(subj, roi.hemi, param, beta))
+
+rank.vs.taua.diff <- d.tdic.taua %>%  
+  group_by(roi.hemi, param) %>%
+  summarize(
+    v    = wilcox.test(beta, taua, paired = TRUE)$statistic,
+    p    = wilcox.test(beta, taua, paired = TRUE)$p.value,
+    diff = tanh(mean(atanh(beta) - atanh(taua))),  ## must be last in this summarize()
+  ) %>%
+  filter(p < 0.05) %>%
+  as.data.frame
+
+## target
+
+rank.vs.taua.diff %>% 
+  filter(
+    param == "target", roi.hemi %in% c(
+      ## union of sets:
+      rank.vs.taua.intersect$target, 
+      rank.vs.taua.notintaua$target, 
+      rank.vs.taua.notinrank$target
+      )
+    ) %>%
+  arrange(diff)
+
+## distractor
+
+rank.vs.taua.diff %>% 
+  filter(
+    param == "distractor", roi.hemi %in% c(
+      ## union of sets:
+      rank.vs.taua.intersect$distractor, 
+      rank.vs.taua.notintaua$distractor, 
+      rank.vs.taua.notinrank$distractor
+      )
+    ) %>%
+  arrange(diff)
+
+## incongruency
+
+rank.vs.taua.diff %>% 
+  filter(
+    param == "incongruency", roi.hemi %in% c(
+      ## union of sets:
+      rank.vs.taua.intersect$incongruency, 
+      rank.vs.taua.notintaua$incongruency, 
+      rank.vs.taua.notinrank$incongruency
+      )
+    ) %>%
+  arrange(diff)
+```
+
+All differences are positive (i.e., greater betas than $\tau_A$).
+
+```{r rank-vs-taua_results_plot}
+
+## plot
+
+plot.new()
+
+for (ii in seq_along(params)) {
+  
+  # plot.new()
+  par(mfrow = c(1, 2))
+  
+  d.tdic.taua %>%
+    filter(param == params[ii]) %>%
+    group_by(subj) %>%
+    summarize_if(is.numeric, function(x) tanh(mean(atanh(x)))) %>%
+    select(beta, taua) %>%
+    plot
+  abline(0, 1)
+  title("by subject")
+  
+  d.tdic.taua %>%
+    filter(param == params[ii]) %>%
+    group_by(roi.hemi) %>%
+    summarize_if(is.numeric, function(x) tanh(mean(atanh(x)))) %>%
+    select(beta, taua) %>%
+    plot
+  abline(0, 1)
+  title("by ROI")
+  
+  mtext(
+    paste0("association between ", params[ii], " estimates from tau-a versus rank regression models"),
+    side = 3, line = -1, outer = TRUE
+    )
+  
+  d.tdic.taua %>%
+    filter(param == params[ii]) %>%
+    group_by(subj) %>%
+    summarize_if(is.numeric, function(x) tanh(mean(atanh(x)))) %>%
+    select(taua, beta) %>%
+    cor %>%
+    print
+
+  d.tdic.taua %>%
+    filter(param == params[ii]) %>%
+    group_by(roi.hemi) %>%
+    summarize_if(is.numeric, function(x) tanh(mean(atanh(x)))) %>%
+    select(taua, beta) %>%
+    cor %>%
+    print
+  
+}
+
+
+```
+
+
+#### __preference analysis__: pairwise comparisons
+
+
+```{r preference_results_taua-vs-tdic_target}
+
+rank.vs.taua.intersect
+
+## target vs distractor
+
+rois.taua.targt.vs.distr <- stats.pairs.taua %>% 
+  filter(
+    roi.hemi %in% rank.vs.taua.intersect$target,
+    p.targt.distr < 0.05,
+    b.targt.distr > 0
+    ) %>%
+  .$roi.hemi
+                            
+rois.tdic.targt.vs.distr <- stats.pairs.tdic %>% 
+  filter(
+      roi.hemi %in% rank.vs.taua.intersect$target,
+      p.targt.distr < 0.05,
+      b.targt.distr > 0
+    ) %>%
+  .$roi.hemi
+
+setdiff(rois.taua.targt.vs.distr, rois.tdic.targt.vs.distr)
+setdiff(rois.tdic.targt.vs.distr, rois.taua.targt.vs.distr)
+
+## target vs incongruency
+
+rois.taua.targt.vs.incon <- stats.pairs.taua %>% 
+  filter(
+    roi.hemi %in% rank.vs.taua.intersect$target,
+    p.targt.incon < 0.05,
+    b.targt.incon > 0,
+    ) %>%
+  .$roi.hemi
+                            
+rois.tdic.targt.vs.incon <- stats.pairs.tdic %>% 
+  filter(
+      roi.hemi %in% rank.vs.taua.intersect$target,
+      p.targt.incon < 0.05,
+      b.targt.incon > 0,
+    ) %>%
+  .$roi.hemi
+
+setdiff(rois.taua.targt.vs.incon, rois.tdic.targt.vs.incon)
+setdiff(rois.tdic.targt.vs.incon, rois.taua.targt.vs.incon)
+
+```
+
+## conclusions
+
+$\tau_A$ models have expectedly worse (lower) fits than the rank regression models.
+This is expected because the $\tau_A$ are *bivariate* correlations, and the variables are negatively correlated.
+Thus, this comparison, as implemented here, is unfair.
+
+A more appropriate comparison shold be performed by first orthogonalizing the variables, then computing $\tau_A$.
+TODO!
