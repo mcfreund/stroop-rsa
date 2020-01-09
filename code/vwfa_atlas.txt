@@ -1,0 +1,54 @@
+## about
+## commands for building VWFA mask.
+##
+## first builds rectangular ROI which covers left lateral occipitotemporal cortex and cerebellum.
+## then removes cerebellar voxels.
+## mike freund, 2020-01-09
+
+cd /mnt/c/local/scratch
+mkdir vwfa_mask
+cd vwfa_mask
+
+## build rectangular ROI ----
+
+## from 10.1038/s41598-018-21062-0:
+## "This mask ranged from −54 < x < −30, −70 < y < −45 and −30 < z < −4 in the MNI space and voxels in the cerebellum according to the automated anatomical labeling template were excluded."
+## see also: Twomey, T., Kawabata, K. J., Price, C. J. & Devlin, J. T. Top-down modulation of ventral occipito-temporal responses during visual word recognition. Neuroimage 55, 1242–1251 (2011).
+
+
+3dcalc -a /mnt/c/local/atlases/HCP-MMP1_on_MNI152_ICBM2009a_nlin_2p4.nii.gz       \
+		-expr 'within(x,-53,-29)*within(y,-69,-44)*within(z,-29,-3)'          \
+		-LPI                                                                      \
+		-prefix box                                          
+
+
+## get cerebellar mask ----
+
+## https://afni.nimh.nih.gov/afni/community/board/read.php?1,142026,142026
+
+cd /mnt/c/local/atlases/
+
+3dcalc -a Cerebellum-SUIT.nii.gz                             \
+		-expr 'step(a)'                                                           \
+		-LPI                                                                      \
+		-prefix cerebellum                                          
+
+mv cerebellum+tlrc* /mnt/c/local/scratch/vwfa_mask
+
+## resample to match 2p4:
+
+cd /mnt/c/local/scratch/vwfa_mask
+
+3dresample -master box+tlrc -prefix cerebellum_resampled -input cerebellum+tlrc
+
+## remove cerebellar voxels ----
+
+3dcalc -a box+tlrc -b cerebellum_resampled+tlrc \
+		-expr 'a*iszero(b)'                     \
+		-LPI                                    \
+		-prefix vwfa
+ 
+ ## to view:
+ 
+ cp /mnt/c/local/atlases/conteAnatomy_2p4_LPI.nii.gz ./conteAnatomy_2p4_LPI.nii.gz
+ 
