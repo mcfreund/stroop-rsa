@@ -19,6 +19,7 @@ ___WORK IN PROGRESS___
   * __./obsv__: observed similarity matrices. saved as arrays within .rds files.
   * __./stats__: subject level fits and group statistics, saved in long-form .csvs
 * __./summaries__: various summary tables (.csvs) for QC, misc analyses, and things that might be read into a manuscript file.
+* __./masks__: functionally or anatomically defined brain masks, created by scripts within __./code/masks__
 
 ### ./glms
 * contains AFNI GLM input (e.g., stimtime and movreg files), shell scripts, and output (e.g., .nii brick files)
