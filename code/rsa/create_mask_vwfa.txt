@@ -1,8 +1,11 @@
 ## about
+##
 ## commands for building VWFA mask.
 ##
 ## first builds rectangular ROI which covers left lateral occipitotemporal cortex and cerebellum.
 ## then removes cerebellar voxels.
+## works in /mnt/c/local/scratch as current version of wsl does not seem to be able to access box drive directory.
+##
 ## mike freund, 2020-01-09
 
 cd /mnt/c/local/scratch
@@ -16,9 +19,9 @@ cd vwfa_mask
 ## see also: Twomey, T., Kawabata, K. J., Price, C. J. & Devlin, J. T. Top-down modulation of ventral occipito-temporal responses during visual word recognition. Neuroimage 55, 1242–1251 (2011).
 
 
-3dcalc -a /mnt/c/local/atlases/HCP-MMP1_on_MNI152_ICBM2009a_nlin_2p4.nii.gz       \
-		-expr 'within(x,-53,-29)*within(y,-69,-44)*within(z,-29,-3)'          \
-		-LPI                                                                      \
+3dcalc -a /mnt/c/local/atlases/HCP-MMP1_on_MNI152_ICBM2009a_nlin_2p4.nii.gz \
+		-expr 'within(x,-53,-29)*within(y,-69,-44)*within(z,-29,-3)'        \
+		-LPI                                                                \
 		-prefix box                                          
 
 
@@ -28,9 +31,9 @@ cd vwfa_mask
 
 cd /mnt/c/local/atlases/
 
-3dcalc -a Cerebellum-SUIT.nii.gz                             \
-		-expr 'step(a)'                                                           \
-		-LPI                                                                      \
+3dcalc -a Cerebellum-SUIT.nii.gz \
+		-expr 'step(a)'          \
+		-LPI                     \
 		-prefix cerebellum                                          
 
 mv cerebellum+tlrc* /mnt/c/local/scratch/vwfa_mask
@@ -48,7 +51,6 @@ cd /mnt/c/local/scratch/vwfa_mask
 		-LPI                                    \
 		-prefix vwfa
  
- ## to view:
+## to view:
  
- cp /mnt/c/local/atlases/conteAnatomy_2p4_LPI.nii.gz ./conteAnatomy_2p4_LPI.nii.gz
- 
+cp /mnt/c/local/atlases/conteAnatomy_2p4_LPI.nii.gz ./conteAnatomy_2p4_LPI.nii.gz
