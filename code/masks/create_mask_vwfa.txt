@@ -54,3 +54,15 @@ cd /mnt/c/local/scratch/vwfa_mask
 ## to view:
  
 cp /mnt/c/local/atlases/conteAnatomy_2p4_LPI.nii.gz ./conteAnatomy_2p4_LPI.nii.gz
+
+## convert to NIFTI:
+
+3dAFNItoNIFTI vwfa+tlrc -prefix vwfa.nii.gz
+
+## clean up
+
+rm box*
+rm cerebellum*
+rm conte*
+rm vwfa+tlrc*
+

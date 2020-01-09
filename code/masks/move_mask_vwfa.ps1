@@ -1,0 +1,1 @@
+Move-Item  C:\local\scratch\vwfa_mask\* C:\Users\mcf\Box\global\proj\stroop-rsa\out\masks

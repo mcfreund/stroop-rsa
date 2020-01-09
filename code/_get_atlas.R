@@ -11,7 +11,7 @@ rm(ii)
 
 ## mmp --
 
-atlas$mmp$l <-oro.nifti::readNIfTI(
+atlas$mmp$l <- oro.nifti::readNIfTI(
   paste0(dir.atlas, "/HCP-MMP1_L_on_MNI152_ICBM2009a_nlin_2p4.nii.gz"),
   reorient = FALSE
   )
@@ -36,6 +36,9 @@ atlas$gordon$r[atlas$gordon$r == -1 & !is.na(atlas$gordon$r)] <- 0  ## reset -1 
 # unique(c(image.atlas.l))
 # unique(c(image.atlas.r))
 # c(image.atlas.l)[!is.na(c(image.atlas.l))] %*% c(image.atlas.r)[!is.na(c(image.atlas.r))]
+
+## vwfa --
+
 
 
 ## read keys ----
