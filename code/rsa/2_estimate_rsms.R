@@ -35,7 +35,7 @@ do.univa <- as.logical(as.integer(opts$u))
 
 ## defaults for interactive use (e.g., debugging, ...)
 if (interactive()) {
-  do.atlas <- FALSE
+  do.atlas <- TRUE
   do.masks <- TRUE
   do.univa <- TRUE
 }
@@ -104,6 +104,11 @@ for (set.i in sets.of.rois) {
     )
   )
   rsarray.euclidean <- rsarray.pearson
+  
+  ## for tallying voxels:
+  voxels.silent <- matrix(NA, nrow = n.roi, ncol = n.subj)  ## for num unresponsive / roi
+  dimnames(voxels.silent) <- list(roi = roi.names, subj = fit.subjs)
+  voxels.number <- numeric(n.roi)  ## for total number of voxels / roi
   
   if (do.univa) {  ### for saving unvariate stats (means)
     roi.means <- matrix(NA, nrow = n.roi, ncol = n.regs)
@@ -182,14 +187,24 @@ for (set.i in sets.of.rois) {
       
       ## get and apply mask for roi.i
       
-      if (set.i != "masks") mask.i <- atlas[[set.i]] == roi.i else mask.i <- masks[[roi.i]]
+      if (set.i != "masks") mask.i <- atlas[[set.i]] == roi.i else mask.i <- masks[[roi.i]] == 1
       
       roi.betas <- apply(image.betas, "reg", function(.) .[mask.i])
+      
+      ## tally number of unresponsive voxels
+      
+      is.all.zero <- vapply(rowSums(roi.betas), function(.) isTRUE(all.equal(., 0)), logical(1))
+      voxels.silent[n.roi, subj.i] <- sum(is.all.zero)
+      
+      ## tally number of voxels (but only do once; same for all subjects)
+      
+      n.voxels <- nrow(roi.betas)
+      if (subj.i == 1) voxels.number[n.roi] <- n.voxels
       
       ## get rsm (pearson and euclidean)
       
       rsarray.pearson[, , subj.i, roi.i] <- cor(roi.betas[, bias.items])
-      rsarray.euclidean[, , subj.i, roi.i] <- mikeutils::dist2mat(roi.betas[, bias.items]) / nrow(roi.betas)
+      rsarray.euclidean[, , subj.i, roi.i] <- mikeutils::dist2mat(roi.betas[, bias.items]) / n.voxels
       
       ## get univariate stats (across-voxel means)
       
@@ -202,34 +217,58 @@ for (set.i in sets.of.rois) {
   }  ## end subject loop
 
   
-    ## store ----
+  ## store ----
     
-    saveRDS(
-      rsarray.pearson, 
-      here::here(
-        "out", "rsa", "obsv", 
-        paste0("rsarray_", glm.name, "_", set.i, "_pearson.rds")
-        )
+  ## RSA results
+  
+  saveRDS(
+    rsarray.pearson, 
+    here::here(
+      "out", "rsa", "obsv", 
+      paste0("rsarray_", glm.name, "_", set.i, "_pearson.rds")
       )
-    
+    )
+  
+  saveRDS(
+    rsarray.euclidean, 
+    here::here(
+      "out", "rsa", "obsv", 
+      paste0("rsarray_", glm.name, "_", set.i, "_euclidean.rds")
+    )
+  )
+  
+  ## univariate results
+  
+  if (do.univa) {
+
     saveRDS(
-      rsarray.euclidean, 
+      roi.means, 
       here::here(
-        "out", "rsa", "obsv", 
-        paste0("rsarray_", glm.name, "_", set.i, "_euclidean.rds")
+        "out", "rsa", "obsv",  ## not an RSA, but save in ./out/rsa/ for consistency...
+        paste0("roi-means_", glm.name, "_", set.i, ".rds")
       )
     )
     
-    if (do.univa) {
-
-      saveRDS(
-        roi.means, 
-        here::here(
-          "out", "rsa", "obsv",  ## not an RSA, but save in ./out/rsa/ for consistency...
-          paste0("roi-means_", glm.name, "_", set.i, ".rds")
-        )
-      )
-      
-    }
+  }
+  
+  ## voxel information
+  
+  voxels.silent <- data.table::as.data.table(voxels.silent)
+  voxels.silent$roi <- roi.names
+  voxels.silent <- data.table::melt(voxels.silent, id.vars = "roi", variable.name = "subj", value.name = "n.silent")
+  data.table::fwrite(
+    voxels.silent,
+    here::here(
+      "out", "summaries", paste0("voxel-counts_unresponsive_", set.i, ".csv")
+    )
+  )
+  
+  data.table::fwrite(
+    data.table::data.table(roi = roi.names, n.total = voxels.number),
+    here::here(
+      "out", "summaries", paste0("voxel-counts_total_", set.i, ".csv")
+    )
+  )
+  
 
 }  ## end atlas loop
