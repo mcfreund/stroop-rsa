@@ -21,9 +21,9 @@ doc <-
    2_estimate_rsms.R [-a <do_atlases> -m <do_masks> -u <univariate>]
 
 Options:
-   -a Conduct analysis using atlases (Glasser's Multi Modal Parcellation, and Gordon's RSFC communities)? [default: 1]
-   -m Conduct analysis using user-specified masks? [default: 1]
-   -u Estimate univariate statistics? [default: 1]
+   -a Conduct analysis using atlases (Glasser's Multi Modal Parcellation, and Gordon's RSFC communities)? [default: 0]
+   -m Conduct analysis using user-specified masks? [default: 0]
+   -u Estimate univariate statistics? [default: 0]
 
  ]"
 
@@ -32,6 +32,15 @@ opts <- docopt::docopt(doc)
 do.atlas <- as.logical(as.integer(opts$a))
 do.masks <- as.logical(as.integer(opts$m))
 do.univa <- as.logical(as.integer(opts$u))
+
+## defaults for interactive use (e.g., debugging, ...)
+if (interactive()) {
+  do.atlas <- FALSE
+  do.masks <- TRUE
+  do.univa <- TRUE
+}
+
+if (!any(do.atlas, do.masks, do.univa)) stop(paste0("you must do something!"))
 
 ## setup ----
 
@@ -58,9 +67,12 @@ fit.subjs <- unique(gsub("/results/.*", "", files.dir.analysis))
 ## regs will be used to pull out (via string match) the statistic from the afni brick;
 ## thus must have the reg.suffix
 regs <- c(bias.items, "pc50_c", "pc50_i", "sustained", "transient", "nuisance")
+n.regs <- length(regs)
 n.subj <- length(fit.subjs)
 n.bias.items <- length(bias.items)
 
+## this variable defines the outermost loop.
+## each iteration collates RSMs into a single array, and saves it as a single .rds file.
 sets.of.rois <- character(0)
 if (do.atlas) sets.of.rois <- c(sets.of.rois, names(atlas))
 if (do.masks) sets.of.rois <- c(sets.of.rois, "masks")
@@ -77,8 +89,8 @@ for (set.i in sets.of.rois) {
     n.roi <- nrow(atlas.key[[set.i]])
     roi.names <- atlas.key[[set.i]]$roi
   } else {
-    # n.roi <- nrow(atlas.key[[atlas.i]])
-    # roi.names <- atlas.key[[atlas.i]]$roi
+    n.roi <- length(masks)
+    roi.names <- names(masks)
   }
   
   rsarray.pearson <- array(  ## for representational similarity matrices
@@ -93,6 +105,10 @@ for (set.i in sets.of.rois) {
   )
   rsarray.euclidean <- rsarray.pearson
   
+  if (do.univa) {  ### for saving unvariate stats (means)
+    roi.means <- matrix(NA, nrow = n.roi, ncol = n.regs)
+    dimnames(roi.means) <- list(roi = roi.names, reg = regs)
+  }
   
   ## loop over subjs and rois ----
   
@@ -106,10 +122,10 @@ for (set.i in sets.of.rois) {
     
     if (file.exists(fname.nii)) {
       ## dims of image.run.full [i, j, k, ???, regressor]
-      image.full <- readNIfTI(fname.nii, reorient = FALSE)
-    } else { stop("file nonexistant! ", paste0(fname.nii)) }
+      image.full <- oro.nifti::readNIfTI(fname.nii, reorient = FALSE)
+    } else stop("file nonexistant! ", paste0(fname.nii))
     
-    ## get brick numbers for regressors:
+    ## get brick numbers for regressors
     
     brick.nums <- rep(NA, length(regs))  ## + 1 for sustained
     for (reg.i in regs) {
@@ -117,11 +133,12 @@ for (set.i in sets.of.rois) {
       
       image.label <- paste0(reg.i, "#0_Coef")
       
+      ## TODO: move this into wrapper function?
       if (nodename == "CCP-FREUND") {
         
         brick.str <- system2(
           "wsl",
-          args = paste("/home/mcf/abin/3dinfo", "-label2index", image.label, win2lin(fname.nii)),
+          args = paste("/home/mcf/abin/3dinfo", "-label2index", image.label, fname.nii),
           stdout = TRUE
         )
         
@@ -135,12 +152,12 @@ for (set.i in sets.of.rois) {
         
       }
       
-      ## for error checking:
+      ## for error checking
       
       has.error <- grepl("error", brick.str, ignore.case = TRUE)
       if (any(has.error)) stop("error loading brick nums: ", paste0(fit.subjs[subj.i], " ", reg.i))
       
-      ## to remove function call that is included in output (when is.local.session):
+      ## to remove function call that is included in output (when is.local.session)
       
       brick.str <- brick.str[!grepl("3dinfo: AFNI version", brick.str)]
       brick.num <- as.numeric(brick.str)
@@ -150,59 +167,69 @@ for (set.i in sets.of.rois) {
     
     if (any(is.na(brick.nums))) stop("brick nums equal zero! ", paste0(fit.subjs[subj.i]))
     
-    ## put subset of images (only the relevant regressors) into one array:
+    ## put subset of images (only the relevant regressors) into one array
     
-    ## image.betas with dims [i, j, k, regs]
+    ## image.betas with dims [i, j, k, regs]:
     image.betas <- image.full[, , , 1, brick.nums + 1]
-    rm(image.full)  ## take out the garbage
-    gc()
+    rm(image.full)
+    gc()  ## take out the garbage
     dimnames(image.betas) <- list(i = NULL, j = NULL, k = NULL, reg = regs)
     
-    ## generate rsm for each roi:
+    ## generate rsm for each roi
     
-    rois <- atlas.key[[atlas.i]]$num.roi
-    for (roi.i in seq_along(rois)) {  ## careful: roi.i is an index for as.numeric(rois)
+    for (roi.i in seq_len(n.roi)) {  ## careful: roi.i is an index for as.numeric(rois)
       # roi.i <- 1
       
-      for (hemi.i in hemis) {
-        # hemi.i <- "r"
-        
-        ## for reading ease:
-        this.atlas.hemi <- atlas[[atlas.i]][[hemi.i]]
-        this.subj.roi.hemi <- paste(fit.subjs[subj.i], atlas.key[[atlas.i]][roi.i, "roi"], hemi.i, sep = "_")
-        
-        ## get roi:
-        mask <- array(this.atlas.hemi %in% rois[roi.i], dim = dim(this.atlas.hemi))
-        roi.betas <- apply(image.betas, "reg", function(slice.i) slice.i[mask])
-        
-        ## get rsm (pearson and euclidean):
-        rsarray.pearson[, , subj.i, roi.i, hemi.i] <- cor(roi.betas[, bias.items])
-        rsarray.euclidean[, , subj.i, roi.i, hemi.i] <- dist2mat(roi.betas[, bias.items]) / nrow(roi.betas)
+      ## get and apply mask for roi.i
       
-      }
+      if (set.i != "masks") mask.i <- atlas[[set.i]] == roi.i else mask.i <- masks[[roi.i]]
       
+      roi.betas <- apply(image.betas, "reg", function(.) .[mask.i])
+      
+      ## get rsm (pearson and euclidean)
+      
+      rsarray.pearson[, , subj.i, roi.i] <- cor(roi.betas[, bias.items])
+      rsarray.euclidean[, , subj.i, roi.i] <- mikeutils::dist2mat(roi.betas[, bias.items]) / nrow(roi.betas)
+      
+      ## get univariate stats (across-voxel means)
+      
+      if (do.univa) roi.means[roi.i, ] <- apply(roi.betas, "reg", mean)
+    
     }
     
     print(paste0(subj.i, ": subj ", fit.subjs[subj.i], " done!"), quote = FALSE)
     
-  }
+  }  ## end subject loop
 
+  
     ## store ----
     
     saveRDS(
       rsarray.pearson, 
-      here(
+      here::here(
         "out", "rsa", "obsv", 
-        paste0("rsarray_", glm.name, "_", atlas.i, "_pearson.rds")
+        paste0("rsarray_", glm.name, "_", set.i, "_pearson.rds")
         )
       )
     
     saveRDS(
       rsarray.euclidean, 
-      here(
+      here::here(
         "out", "rsa", "obsv", 
-        paste0("rsarray_", glm.name, "_", atlas.i, "_euclidean.rds")
+        paste0("rsarray_", glm.name, "_", set.i, "_euclidean.rds")
       )
     )
+    
+    if (do.univa) {
+
+      saveRDS(
+        roi.means, 
+        here::here(
+          "out", "rsa", "obsv",  ## not an RSA, but save in ./out/rsa/ for consistency...
+          paste0("roi-means_", glm.name, "_", set.i, ".rds")
+        )
+      )
+      
+    }
 
 }  ## end atlas loop
