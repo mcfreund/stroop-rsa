@@ -1,3 +1,5 @@
+#!/usr/bin/env Rscript
+
 ## about ----
 ## 
 ## reads in afni images (beta estimates from GLM) into a list.
@@ -13,8 +15,6 @@
 
 ## TODO
 ## function for matching brick string
-
-#!/usr/bin/env Rscript
 
 doc <- 
 "Usage:
@@ -33,7 +33,7 @@ do.atlas <- as.logical(as.integer(opts$a))
 do.masks <- as.logical(as.integer(opts$m))
 do.univa <- as.logical(as.integer(opts$u))
 
-## defaults for interactive use (e.g., debugging, ...)
+## defaults for interactive use (e.g., debugging, ...):
 if (interactive()) {
   do.atlas <- TRUE
   do.masks <- TRUE
