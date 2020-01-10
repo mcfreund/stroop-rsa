@@ -1,4 +1,5 @@
 ## about ----
+## 
 ## fits general linear models on each subject's RSMs from each parcel then writes the results to files.
 ## 
 ## mike freund, created 2019-02-24, updated 2019-03-05
@@ -17,8 +18,8 @@ library(dplyr)
 library(purrr)
 library(magrittr)
 library(data.table)
-source(here("code", "_strings.R"))
-source(here("code", "_get_atlas.R"))
+source(here("code", "strings.R"))
+source(here("code", "read_atlases.R"))
 
 ## read models
 

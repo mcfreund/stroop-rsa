@@ -13,8 +13,8 @@ library(mikeutils)
 library(dplyr)
 library(data.table)
 library(purrr)
-source(here("code", "_strings.R"))
-source(here("code", "_get_atlas.R"))
+source(here("code", "strings.R"))
+source(here("code", "read_atlases.R"))
 
 
 ## atlas loop ----

@@ -1,4 +1,5 @@
 ## about ----
+## 
 ## fits representational models with kendall's tau-a.
 ## 
 ## mike freund, 06 jan 2020a
@@ -20,7 +21,7 @@ library(data.table)
 library(doParallel)  ## parallelize tau-a calculation
 library(foreach)
 source(here("code", "_strings.R"))
-source(here("code", "_get_atlas.R"))
+source(here("code", "_read_atlases.R"))
 
 ## read models
 

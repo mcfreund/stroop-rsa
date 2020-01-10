@@ -1,79 +1,105 @@
 ## about ----
+## 
 ## reads in afni images (beta estimates from GLM) into a list.
 ## this list contains one element per subject per parcel per hemisphere.
-## given a parcellation atlas, similarity measures are then calculated from this list, and saved as
+## given a parcellation atlas or mask, similarity measures are then calculated from this list, and saved as
 ##  .RDS files to stroop-rsa/out/rsa/.
-## the beta list is also optionally saved to this location.
+## additionaly saved are mean values for conducting a univariate analysis.
 ## 
-## mike freund, 2019-03-17
-## adapted for new project directory 2019-12-24
+## this script is configured to run as an executable on a *nix system.
+## however, it can also be run locally (on mike's lenovo) in an interactive session.
+## 
+## mike freund, 2019-12-24
 
 ## TODO
-## script as function (executable): 
-##  - given an atlas (mmp, gordon, user defined), loop over subjects and output RDA files.
-##  (remove atlas loop and get clusters in same format as other atlases; i.e. as mask)
+## function for matching brick string
 
+#!/usr/bin/env Rscript
+
+doc <- 
+"Usage:
+   2_estimate_rsms.R [-a <do_atlases> -m <do_masks> -u <univariate>]
+
+Options:
+   -a Conduct analysis using atlases (Glasser's Multi Modal Parcellation, and Gordon's RSFC communities)? [default: 1]
+   -m Conduct analysis using user-specified masks? [default: 1]
+   -u Estimate univariate statistics? [default: 1]
+
+ ]"
+
+opts <- docopt::docopt(doc)
+
+do.atlas <- as.logical(as.integer(opts$a))
+do.masks <- as.logical(as.integer(opts$m))
+do.univa <- as.logical(as.integer(opts$u))
 
 ## setup ----
 
-library(here)
-library(mikeutils)
-library(magrittr)
-library(dplyr)
-library(abind)
-library(data.table)
-library(oro.nifti)
+# library(here)
+# library(mikeutils)
+# library(magrittr)
+# library(dplyr)
+# library(abind)
+# library(data.table)
+# library(oro.nifti)
 
-source(here("code", "_strings.R"))
-source(here("code", "_get_atlas.R"))
+source(here::here("code", "strings.R"))
+if (do.atlas) source(here::here("code", "read_atlases.R"))
+if (do.masks) source(here::here("code", "read_masks.R"))
 
 ## paths, vars
 
-dir.analysis <- here("glms")
+dir.analysis <- here::here("glms")
 glm.name <- "pro_bias_acc-only"
 files.dir.analysis <- list.files(dir.analysis, pattern = "stats_var", recursive = TRUE)  ## get fit.subjs
 files.dir.analysis <- files.dir.analysis[grep(glm.name, files.dir.analysis)]
 fit.subjs <- unique(gsub("/results/.*", "", files.dir.analysis))
 
-hemis <- c("l", "r")
-# stats <- c("pearson", "euclidean")  ## which similarity statistics should be calculated?
 ## regs will be used to pull out (via string match) the statistic from the afni brick;
 ## thus must have the reg.suffix
 regs <- c(bias.items, "pc50_c", "pc50_i", "sustained", "transient", "nuisance")
-
-n.hemi <- length(hemis)  ## duh, but for clarity
-# n.stats <- length(stats)
 n.subj <- length(fit.subjs)
 n.bias.items <- length(bias.items)
 
+sets.of.rois <- character(0)
+if (do.atlas) sets.of.rois <- c(sets.of.rois, names(atlas))
+if (do.masks) sets.of.rois <- c(sets.of.rois, "masks")
 
-for (atlas.i in names(atlas.key)) {
-  # atlas.i = "mmp"
+
+## loop over sets of ROIs ----
+
+for (set.i in sets.of.rois) {
+  # set.i = "mmp"
   
-  ## numbers
-  n.roi <- nrow(atlas.key[[atlas.i]])
-  roi.names <- atlas.key[[atlas.i]]$roi
+  ## get numbers and create storage objects
   
-  ## create storage objects:
+  if (set.i != "masks") {
+    n.roi <- nrow(atlas.key[[set.i]])
+    roi.names <- atlas.key[[set.i]]$roi
+  } else {
+    # n.roi <- nrow(atlas.key[[atlas.i]])
+    # roi.names <- atlas.key[[atlas.i]]$roi
+  }
+  
   rsarray.pearson <- array(  ## for representational similarity matrices
     NA,
-    dim = c(n.bias.items, n.bias.items, n.subj, n.roi, n.hemi),
+    dim = c(n.bias.items, n.bias.items, n.subj, n.roi),
     dimnames = list(
-      r    = bias.items,
-      c    = bias.items,
+      .row = bias.items,
+      .col = bias.items,
       subj = fit.subjs,
-      roi  = roi.names,
-      hemi = hemis
+      roi  = roi.names
     )
   )
   rsarray.euclidean <- rsarray.pearson
+  
   
   ## loop over subjs and rois ----
   
   for (subj.i in seq_along(fit.subjs)) {
     # subj.i <- 1
     
-    ## get afni images:
+    ## get afni images
     
     dir.glms <- file.path(dir.analysis, fit.subjs[subj.i], "results", glm.name)
     fname.nii <- file.path(dir.glms, paste0("stats_", fit.subjs[subj.i], ".nii.gz"))

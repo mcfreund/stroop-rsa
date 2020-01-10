@@ -1,4 +1,5 @@
 ## about ----
+## 
 ## creates model similarity matrices (for RSA) and writes them to .csv files.
 ## 
 ## mike freund, 2019-02-20
@@ -15,7 +16,7 @@ library(mikeutils)
 library(magrittr)
 library(dplyr)
 
-source(here("code", "_strings.R"))
+source(here("code", "strings.R"))
 
 
 ## categorical models ----
