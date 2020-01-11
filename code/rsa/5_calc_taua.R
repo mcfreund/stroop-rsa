@@ -20,8 +20,9 @@ library(magrittr)
 library(data.table)
 library(doParallel)  ## parallelize tau-a calculation
 library(foreach)
-source(here("code", "_strings.R"))
-source(here("code", "_read_atlases.R"))
+source(here("code", "strings.R"))
+source(here("code", "read_atlases.R"))
+source(here("code", "read_masks.R"))
 
 ## read models
 
@@ -32,21 +33,54 @@ rsv.models.ltri <- fread(here("out", "rsa", "mods", "rsv_bias_lower-triangles.cs
 variables <- as.matrix(rsv.models.ltri[sapply(rsv.models.ltri, is.numeric)])
 variables <- cbind(variables, conclust = variables[, "incongruency"] | variables[, "congruency"])
 
-## loop over atlases ----
+## orthogonalize the categorical models
 
-for (atlas.i in seq_along(atlas.key)) {
-  # atlas.i = 1
-  
-  name.atlas.i <- names(atlas.key)[atlas.i]
+project <- function(y, X) c(X %*% MASS::ginv(crossprod(X)) %*% t(X) %*% y) ## y onto column-space of X
+X <- scale(variables[, c("target", "distractor", "incongruency")])
+P <- cbind(
+  project(X[, 1], X[, c(2, 3)]),
+  project(X[, 2], X[, c(1, 3)]),
+  project(X[, 3], X[, c(1, 2)])
+)
+Z <- X - P
+colnames(Z) <- paste0(colnames(Z), ".orth")
+
+variables <- cbind(variables, Z)
+
+# crossprod(Z, X)
+# cor(Z, X)
+# qcor(vec2mat(Z[, 1] / max(abs(Z[, 1])), bias.items, diag.val = 0))
+# qcor(vec2mat(Z[, 2] / max(abs(Z[, 2])), bias.items, diag.val = 0))
+# qcor(vec2mat(Z[, 3] / max(abs(Z[, 3])), bias.items, diag.val = 0))
+# 
+## qr decomposition
+#
+# Q <- cbind(
+#   incongruency.q = qr.Q(qr(X))[, 3],
+#   target.q       = qr.Q(qr(X[, 3:1]))[, 3],
+#   distractor.q   = qr.Q(qr(X[, c(1, 3, 2)]))[, 3]
+# )
+# qcor(vec2mat(Q[, "incongruency.q"] / max(abs(Q[, "incongruency.q"])), bias.items, diag.val = 0))
+# qcor(vec2mat(Q[, "distractor.q"] / max(abs(Q[, "distractor.q"])), bias.items, diag.val = 0))
+# qcor(vec2mat(Q[, "target.q"] / max(abs(Q[, "target.q"])), bias.items, diag.val = 0))
+
+
+## loop over sets of ROIs ----
+
+sets.of.rois <- c("mmp", "gordon", "masks")
+
+for (set.i in sets.of.rois) {
+  # set.i = "mmp"
   
   ## read observed similarity matrices (arrays)
   
   rsarray.rank <- readRDS(
     here(
       "out", "rsa", "obsv",
-      paste0("rsarray_pro_bias_acc-only_", name.atlas.i, "_pearson_residual-rank.rds")
+      paste0("rsarray_pro_bias_acc-only_", set.i, "_pearson_residual-rank.rds")
     )
   )
+  
   
   ## prepare similarity matrices for regression ----
   
@@ -63,26 +97,23 @@ for (atlas.i in seq_along(atlas.key)) {
   is.lower.tri <- lower.tri(diag(n.dim))
   subjs <- dimnames(rsarray.rank)$subj
   rois <- dimnames(rsarray.rank)$roi
-  hemis <- dimnames(rsarray.rank)$hemi
-  n.mods <- length(subjs) * length(rois) * length(hemis)
+  n.mods <- length(subjs) * length(rois)
   
   ## unwrap into lower-triangle vector
   
   rsvectors <- vector("list", n.mods)
-  names(rsvectors) <- combo_paste3(subjs, rois, hemis)
+  names(rsvectors) <- combo_paste(subjs, rois)
   
   for (subj.i in seq_along(subjs)) {
     for (roi.j in seq_along(rois)) {
-      for (hemi.k in seq_along(hemis)) {
-        # subj.i = 1; roi.j = 1; hemi.k = 1
-        
-        rsm.rank <- rsarray.rank[, , subj.i, roi.j, hemi.k]
-        
-        name.ijk <- paste0(subjs[subj.i], "_", rois[roi.j], "_", hemis[hemi.k])  ## to match name
-        
-        rsvectors[[name.ijk]] <- rsm.rank[is.lower.tri]
-        
-      }
+      # subj.i = 1; roi.j = 1
+      
+      rsm.rank <- rsarray.rank[, , subj.i, roi.j]
+      
+      name.ij <- paste0(subjs[subj.i], "_", rois[roi.j])  ## to match name
+      
+      rsvectors[[name.ij]] <- rsm.rank[is.lower.tri]
+      
     }
   }
   
@@ -116,7 +147,7 @@ for (atlas.i in seq_along(atlas.key)) {
   
   taua <- bind_cols(
     taua,
-    reshape2::colsplit(taua$id, pattern = "_", names = c("subj", "roi", "hemi"))
+    reshape2::colsplit(taua$id, pattern = "_", names = c("subj", "roi"))
   )
   
   ## add is.analysis.group col
@@ -127,16 +158,14 @@ for (atlas.i in seq_along(atlas.key)) {
   
   ## create roi.hemi col, rearrange cols (and drop id col)
   
-  taua %<>%
-    mutate(roi.hemi = paste0(roi, "_", hemi)) %>%
-    select(subj, is.analysis.group, roi.hemi, roi, hemi, param, taua)
+  taua %<>% select(subj, is.analysis.group, roi, param, taua)
   
   
   ## write ----
   
   fwrite(
     taua,
-    here("out", "rsa", "stats", paste0("subjs_pro_bias_acc-only_", name.atlas.i, "_pearson_residual_taua.csv"))
+    here("out", "rsa", "stats", paste0("subjs_pro_bias_acc-only_", set.i, "_pearson_residual_taua.csv"))
   )
   
 }

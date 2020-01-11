@@ -44,14 +44,6 @@ if (!any(do.atlas, do.masks, do.univa)) stop(paste0("you must do something!"))
 
 ## setup ----
 
-# library(here)
-# library(mikeutils)
-# library(magrittr)
-# library(dplyr)
-# library(abind)
-# library(data.table)
-# library(oro.nifti)
-
 source(here::here("code", "strings.R"))
 if (do.atlas) source(here::here("code", "read_atlases.R"))
 if (do.masks) source(here::here("code", "read_masks.R"))

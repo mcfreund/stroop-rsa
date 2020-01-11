@@ -1,0 +1,518 @@
+---
+  title: "assessing coding profiles for MMP"
+  output: html_document
+---
+
+Conducts RSA model comparisons and sorts parcels into groups with different _coding profiles_.
+Displays results.
+
+```{r setup}
+## TODO
+##  - results to tables
+##  - revise intro
+##  - TOST procedures
+
+library(here)
+library(magrittr)
+library(dplyr)
+library(data.table)
+library(ggplot2)
+library(mikeutils)
+library(doParallel)
+library(foreach)
+source(here("code", "_strings.R"))
+source(here("code", "_get_atlas.R"))
+
+## for printing results
+
+mmp <- atlas.key$mmp
+mmp <- bind_rows(
+  mmp %>% mutate(roi.hemi = paste0(roi, "_l")),
+  mmp %>% mutate(roi.hemi = paste0(roi, "_r"))
+)
+mmp %<>% select(roi.hemi, community) %>% arrange(community, roi.hemi)
+
+```
+
+# __CODE__
+
+## description
+
+the __tdic__ model:
+\[
+  rank(\textbf{r}) \sim 
+  \textbf{x}_{\text{targt}}\beta_{\text{targt}} + 
+  \textbf{x}_{\text{distr}}\beta_{\text{distr}} + 
+  \textbf{x}_{\text{incon}}\beta_{\text{incon}} +
+  \textbf{x}_{\text{congr}}\beta_{\text{congr}}
+\]
+
+* rank transformed response variable
+* coefficients standardized (betas)
+* subjects as random effect for all inferential tests
+
+```{r read-and-extract}
+
+stats.subjs.tdic <- fread(
+  here("out", "rsa", "stats", paste0("subjs_pro_bias_acc-only_mmp_pearson_residual_glm-tdic.csv"))
+  )
+stats.subjs.tdic <- stats.subjs.tdic[is.analysis.group == TRUE & y == "rank", ]  ## EXCLUDE HELD OUT SUBJECTS!
+stats.subjs.tdic <- stats.subjs.tdic[, "coef" := NULL]
+
+params.interest <- c("target", "distractor", "incongruency")
+
+```
+
+## __task coding analysis__: test each regressor against zero (baseline)
+
+- wilcoxon sign-rank test on estimated betas
+  - per parcel and model
+  - one-sided (greater than zero)
+  - p-values FDR corrected across all ROIs (bilateral), within each regressor
+
+```{r taskcoding}
+
+stats.group.tdic <- stats.subjs.tdic %>%
+  group_by(roi.hemi, model, param) %>%
+  summarize(
+    v    = wilcox.test(beta, alternative = "greater")$statistic,
+    p    = wilcox.test(beta, alternative = "greater")$p.value,
+    beta = tanh(mean(atanh(beta))),  ## must be last in this summarize()
+  ) %>%
+  mutate(p.fdr = p.adjust(p, method = "fdr"), p.holm = p.adjust(p, method = "holm")) %>%
+  ungroup
+
+stats.group.tdic %<>% full_join(mmp, by = "roi.hemi") %>% select(roi.hemi, community, param, v, p, beta, p.fdr, p.holm)
+
+stats.group.tdic %<>% as.data.table
+
+```
+
+## __preference analysis__: pairwise comparisons
+
+- paired wilcoxon sign-rank test on estimated betas
+  - 3 tests per parcel (t vs d, t vs i, d vs i)
+  - two-sided
+  - p-values FDR corrected across all comparisons, within each roi.hemi
+
+```{r preference}
+
+## get p vals
+
+stats.pairs.tdic <- stats.subjs.tdic %>%
+  filter(param %in% params.interest) %>%
+  group_by(roi.hemi) %>%
+  summarize(
+    out = list(
+      pairwise.wilcox.test(beta, param, paired = TRUE, alternative = "two.sided", p.adjust.method = "fdr")
+    )
+  )
+pvals <- vapply(stats.pairs.tdic$out, function(.) .$p.value[lower.tri(diag(2), diag = TRUE)], numeric(3))
+pvals <- t(pvals)
+colnames(pvals) <- c("p.incon.distr", "p.targt.distr", "p.targt.incon")
+stats.pairs.tdic <- as.data.frame(cbind(roi.hemi = stats.pairs.tdic$roi.hemi, pvals), stringsAsFactors = FALSE)
+
+## get mean diffs
+
+stats.pairs.tdic %<>% full_join(
+  stats.subjs.tdic %>%
+    filter(param %in% params.interest) %>%
+    group_by(roi.hemi) %>%
+    summarize(
+      b.incon.distr = tanh(mean(atanh(beta[param == "incongruency"]) - atanh(beta[param == "distractor"]))),
+      b.targt.distr = tanh(mean(atanh(beta[param == "target"]) - atanh(beta[param == "distractor"]))),
+      b.targt.incon = tanh(mean(atanh(beta[param == "target"]) - atanh(beta[param == "incongruency"]))),
+    ),
+  by = "roi.hemi"
+)
+
+stats.pairs.tdic %<>% full_join(mmp, by = "roi.hemi") %>% as.data.table
+
+```
+
+
+# __RESULTS__
+
+## __task coding analysis__: test each regressor against zero (baseline)
+
+These values represent a (standardized) contrast of within-group correlations (e.g., within __target__ correlations) against between-group correlations (i.e., between items with no common target, distractor, or congruency status).
+
+```{r taskcoding_rois}
+
+rois.targt <- stats.group.tdic[param == "target" & p.fdr < 0.05, roi.hemi]
+rois.distr <- stats.group.tdic[param == "distractor" & p.fdr < 0.05, roi.hemi]
+rois.incon <- stats.group.tdic[param == "incongruency" & p.fdr < 0.05, roi.hemi]
+
+```
+
+Sorted (descending) by beta.
+
+#### target coding
+
+```{r taskcoding_targt}
+stats.group.tdic[param == "target" & roi.hemi %in% rois.targt] %>% arrange(-beta)
+```
+
+#### distractor coding
+
+```{rtaskcoding_distr}
+stats.group.tdic[param == "distractor" & roi.hemi %in% rois.distr] %>% arrange(-beta)
+```
+
+#### incongruency coding
+
+```{r taskcoding_incon}
+stats.group.tdic[param == "incongruency" & roi.hemi %in% rois.incon] %>% arrange(-beta)
+```
+
+#### congruency coding
+
+```{r taskcoding_cong}
+stats.group.tdic[param == "congruency" & p.fdr < 0.05] %>% arrange(-beta)
+```
+
+
+## __preference analysis__: pairwise comparisons
+
+Of the task coding parcels, which show preferece for certain task dimensions over others?
+In this section, each task dimension is considered in turn.
+ROIs are identified in each subsection that meet criteria for having certain representational 'preferences'.
+Within each subsection, these criteria get progressively more stringent.
+
+
+#### __target__
+
+###### __target__ > \{__distractor__, 0\}
+
+```{r preference_targt-vs-distr}
+
+rois.pref.targt.vs.distr <- stats.pairs.tdic[
+  roi.hemi %in% rois.targt &
+  p.targt.distr < 0.05 &
+  b.targt.distr > 0,
+  roi.hemi
+  ]
+
+stats.group.tdic[param == "target" & roi.hemi %in% rois.pref.targt.vs.distr]
+stats.pairs.tdic[roi.hemi %in% rois.pref.targt.vs.distr]
+
+```
+
+###### __target__ > \{__incongruency__, 0\}
+
+```{r preference_targt-vs-incon}
+
+rois.pref.targt.vs.incon <- stats.pairs.tdic[
+  roi.hemi %in% rois.targt &
+  p.targt.incon < 0.05 &
+  b.targt.incon > 0,
+  roi.hemi
+  ]
+
+stats.group.tdic[param == "target" & roi.hemi %in% rois.pref.targt.vs.incon]
+stats.pairs.tdic[roi.hemi %in% rois.pref.targt.vs.incon]
+
+```
+
+###### __target__ > \{__distractor__, __incongruency__, 0\}
+
+```{r preference_targt-vs-all}
+
+rois.pref.targt.vs.all <- stats.pairs.tdic[
+  roi.hemi %in% rois.targt &
+  p.targt.incon < 0.05 & p.targt.distr < 0.05 &
+  b.targt.incon > 0 & b.targt.distr > 0,
+  roi.hemi
+  ]
+
+stats.group.tdic[param == "target" & roi.hemi %in% rois.pref.targt.vs.all]
+stats.pairs.tdic[roi.hemi %in% rois.pref.targt.vs.all]
+
+```
+
+
+#### __distractor__
+
+##### __distractor__ > \{__target__, 0\}
+
+```{r preference_distr-vs-targt}
+
+rois.pref.distr.vs.targt <- stats.pairs.tdic[
+  roi.hemi %in% rois.distr &
+  p.targt.distr < 0.05 &
+  b.targt.distr < 0,
+  roi.hemi
+  ]
+
+stats.group.tdic[param == "distractor" & roi.hemi %in% rois.pref.distr.vs.targt]
+stats.pairs.tdic[roi.hemi %in% rois.pref.distr.vs.targt]
+
+```
+
+##### __distractor__ > \{__incongruency__, 0\}
+
+```{r preference_distr-vs-incon}
+
+rois.pref.distr.vs.incon <- stats.pairs.tdic[
+  roi.hemi %in% rois.distr &
+  b.incon.distr < 0.05 &
+  b.incon.distr < 0,
+  roi.hemi
+  ]
+
+stats.group.tdic[param == "distractor" & roi.hemi %in% rois.pref.distr.vs.incon]
+stats.pairs.tdic[roi.hemi %in% rois.pref.distr.vs.incon]
+
+```
+
+##### __distractor__ > \{__target__, __incongruency__, 0\}
+
+No parcels meet criteria (no parcels distractor > target).
+
+
+#### __incongruency__
+
+###### __incongruency__ > \{__distractor__, 0\}
+
+```{r preference_incon-vs-distr}
+
+rois.pref.incon.vs.distr <- stats.pairs.tdic[
+  roi.hemi %in% rois.incon &
+  b.incon.distr < 0.05 &
+  b.incon.distr > 0,
+  roi.hemi
+  ]
+
+stats.group.tdic[param == "incongruency" & roi.hemi %in% rois.pref.incon.vs.distr]
+stats.pairs.tdic[roi.hemi %in% rois.pref.incon.vs.distr]
+
+```
+
+###### __incongruency__ > \{__target__, 0\}
+
+```{r preference_incon-vs-targt}
+
+rois.pref.incon.vs.targt <- stats.pairs.tdic[
+  roi.hemi %in% rois.incon &
+  p.targt.incon < 0.05 &
+  b.targt.incon < 0,
+  roi.hemi
+  ]
+
+stats.group.tdic[param == "incongruency" & roi.hemi %in% rois.pref.incon.vs.targt]
+stats.pairs.tdic[roi.hemi %in% rois.pref.incon.vs.targt]
+
+```
+
+###### __incongruency__ > \{__distractor__, __target__, 0\}
+
+```{r preference_incon-vs-all}
+
+rois.pref.incon.vs.all <- stats.pairs.tdic[
+  roi.hemi %in% rois.incon &
+  p.targt.incon < 0.05 & b.incon.distr < 0.05 &
+  b.targt.incon < 0 & p.incon.distr > 0,
+  roi.hemi
+  ]
+
+stats.group.tdic[param == "incongruency" & roi.hemi %in% rois.pref.incon.vs.all]
+stats.pairs.tdic[roi.hemi %in% rois.pref.incon.vs.all]
+
+```
+
+
+## __selectivity analysis__: equivalence testing
+
+Here I establish which (if any) ROIs previously identified as having a *preference* for a task dimension(s), are *selective* for said task dimension(s).
+Establishing selectivity involves "confirming the null": e.g., "this ROI was only coding for target information, not distractor or incongruency".
+To perform such a test of equivalence, I use the two-one sided significance testing procedure (TOST).
+
+Given an effect size $\Delta$, the TOST requires specifiying two criteria: an $\alpha$, and a smallest effect size of interest, $\Delta_U$. In TOST, two one-sided tests are performed: $H_1: \Delta \geq -\Delta_U$ and $H_2: \Delta \leq \Delta_U$. Note that the null hypothesis in each of these tests is the *presence* of an effect.
+Thus, if both are rejected (p-values are  $< \alpha$), the test provides positive evidence for the absence of a "meaningful" effect size.
+TOST is the frequentist's alterntive to bayesian analysis.
+
+In the absence of an a priori effect size of interest, I use a simulated one.
+Given $\alpha = 0.05$, $N = 49$, and the deisred power level of $1 - \beta = 0.8$, I simulate the smallest effect size observable via wilcoxon signed rank.
+
+```{r tost_sesi, cache = TRUE}
+
+powersim <- function(es, n = 49, a = 0.05, nsim = 5000) {
+  
+  out <- numeric(nsim)
+  
+  for (sim.i in seq_len(nsim)) {
+    x <- rnorm(n, es)
+    p <- wilcox.test(x, alternative = "greater")$p.value
+    out[sim.i] <- p < a
+  }
+  
+  sum(out) / nsim
+  
+}
+
+es <- seq(0, 0.5, 0.001)  ## range of effect sizes to simulate
+
+n.cores <- detectCores()
+cl <- makeCluster(n.cores - 1)
+registerDoParallel(cl)
+res <- foreach(ii = es, .combine = c) %dopar% {
+  set.seed(ii * 1000)  ## set seed anew each iteraion (on each worker)
+  powersim(ii)  ## power
+}
+stopCluster(cl)
+
+plot(es, res, main = "effect size (cohen's d) by power level of signed rank")
+
+min.d <- min(es[res >= 0.8])  ## minimum effect size detectable at 0.8 power
+
+min.d
+
+write.table(min.d, here("analyses", "coding_profiles", "smallest-effect-size-of-interest.txt"))
+
+```
+
+Now this minimum effect size serves as the reference (null) value in two non-central sign-rank tests.
+Note that I use the standardized betas (divisively normalized by their standard deviation) to conduct this test (this puts the model fits / betas in the same unit as the reference effect size).
+
+```{r tost}
+
+stats.tosts <- stats.subjs.tdic %>%
+  filter(param %in% params.interest) %>%
+  group_by(param, roi.hemi) %>%
+  summarize(
+    du = wilcox.test(beta / sd(beta), alternative = "less", mu = min.d)$p.value,  ## less than upward bound?
+    dl = wilcox.test(beta / sd(beta), alternative = "greater", mu = -min.d)$p.value,  ## greater than lower bound?
+    p = max(du, dl)  ## take largest p-value
+  ) %>%
+  as.data.table
+
+```
+
+
+#### __target__
+
+
+###### __target__ > \{__distractor__, 0\} & __distractor__ ~ 0
+
+Establish absence of __distractor__ coding:
+
+```{r tost_targt-vs-distr}
+
+rois.tost.targt.vs.distr <- stats.tosts[roi.hemi %in% rois.pref.targt.vs.distr & param == "distractor", ] %>%
+  ungroup %>%
+  mutate(p.fdr = p.adjust(p, method = "fdr"), p.holm = p.adjust(p, method = "holm")) %>%
+  filter(p.fdr < 0.05) %>%
+  .$roi.hemi
+
+stats.tosts[param == "distractor" & roi.hemi %in% rois.tost.targt.vs.distr]
+
+```
+
+
+###### __target__ > \{__incongruency__, 0\} & __incongruency__ ~ 0
+
+Establish absence of __incongruency__ coding:
+
+```{r tost_targt-vs-incon}
+
+rois.tost.targt.vs.incon <- stats.tosts[roi.hemi %in% rois.pref.targt.vs.incon & param == "incongruency", ] %>%
+  ungroup %>%
+  mutate(p.fdr = p.adjust(p, method = "fdr"), p.holm = p.adjust(p, method = "holm")) %>%
+  filter(p.fdr < 0.05) %>%
+  .$roi.hemi
+
+
+stats.tosts[param == "incongruency" & roi.hemi %in% rois.tost.targt.vs.incon]
+
+```
+
+###### __target__ > \{__incongruency__, __distractor__, 0\} & \{__incongruency__, __distractor__\} ~ 0
+
+The intersection of those sets:
+
+```{r tost_targt-vs-all}
+
+rois.target.selective <- intersect(rois.tost.targt.vs.incon, rois.tost.targt.vs.distr)
+
+rois.target.selective
+
+```
+
+
+#### __distractor__
+
+###### __distractor__ > \{__target__, 0\} & __target__ ~ 0
+
+None with preference for distractor.
+
+###### __distractor__ > \{__incongruency__, 0\} & __incongruency__ ~ 0
+
+Establish absence of __incongruency__ coding:
+
+```{r tost_distr-vs-incon}
+
+rois.tost.distr.vs.incon <- stats.tosts[roi.hemi %in% rois.pref.distr.vs.incon & param == "incongruency", ] %>%
+  ungroup %>%
+  mutate(p.fdr = p.adjust(p, method = "fdr"), p.holm = p.adjust(p, method = "holm")) %>%
+  filter(p.fdr < 0.05) %>%
+  .$roi.hemi
+
+
+stats.tosts[param == "incongruency" & roi.hemi %in% rois.tost.distr.vs.incon]
+
+```
+
+###### __distractor__ > \{__incongruency__, __distractor__, 0\} & \{__incongruency__, __distractor__\} ~ 0
+
+The intersection of those sets:
+
+None.
+
+
+
+#### __incongruency__
+
+###### __incongruency__ > \{__distractor__, 0\} & __distractor__ ~ 0
+
+Establish absence of __distractor__ coding:
+
+```{r tost_incon-vs-distr}
+
+rois.tost.incon.vs.distr <- stats.tosts[roi.hemi %in% rois.pref.incon.vs.distr & param == "distractor", ] %>%
+  ungroup %>%
+  mutate(p.fdr = p.adjust(p, method = "fdr"), p.holm = p.adjust(p, method = "holm")) %>%
+  filter(p.fdr < 0.05) %>%
+  .$roi.hemi
+
+stats.tosts[param == "distractor" & roi.hemi %in% rois.tost.incon.vs.distr]
+
+```
+
+###### __incongruency__ > \{__target__, 0\} & __target__ ~ 0
+
+Establish absence of __target__ coding:
+
+```{r tost_incon-vs-targt}
+
+rois.tost.incon.vs.targt <- stats.tosts[roi.hemi %in% rois.pref.incon.vs.targt & param == "target", ] %>%
+  ungroup %>%
+  mutate(p.fdr = p.adjust(p, method = "fdr"), p.holm = p.adjust(p, method = "holm")) %>%
+  filter(p.fdr < 0.05) %>%
+  .$roi.hemi
+
+
+stats.tosts[param == "target" & roi.hemi %in% rois.tost.incon.vs.targt]
+
+```
+
+###### __incongruency__ > \{__incongruency__, __distractor__, 0\} & \{__incongruency__, __distractor__\} ~ 0
+
+The intersection of those sets:
+
+None.
+
+
+
+# __CONCLUSIONS__
+
+

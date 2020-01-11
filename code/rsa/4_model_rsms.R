@@ -20,6 +20,7 @@ library(magrittr)
 library(data.table)
 source(here("code", "strings.R"))
 source(here("code", "read_atlases.R"))
+source(here("code", "read_masks.R"))
 
 ## read models
 
@@ -52,25 +53,25 @@ m <- list(
 m.std <- lapply(m, function(x) scale(x[, -1]))  ## drop the intercept
 
 
-## loop over atlases ----
+## loop over sets of ROIs ----
 
-for (atlas.i in seq_along(atlas.key)) {
-  # atlas.i = 1
-  
-  name.atlas.i <- names(atlas.key)[atlas.i]
+sets.of.rois <- c("mmp", "gordon", "masks")
+
+for (set.i in sets.of.rois) {
+  # set.i = "mmp"
   
   ## read observed similarity matrices (arrays)
   
   rsarray.rank <- readRDS(
     here(
       "out", "rsa", "obsv",
-      paste0("rsarray_pro_bias_acc-only_", name.atlas.i, "_pearson_residual-rank.rds")
+      paste0("rsarray_pro_bias_acc-only_", set.i, "_pearson_residual-rank.rds")
     )
   )
   rsarray.line <- readRDS(
     here(
       "out", "rsa", "obsv",
-      paste0("rsarray_pro_bias_acc-only_", name.atlas.i, "_pearson_residual-linear.rds")
+      paste0("rsarray_pro_bias_acc-only_", set.i, "_pearson_residual-linear.rds")
     )
   )
   
@@ -92,29 +93,26 @@ for (atlas.i in seq_along(atlas.key)) {
   is.lower.tri <- lower.tri(diag(n.dim))
   subjs <- dimnames(rsarray.line)$subj
   rois <- dimnames(rsarray.line)$roi
-  hemis <- dimnames(rsarray.line)$hemi
-  n.mods <- length(subjs) * length(rois) * length(hemis)
+  n.mods <- length(subjs) * length(rois)
   
   ## unwrap into lower-triangle vector
   
   rsvectors <- vector("list", n.mods)
-  names(rsvectors) <- combo_paste3(subjs, rois, hemis)
+  names(rsvectors) <- combo_paste(subjs, rois)
   
   for (subj.i in seq_along(subjs)) {
     for (roi.j in seq_along(rois)) {
-      for (hemi.k in seq_along(hemis)) {
-        # subj.i = 1; roi.j = 1; hemi.k = 1
-        
-        rsm.line <- rsarray.line[, , subj.i, roi.j, hemi.k]  ## get slice
-        rsm.rank <- rsarray.rank[, , subj.i, roi.j, hemi.k]
+      # subj.i = 1; roi.j = 1
+      
+      rsm.line <- rsarray.line[, , subj.i, roi.j]  ## get slice
+      rsm.rank <- rsarray.rank[, , subj.i, roi.j]
 
-        z <- atanh(rsm.line[is.lower.tri])  ## get lower.triangle vector (and transform to fisher's z)
-        rank <- rsm.rank[is.lower.tri]
-        
-        name.ijk <- paste0(subjs[subj.i], "_", rois[roi.j], "_", hemis[hemi.k])  ## to match name
-        rsvectors[[name.ijk]] <- cbind(z, rank)
-        
-      }
+      z <- atanh(rsm.line[is.lower.tri])  ## get lower.triangle vector (and transform to fisher's z)
+      rank <- rsm.rank[is.lower.tri]
+      
+      name.ij <- paste0(subjs[subj.i], "_", rois[roi.j])  ## to match name
+      rsvectors[[name.ij]] <- cbind(z, rank)
+      
     }
   }
   
@@ -179,7 +177,7 @@ for (atlas.i in seq_along(atlas.key)) {
   
   stats.subjs <- bind_cols(
     stats.subjs,
-    reshape2::colsplit(stats.subjs$id, pattern = "_", names = c("subj", "roi", "hemi"))
+    reshape2::colsplit(stats.subjs$id, pattern = "_", names = c("subj", "roi"))
     )
   
   ## add is.analysis.group col
@@ -188,11 +186,9 @@ for (atlas.i in seq_along(atlas.key)) {
   sample.analysis <- unique(filter(stroop, is.analysis.group)$subj)
   stats.subjs$is.analysis.group <- stats.subjs$subj %in% sample.analysis
   
-  ## create roi.hemi col, rearrange cols (and drop id col)
+  ## rearrange cols (and drop id col)
   
-  stats.subjs %<>%
-    mutate(roi.hemi = paste0(roi, "_", hemi)) %>%
-    select(subj, is.analysis.group, roi.hemi, roi, hemi, model, y, param, coef, beta)
+  stats.subjs %<>% select(subj, is.analysis.group, roi, model, y, param, coef, beta)
   
   
   ## write ----
@@ -207,7 +203,7 @@ for (atlas.i in seq_along(atlas.key)) {
       stats.i,
       here(
         "out", "rsa", "stats", 
-        paste0("subjs_pro_bias_acc-only_", name.atlas.i, "_pearson_residual_glm-", model.i, ".csv")
+        paste0("subjs_pro_bias_acc-only_", set.i, "_pearson_residual_glm-", model.i, ".csv")
         )
     )
     

@@ -15,20 +15,21 @@ library(data.table)
 library(purrr)
 source(here("code", "strings.R"))
 source(here("code", "read_atlases.R"))
+source(here::here("code", "read_masks.R"))
 
 
-## atlas loop ----
+## loop over sets of ROIs ----
 
-for (atlas.i in seq_along(atlas.key)) {
-  # atlas.i = 1
-  
-  name.atlas.i <- names(atlas.key)[atlas.i]
+sets.of.rois <- c("mmp", "gordon", "masks")
+
+for (set.i in sets.of.rois) {
+  # set.i = "mmp"
   
   ## reprisimil matrix
   
   rsarray <- readRDS(
     here(
-      "out", "rsa", "obsv", paste0("rsarray_pro_bias_acc-only_", name.atlas.i, "_pearson.rds")
+      "out", "rsa", "obsv", paste0("rsarray_pro_bias_acc-only_", set.i, "_pearson.rds")
     )
   )
   
@@ -46,50 +47,47 @@ for (atlas.i in seq_along(atlas.key)) {
   
   is.lower.tri <- lower.tri(diag(length(bias.items)))
   subjs <- dimnames(rsarray)$subj
-  parcels <- dimnames(rsarray)$roi
-  hemis <- c("l", "r")
+  rois  <- dimnames(rsarray)$roi
   rsarray.resid.rank <- array(NA, dim = dim(rsarray), dimnames = dimnames(rsarray))
   rsarray.resid.line <- rsarray.resid.rank
   
   ## loop
   
-  for (n.subj.i in seq_along(subjs)) {
-    for (n.parcel.j in seq_along(parcels)) {
-      for (n.hemi.k in seq_along(hemis)) {
-        # n.hemi.k = 1; n.parcel.j = 1; n.subj.i = 1
-        
-        ## get matrix and unwrap to lower triangle
-        
-        rsm <- rsarray[, , n.subj.i, n.parcel.j, n.hemi.k]
-        rsv <- as.matrix(rsm[is.lower.tri])
-        
-        ## transform and create response matrix
-        
-        Y <- cbind(atanh(rsv), rank(rsv))
-        
-        ## regress run component from rsv
-        
-        fits <- .lm.fit(X, Y)
-        E <- fits$residuals  ## residuals
-        B0 <- fits$coef[1, ]  ## intercepts
-        regressed <- sweep(E, 2, B0, "+")  ## re-center residuals (add intercepts)
-        
-        ## extract
-        
-        regressed.r <- tanh(regressed[, 1])
-        regressed.rank <- regressed[, 2]
-        
-        ## vector to matrix:
-        
-        rsm.line.i <- vec2mat(regressed.r, dnames = bias.items)  ## linear regressed
-        rsm.rank.i <- vec2mat(regressed.rank, dnames = bias.items)  ## rank regressed
-        
-        ## store:
-        
-        rsarray.resid.line[, , n.subj.i, n.parcel.j, n.hemi.k] <- rsm.line.i
-        rsarray.resid.rank[, , n.subj.i, n.parcel.j, n.hemi.k] <- rsm.rank.i
-        
-      }
+  for (subj.i in seq_along(subjs)) {
+    for (roi.j in seq_along(rois)) {
+      # roi.j = 1; subj.i = 1
+      
+      ## get matrix and unwrap to lower triangle
+      
+      rsm <- rsarray[, , subj.i, roi.j]
+      rsv <- as.matrix(rsm[is.lower.tri])
+      
+      ## transform and create response matrix
+      
+      Y <- cbind(atanh(rsv), rank(rsv))
+      
+      ## regress run component from rsv
+      
+      fits <- .lm.fit(X, Y)
+      E <- fits$residuals  ## residuals
+      B0 <- fits$coef[1, ]  ## intercepts
+      regressed <- sweep(E, 2, B0, "+")  ## re-center residuals (add intercepts)
+      
+      ## extract
+      
+      regressed.r <- tanh(regressed[, 1])
+      regressed.rank <- regressed[, 2]
+      
+      ## vector to matrix
+      
+      rsm.line.i <- vec2mat(regressed.r, dnames = bias.items)  ## linear regressed
+      rsm.rank.i <- vec2mat(regressed.rank, dnames = bias.items)  ## rank regressed
+      
+      ## store:
+      
+      rsarray.resid.line[, , subj.i, roi.j] <- rsm.line.i
+      rsarray.resid.rank[, , subj.i, roi.j] <- rsm.rank.i
+      
     }
   }
   
@@ -100,7 +98,7 @@ for (atlas.i in seq_along(atlas.key)) {
     rsarray.resid.rank, 
     here(
       "out", "rsa", "obsv", 
-      paste0("rsarray_pro_bias_acc-only_", name.atlas.i, "_pearson_residual-rank.rds")
+      paste0("rsarray_pro_bias_acc-only_", set.i, "_pearson_residual-rank.rds")
     )
   )
   
@@ -108,7 +106,7 @@ for (atlas.i in seq_along(atlas.key)) {
     rsarray.resid.line, 
     here(
       "out", "rsa", "obsv", 
-      paste0("rsarray_pro_bias_acc-only_", name.atlas.i, "_pearson_residual-linear.rds")
+      paste0("rsarray_pro_bias_acc-only_", set.i, "_pearson_residual-linear.rds")
     )
   )
   
