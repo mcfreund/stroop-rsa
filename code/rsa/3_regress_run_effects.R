@@ -15,7 +15,7 @@ library(data.table)
 library(purrr)
 source(here("code", "strings.R"))
 source(here("code", "read_atlases.R"))
-source(here::here("code", "read_masks.R"))
+source(here("code", "read_masks.R"))
 
 
 ## loop over sets of ROIs ----

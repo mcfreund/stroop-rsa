@@ -35,6 +35,8 @@ variables <- cbind(variables, conclust = variables[, "incongruency"] | variables
 
 ## orthogonalize the categorical models
 
+## projection method
+
 project <- function(y, X) c(X %*% MASS::ginv(crossprod(X)) %*% t(X) %*% y) ## y onto column-space of X
 X <- scale(variables[, c("target", "distractor", "incongruency")])
 P <- cbind(
@@ -47,22 +49,28 @@ colnames(Z) <- paste0(colnames(Z), ".orth")
 
 variables <- cbind(variables, Z)
 
+## check
+#
 # crossprod(Z, X)
 # cor(Z, X)
 # qcor(vec2mat(Z[, 1] / max(abs(Z[, 1])), bias.items, diag.val = 0))
 # qcor(vec2mat(Z[, 2] / max(abs(Z[, 2])), bias.items, diag.val = 0))
 # qcor(vec2mat(Z[, 3] / max(abs(Z[, 3])), bias.items, diag.val = 0))
-# 
-## qr decomposition
+ 
+# ## qr decomposition
 #
 # Q <- cbind(
 #   incongruency.q = qr.Q(qr(X))[, 3],
 #   target.q       = qr.Q(qr(X[, 3:1]))[, 3],
 #   distractor.q   = qr.Q(qr(X[, c(1, 3, 2)]))[, 3]
 # )
+# 
+# ## check
+# 
 # qcor(vec2mat(Q[, "incongruency.q"] / max(abs(Q[, "incongruency.q"])), bias.items, diag.val = 0))
 # qcor(vec2mat(Q[, "distractor.q"] / max(abs(Q[, "distractor.q"])), bias.items, diag.val = 0))
 # qcor(vec2mat(Q[, "target.q"] / max(abs(Q[, "target.q"])), bias.items, diag.val = 0))
+## NB: seems signs become arbitrary
 
 
 ## loop over sets of ROIs ----
