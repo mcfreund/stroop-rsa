@@ -37,14 +37,14 @@ variables <- cbind(variables, conclust = variables[, "incongruency"] | variables
 
 ## projection method
 
-project <- function(y, X) c(X %*% MASS::ginv(crossprod(X)) %*% t(X) %*% y) ## y onto column-space of X
+project <- function(y, X) c(X %*% MASS::ginv(crossprod(X)) %*% t(X) %*% y) ## y onto column space of X
 X <- scale(variables[, c("target", "distractor", "incongruency")])
 P <- cbind(
   project(X[, 1], X[, c(2, 3)]),
   project(X[, 2], X[, c(1, 3)]),
   project(X[, 3], X[, c(1, 2)])
-)
-Z <- X - P
+)  ## projections of each column of X onto the remaining columns
+Z <- X - P  ## get residuals
 colnames(Z) <- paste0(colnames(Z), ".orth")
 
 variables <- cbind(variables, Z)

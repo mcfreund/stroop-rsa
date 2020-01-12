@@ -20,21 +20,77 @@ source(here("code", "read_masks.R"))
 
 ```
 
-```{r}
+```{r read-and-extract}
 
 stats.subjs.tdic <- fread(
   here("out", "rsa", "stats", paste0("subjs_pro_bias_acc-only_masks_pearson_residual_glm-tdic.csv"))
   )
 
+stats.subjs.continu <- fread(
+  here("out", "rsa", "stats", paste0("subjs_pro_bias_acc-only_masks_pearson_residual_glm-continu.csv"))
+  )
+
+stats.subjs.taua <- fread(
+  here("out", "rsa", "stats", paste0("subjs_pro_bias_acc-only_masks_pearson_residual_taua.csv"))
+  )
+
+stats.subjs.tdic    <- stats.subjs.tdic[y == "rank"]
+stats.subjs.continu <- stats.subjs.continu[y == "rank"]
+
+```
+
+```{r against-zero}
+
 stats.group.tdic <- stats.subjs.tdic %>%
-  group_by(roi, model, param, y) %>%
+  group_by(roi, param) %>%
   summarize(
     v    = wilcox.test(beta, alternative = "greater")$statistic,
     p    = wilcox.test(beta, alternative = "greater")$p.value,
     beta = tanh(mean(atanh(beta))),  ## must be last in this summarize()
   )
 
+stats.group.continu <- stats.subjs.continu %>%
+  group_by(roi, param) %>%
+  summarize(
+    v    = wilcox.test(beta, alternative = "greater")$statistic,
+    p    = wilcox.test(beta, alternative = "greater")$p.value,
+    beta = mean(beta)  ## must be last in this summarize()
+  )
+
+stats.group.taua <- stats.subjs.taua %>%
+  group_by(roi, param) %>%
+  summarize(
+    v    = wilcox.test(taua, alternative = "greater")$statistic,
+    p    = wilcox.test(taua, alternative = "greater")$p.value,
+    taua = tanh(mean(atanh(taua))),  ## must be last in this summarize()
+  )
+## betas range > 1! 
+## see:
+## https://stats.stackexchange.com/questions/50156/are-standardized-betas-in-multiple-linear-regression-partial-correlations/50222
+## https://stats.stackexchange.com/questions/120201/magnitude-of-standardized-coefficients-beta-in-multiple-linear-regression/120206#120206
+
 stats.group.tdic
+stats.group.continu
+stats.group.taua
+
+```
+
+```{r pairwise}
+
+stats.pairs.taua <- stats.subjs.taua %>%
+  filter(param %in% c("target", "distractor", "incongruency", "cielab", "silhou", "tphono", "orthog", "dphono")) %>%
+  summarize(
+    out = list(
+      pairwise.wilcox.test(taua, param, paired = TRUE, alternative = "two.sided", p.adjust.method = "fdr")$p.value
+    )
+  )
+stats.pairs.taua$out[[1]]
+any(stats.pairs.taua$out[[1]] < 0.05, na.rm = TRUE)
+
+```
+
+
+```{r comparison-to-mmp}
 
 ## which MMP ROIs are closest?
 overlap <- numeric(180)
