@@ -20,7 +20,7 @@
 library(here)
 library(magrittr)
 
-source(here("code", "_strings.R"))
+source(here("code", "strings.R"))
 
 ## mmp ----
 
