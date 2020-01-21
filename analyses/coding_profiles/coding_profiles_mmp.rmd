@@ -24,6 +24,8 @@ library(gifti)
 source(here("code", "strings.R"))
 source(here("code", "read_atlases.R"))
 
+par(mar = c(0, 0, 0, 0))
+
 ## underlay images
 
 hcp <- list(
@@ -38,8 +40,8 @@ hcp <- list(
 ## MMP template for defining masks
 
 mmp <- list(
-  L = readGIfTI(file.path(dir.atlas, "MMP_surface", "mmpL.func.gii")),
-  R = readGIfTI(file.path(dir.atlas, "MMP_surface", "mmpR.func.gii"))
+  L = read_gifti2matrix(file.path(dir.atlas, "MMP_surface", "mmpL.func.gii")) %>% c,
+  R = read_gifti2matrix(file.path(dir.atlas, "MMP_surface", "mmpR.func.gii")) %>% c
 )
 
 
@@ -72,6 +74,8 @@ stats.subjs.tdic <- stats.subjs.tdic[, "coef" := NULL]
 
 params.interest <- c("target", "distractor", "incongruency")
 
+stats.subjs.tdic %<>% full_join(atlas.key$mmp[, -1], by = "roi")
+
 ```
 
 ## __task coding analysis__: test each regressor against zero (baseline)
@@ -84,7 +88,7 @@ params.interest <- c("target", "distractor", "incongruency")
 ```{r taskcoding}
 
 stats.group.tdic <- stats.subjs.tdic %>%
-  group_by(roi, model, param) %>%
+  group_by(num.roi, model, param) %>%
   summarize(
     v    = wilcox.test(beta, alternative = "greater")$statistic,
     p    = wilcox.test(beta, alternative = "greater")$p.value,
@@ -97,107 +101,122 @@ stats.group.tdic <- stats.subjs.tdic %>%
 
 stats.group.tdic %<>% as.data.table
 
+
 ```
 
 
 ```{r taskcoding_brains}
 
+rois.tdic.incon <- stats.group.tdic[p.fdr < 0.05 & param == "incongruency"]$num.roi
+rois.tdic.congr <- stats.group.tdic[p.fdr < 0.05 & param == "congruency"]$num.roi
+rois.tdic.targt <- stats.group.tdic[p.fdr < 0.05 & param == "target"]$num.roi
+rois.tdic.distr <- stats.group.tdic[p.fdr < 0.05 & param == "distractor"]$num.roi
+
+mask.tdic.incon <- mmp %>% lapply(function(.) as.numeric(. %in% rois.tdic.incon))
+mask.tdic.congr <- mmp %>% lapply(function(.) as.numeric(. %in% rois.tdic.congr))
+mask.tdic.targt <- mmp %>% lapply(function(.) as.numeric(. %in% rois.tdic.targt))
+mask.tdic.distr <- mmp %>% lapply(function(.) as.numeric(. %in% rois.tdic.distr))
+
+plot_surface(mask.tdic.incon, hcp)
+plot_surface(mask.tdic.congr, hcp)
+
+
 ## SEE:
 # source("/data/nil-external/ccp/JosetAEtzel/DMCC_files/giftiPlottingFunctions.R");  # surface plotting functions 
-
-
-plot.surface <- function(
-  overlay, underlay, 
-  facet.names = c("left_lateral", "left_medial", "right_lateral", "right_medial"),
-  dims = c(1, 4),
-  facet.params
-  ){
-  # underlay <- hcp; overlay <- mmp
-  # facet.names <- c("left_lateral", "left_medial", "right_lateral", "right_medial")
-  # dims = c(1, 4)
-  
-  ## TODO
-  ## limits
-  ## titles + text
-  ## superior & inferior views?
-
-  ## input validation
-  
-  is.bad.type <- !all(is.list(overlay) | is.list(underlay) | is.character(facet.names) | is.numeric(dims))
-  if (is.bad.type) stop("input(s) of wrong type")
-  if (any(length(overlay) !=2, length(underlay) != 2)) stop("over/underlay not of length 2")
-  if (any(vapply(c(overlay, underlay), class, character(1)) != "gifti")) stop("bad image classes")
-  if (any(!names(c(overlay, underlay)) %in% c("L", "R"))) stop("over / underlay names not %in% c('L', 'R')")
-  if (any(!facet.names %in% c("left_lateral", "left_medial", "right_lateral", "right_medial"))) stop("bad facet.names")
-  if (length(dims) != 2) stop("length(dims) != 2")
-  if (prod(dims) != length(facet.names)) stop("prod(dims) != length(facet.names)")
-  if (!missing(facet.params)) {
-    are.bad.facet.params <- any(
-      !is.list(facet.params),  ## type ok?
-      !unique(vapply(facet.params, length, numeric(1))) == 2,  ## lengths ok?
-      !length(facet.params) == length(facet.names),  ## length ok?
-      !names(facet.params) %in% c("left_lateral", "left_medial", "right_lateral", "right_medial"),  ## names ok?
-      !unique(c(vapply(facet.params, names, character(2)))) %in% c("theta", "phi")  ## element names ok?
-    )
-    if (are.bad.facet.params) stop("bad facet.params")
-  }
-
-  ## default orientations
-  
-  if (missing(facet.params)) {
-    
-    facet.params <- list(
-      right_medial  = c(theta = 270, phi = 0),
-      right_lateral = c(theta = 90, phi = 0),
-      left_medial   = c(theta = 90, phi = 0),
-      left_lateral  = c(theta = 270, phi = 0)
-    )
-    
-  }
-  
-  ## extract data from gifti objects and format
-  
-  triangles <- lapply(underlay, function(.) c(t(.[["data"]][["triangle"]])) + 1)
-  indices   <- lapply(triangles, function(.) .[seq(1, length(.), 3)])
-  pointsets <- lapply(underlay, function(.) .[["data"]][["pointset"]])
-  values    <- lapply(overlay, function(.) .[["data"]][[1]][, 1])
-  
-  ## assign colors to triangles
-  
-  coords <- list(L = pointsets$L[triangles$L, ], R = pointsets$R[triangles$R, ])
-  values <- list(L = values$L[indices$L], R = values$R[indices$R])
-  
-  ## draw
-  
-  par(mfrow = dims)
-  
-  for (facet.i in facet.names) {
-    # facet.i = "right_medial"
-    
-    hemi.i <- switch(grepl("right", facet.i) + 1, "L", "R")
-    
-    plot3D::triangle3D(
-      tri    = coords[[hemi.i]],  ## overlay
-      colvar = values[[hemi.i]],  ## underlay
-      theta  = facet.params[[facet.i]]["theta"],  ## "polar angle" / "colatitute"
-      phi    = facet.params[[facet.i]]["phi"],  ## "azithmuthal angle"
-      ## (see https://en.wikipedia.org/wiki/Spherical_coordinate_system)
-      ltheta = facet.params[[facet.i]]["theta"],  ## lighting source
-      lphi   = facet.params[[facet.i]]["phi"],
-      zlim   =  c(-60, 90), 
-      d      = 6, ## ?
-      resfac = 0.01,  ## resolution factor
-      bty    = "n",  ## background type
-      colkey = FALSE,  ## color key
-      # col    = cols,  ## colors
-      # clim   = c.lims,  ## color limits
-      facets = FALSE
-    )
-    
-  }
-}
-
-plot.surface(mmp, hcp)
+# 
+# 
+# plot.surface <- function(
+#   overlay, underlay, 
+#   facet.names = c("left_lateral", "left_medial", "right_lateral", "right_medial"),
+#   dims = c(1, 4),
+#   facet.params
+#   ){
+#   # underlay <- hcp; overlay <- mmp
+#   # facet.names <- c("left_lateral", "left_medial", "right_lateral", "right_medial")
+#   # dims = c(1, 4)
+#   
+#   ## TODO
+#   ## limits
+#   ## titles + text
+#   ## superior & inferior views?
+# 
+#   ## input validation
+#   
+#   is.bad.type <- !all(is.list(overlay) | is.list(underlay) | is.character(facet.names) | is.numeric(dims))
+#   if (is.bad.type) stop("input(s) of wrong type")
+#   if (any(length(overlay) !=2, length(underlay) != 2)) stop("over/underlay not of length 2")
+#   if (any(vapply(c(overlay, underlay), class, character(1)) != "gifti")) stop("bad image classes")
+#   if (any(!names(c(overlay, underlay)) %in% c("L", "R"))) stop("over / underlay names not %in% c('L', 'R')")
+#   if (any(!facet.names %in% c("left_lateral", "left_medial", "right_lateral", "right_medial"))) stop("bad facet.names")
+#   if (length(dims) != 2) stop("length(dims) != 2")
+#   if (prod(dims) != length(facet.names)) stop("prod(dims) != length(facet.names)")
+#   if (!missing(facet.params)) {
+#     are.bad.facet.params <- any(
+#       !is.list(facet.params),  ## type ok?
+#       !unique(vapply(facet.params, length, numeric(1))) == 2,  ## lengths ok?
+#       !length(facet.params) == length(facet.names),  ## length ok?
+#       !names(facet.params) %in% c("left_lateral", "left_medial", "right_lateral", "right_medial"),  ## names ok?
+#       !unique(c(vapply(facet.params, names, character(2)))) %in% c("theta", "phi")  ## element names ok?
+#     )
+#     if (are.bad.facet.params) stop("bad facet.params")
+#   }
+# 
+#   ## default orientations
+#   
+#   if (missing(facet.params)) {
+#     
+#     facet.params <- list(
+#       right_medial  = c(theta = 270, phi = 0),
+#       right_lateral = c(theta = 90, phi = 0),
+#       left_medial   = c(theta = 90, phi = 0),
+#       left_lateral  = c(theta = 270, phi = 0)
+#     )
+#     
+#   }
+#   
+#   ## extract data from gifti objects and format
+#   
+#   triangles <- lapply(underlay, function(.) c(t(.[["data"]][["triangle"]])) + 1)
+#   indices   <- lapply(triangles, function(.) .[seq(1, length(.), 3)])
+#   pointsets <- lapply(underlay, function(.) .[["data"]][["pointset"]])
+#   values    <- lapply(overlay, function(.) .[["data"]][[1]][, 1])
+#   
+#   ## assign colors to triangles
+#   
+#   coords <- list(L = pointsets$L[triangles$L, ], R = pointsets$R[triangles$R, ])
+#   values <- list(L = values$L[indices$L], R = values$R[indices$R])
+#   
+#   ## draw
+#   
+#   par(mfrow = dims)
+#   
+#   for (facet.i in facet.names) {
+#     # facet.i = "right_medial"
+#     
+#     hemi.i <- switch(grepl("right", facet.i) + 1, "L", "R")
+#     
+#     plot3D::triangle3D(
+#       tri    = coords[[hemi.i]],  ## overlay
+#       colvar = values[[hemi.i]],  ## underlay
+#       theta  = facet.params[[facet.i]]["theta"],  ## "polar angle" / "colatitute"
+#       phi    = facet.params[[facet.i]]["phi"],  ## "azithmuthal angle"
+#       ## (see https://en.wikipedia.org/wiki/Spherical_coordinate_system)
+#       ltheta = facet.params[[facet.i]]["theta"],  ## lighting source
+#       lphi   = facet.params[[facet.i]]["phi"],
+#       zlim   =  c(-60, 90), 
+#       d      = 6, ## ?
+#       resfac = 0.01,  ## resolution factor
+#       bty    = "n",  ## background type
+#       colkey = FALSE,  ## color key
+#       # col    = cols,  ## colors
+#       # clim   = c.lims,  ## color limits
+#       facets = FALSE
+#     )
+#     
+#   }
+# }
+# 
+# plot.surface(mmp, hcp)
 
 
 ```
