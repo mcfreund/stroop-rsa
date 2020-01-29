@@ -47,7 +47,7 @@ ranefs <- vector("list", n.resamp)
 converged <- integer(n.resamp)
 
 beg.resamp <- Sys.time()
-for (resamp.i in seq_len(n.resamp)[1:10]) {
+for (resamp.i in seq_len(n.resamp)) {
   
   .d2 <- d2  ## make copy of data
   
