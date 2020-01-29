@@ -59,7 +59,7 @@ for (resamp.i in seq_len(n.resamp)[1:10]) {
   
   ## check for convergence
   
-  converged[resamp.i] <- !isTRUE(all.equal(fit@optinfo$conv$opt, 0))
+  converged[resamp.i] <- !isTRUE(all.equal(.fit@optinfo$conv$opt, 0))
 
   ## get random effects
   
@@ -76,7 +76,7 @@ for (resamp.i in seq_len(n.resamp)[1:10]) {
   print(resamp.i)
   
 }
-end.resamp <- beg.resamp - Sys.time()
+time.resamp <- beg.resamp - Sys.time()
 
 save.image()
 
