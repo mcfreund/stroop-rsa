@@ -33,7 +33,7 @@ time.confint <- beg.confint - Sys.time()
 
 ## randomization test ----
 
-n.resamp <- 1E5 + 500
+n.resamp <- 1E4 + 100
 resamples <- replicate(n.resamp, sample(unique(stroop.pro$subj)))
 resamples <- unique(resamples, MARGIN = 2)  ## remove duplicate permutations (prob. none)
 
@@ -80,10 +80,11 @@ time.resamp <- beg.resamp - Sys.time()
 
 save.image()
 
-## load and look ----
 
-cors <- cors[!is.na(cors[, 1]), ]
-ranefs <- ranefs[!is.na(cors[, 1])]
+## look ----
+
+cors <- cors[converged, ]
+ranefs <- ranefs[converged]
 
 
 ols <- stroop.pro %>%
