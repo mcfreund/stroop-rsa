@@ -1,5 +1,7 @@
 library(lme4)
 library(dplyr)
+library(mikeutils)
+library(ggplot2)
 
 ## read data ----
 
@@ -83,6 +85,8 @@ save.image()
 
 ## look ----
 
+load("thisimage.Rdata")
+
 cors <- cors[converged, ]
 ranefs <- ranefs[converged]
 
@@ -100,8 +104,6 @@ names(u) <- c("run1", "run2")
 u <- tibble::rownames_to_column(u, "subj")
 
 ests <- bind_rows(u %>% mutate(est = "eb"), ols %>% mutate(est = "ols"))
-
-library(ggplot2)
 
 scatter <- ests %>%
   ggplot(aes(run1, run2)) +
@@ -131,6 +133,11 @@ scatter <- ests %>%
     hjust = 0, vjust = 1, color = "firebrick2", size = 5
   )
   
+
+
+
+
+
 cors <- cors %>% as.data.frame
 hyptest <- cors %>%
   ggplot(aes(y = r)) +
