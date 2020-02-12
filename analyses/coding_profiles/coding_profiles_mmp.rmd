@@ -8,11 +8,9 @@
 Conducts RSA model comparisons and sorts parcels into groups with different _coding profiles_.
 Displays results.
 
-```{r setup}
-## TODO
-##  - results to tables
-##  - revise intro
-##  - TOST procedures
+```{r setup, include = FALSE}
+
+knitr::opts_chunk$set(cache = TRUE, dpi = 40)
 
 library(here)
 library(knitr)
@@ -24,10 +22,15 @@ library(mikeutils)
 library(doParallel)
 library(foreach)
 library(gifti)
+library(fANCOVA)
+library(viridis)
+library(colorspace)
 source(here("code", "strings.R"))
 source(here("code", "read_atlases.R"))
 
-par(mar = c(0, 0, 0, 0))
+params <- c("target", "distractor", "incongruency", "congruency")
+
+par(mar = c(2, 2, 2, 2))
 
 atlas.key$mmp$X <- NULL
 atlas.key$gordon$X <- NULL
@@ -39,10 +42,10 @@ atlas.key$mmp[atlas.key$mmp$hemi == "R", "num.roi"] <- atlas.key$mmp$num.roi[atl
 
 hcp <- list(
   L  = readGIfTI(
-    file.path(dir.atlas, "surf", "HCP_S1200_GroupAvg_v1", "S1200.L.inflated_MSMAll.32k_fs_LR.surf.gii")
+    file.path(dir.atlas, "surf", "HCP_S1200_GroupAvg_v1", "S1200.L.very_inflated_MSMAll.32k_fs_LR.surf.gii")
     ),
   R = readGIfTI(
-    file.path(dir.atlas, "surf", "HCP_S1200_GroupAvg_v1", "S1200.R.inflated_MSMAll.32k_fs_LR.surf.gii")
+    file.path(dir.atlas, "surf", "HCP_S1200_GroupAvg_v1", "S1200.R.very_inflated_MSMAll.32k_fs_LR.surf.gii")
     )
 )
 
@@ -52,118 +55,6 @@ mmp <- list(
   L = read_gifti2matrix(file.path(dir.atlas, "MMP_surface", "mmpL.func.gii")) %>% c,
   R = read_gifti2matrix(file.path(dir.atlas, "MMP_surface", "mmpR.func.gii")) %>% c
 )
-
-plot_surface <- function (
-  overlay, 
-  underlay = hcp, 
-  hues        = colorspace::diverging_hcl(501, palette = "Blue-Red"),
-  pos.lims    = c(0, 1),
-  neg.lims    = NULL, 
-  facet.names = c("left_lateral", "left_medial", "right_lateral", "right_medial"), 
-  dims        = c(1, 4), 
-  facet.params
-  ) {
-  
-    is.bad.type <- !all(is.list(overlay) | is.list(underlay) | is.character(facet.names) | is.numeric(dims))
-    if (is.bad.type) stop("input(s) of wrong type")
-    if (any(length(overlay) != 2, length(underlay) != 2)) stop("over/underlay not of length 2")
-    if (any(vapply(underlay, class, character(1)) != "gifti")) stop("bad image classes")
-    if (any(!names(c(overlay, underlay)) %in% c("L", "R"))) stop("over / underlay names not %in% c('L', 'R')")
-    if (any(!facet.names %in% c("left_lateral", "left_medial", "right_lateral", "right_medial"))) {
-      stop("bad facet.names")
-    }
-    if (length(dims) != 2) stop("length(dims) != 2")
-    if (prod(dims) != length(facet.names)) stop("prod(dims) != length(facet.names)")
-    if (!missing(facet.params)) {
-        are.bad.facet.params <- any(
-          !is.list(facet.params), 
-          !unique(vapply(facet.params, length, numeric(1))) == 2,
-          !length(facet.params) == length(facet.names), 
-          !names(facet.params) %in% c("left_lateral", "left_medial", "right_lateral", "right_medial"), 
-          !unique(c(vapply(facet.params, names, character(2)))) %in% c("theta", "phi")
-        )
-        if (are.bad.facet.params) stop("bad facet.params")
-    }
-    if (missing(facet.params)) {
-        facet.params <- list(
-          right_medial  = c(theta = 270, phi = 0), 
-          right_lateral = c(theta = 90, phi = 0), 
-          left_medial   = c(theta = 90, phi = 0),
-          left_lateral  = c(theta = 270, phi = 0)
-          )
-    }
-    
-    
-    if (length(pos.lims) == 0) {
-      overlay$L[overlay$L >= 0] <- NA
-      overlay$R[overlay$R >= 0] <- NA
-    } else {
-      overlay$L[overlay$L > pos.lims[2] | (overlay$L <= pos.lims[1] & overlay$L > 0)] <- NA
-      overlay$R[overlay$R > pos.lims[2] | (overlay$R <= pos.lims[1] & overlay$R > 0)] <- NA
-    }
-    if (length(neg.lims) == 0) {
-      overlay$L[overlay$L < 0] <- NA
-      overlay$R[overlay$R < 0] <- NA
-    } else {
-      overlay$L[overlay$L < neg.lims[2] | (overlay$L > neg.lims[1] & overlay$L < 0)] <- NA
-      overlay$R[overlay$R < neg.lims[2] | (overlay$R > neg.lims[1] & overlay$R < 0)] <- NA
-    }
-    
-    lim <- vapply(overlay, range, na.rm = TRUE, numeric(2))
-    lim <- c(min(lim[, 1]), max(lim[, 2]))
-    
-    triangles <- lapply(underlay, function(.) c(t(.[["data"]][["triangle"]])) + 1)
-    indices <- lapply(triangles, function(.) .[seq(1, length(.), 3)])
-    pointsets <- lapply(underlay, function(.) .[["data"]][["pointset"]])
-    values <- overlay
-    coords <- list(L = pointsets$L[triangles$L, ], R = pointsets$R[triangles$R, ])
-    values <- list(L = values$L[indices$L], R = values$R[indices$R])
-    
-    par(mfrow = dims)
-    
-    for (facet.i in facet.names) {
-        
-      hemi.i <- switch(grepl("right", facet.i) + 1, "L", "R")
-      
-      plot3D::triangle3D(
-        tri    = coords[[hemi.i]], 
-        colvar = values[[hemi.i]], 
-        theta  = facet.params[[facet.i]]["theta"], 
-        phi    = facet.params[[facet.i]]["phi"], 
-        ltheta = facet.params[[facet.i]]["theta"], 
-        lphi   = facet.params[[facet.i]]["phi"], 
-        zlim   = c(-60, 90), 
-        d      = 6, 
-        resfac = 0.01, 
-        bty    = "n", 
-        colkey = FALSE, 
-        col    = hues,
-        # clim   = lim,
-        facets = FALSE
-        )
-      
-    }
-}
-
-build.overlay <- function (values, overlay = mmp) {
-  
-  out <- setNames(vector("list", 2), c("L", "R"))
-  
-  for (hemi.i in c("L", "R")) {
-    
-    rois <- atlas.key$mmp[atlas.key$mmp$hemi == hemi.i, "num.roi"]
-    overlay.i <- overlay[[hemi.i]]
-    
-    for (roi.i in rois) {
-      overlay.i[overlay.i == roi.i] <- values[roi.i]
-      out[[hemi.i]] <- overlay.i
-    }
-    
-  }
-  
-  out
-  
-}
 
 ```
 
@@ -196,9 +87,9 @@ stats.subjs.tdic %<>% full_join(atlas.key$mmp, by = "roi")
 
 ```
 
-## 1. __task coding analysis__: test each regressor against zero (baseline)
+# 1. __task coding analysis__: test each regressor against zero (baseline)
 
-### code
+## code
 
 - wilcoxon sign-rank test on estimated betas
   - per parcel and model
@@ -225,87 +116,172 @@ stats.group.tdic %<>% full_join(atlas.key$mmp, by = "num.roi") %>% as.data.table
 ```
 
 
-### results
-
-#### unthresholded maps
-
-These values represent a (standardized) contrast of within-group correlations (e.g., within __target__ correlations) against between-group correlations (i.e., between items with no common target, distractor, or congruency status).
-
+## results
 
 ```{r taskcoding_rois}
 
 rois.targt <- stats.group.tdic[param == "target" & p.fdr < 0.05, roi]
 rois.distr <- stats.group.tdic[param == "distractor" & p.fdr < 0.05, roi]
 rois.incon <- stats.group.tdic[param == "incongruency" & p.fdr < 0.05, roi]
+rois.congr <- stats.group.tdic[param == "congruency" & p.fdr < 0.05, roi]
 
-## for brains
-
-overlay.tdic.incon <- build.overlay(stats.group.tdic[stats.group.tdic$param == "incongruency"]$beta)
-overlay.tdic.congr <- build.overlay(stats.group.tdic[stats.group.tdic$param == "congruency"]$beta)
-overlay.tdic.targt <- build.overlay(stats.group.tdic[stats.group.tdic$param == "target"]$beta)
-overlay.tdic.distr <- build.overlay(stats.group.tdic[stats.group.tdic$param == "distractor"]$beta)
-
-```
-
-
-#### target coding
-
-Betas:
-```{r, dev = "png", fig.width = 20, fig.height = 10}
-plot_surface(build.overlay(stats.group.tdic[stats.group.tdic$param == "incongruency"]$beta))
-plot_surface(build.overlay(stats.group.tdic[stats.group.tdic$param == "congruency"]$beta))
-plot_surface(build.overlay(stats.group.tdic[stats.group.tdic$param == "target"]$beta))
-plot_surface(build.overlay(stats.group.tdic[stats.group.tdic$param == "distractor"]$beta))
+keep.these.bois <- c("beta", "v", "p.fdr", "num.roi", "roi", "hemi")
+stats.coding.targt <- stats.group.tdic[param == "target", ..keep.these.bois]
+stats.coding.distr <- stats.group.tdic[param == "distractor", ..keep.these.bois]
+stats.coding.incon <- stats.group.tdic[param == "incongruency", ..keep.these.bois]
+stats.coding.congr <- stats.group.tdic[param == "congruency", ..keep.these.bois]
 
 ```
 
-test statistics (sum of sign ranks):
-```{r, dev = "png", fig.width = 20, fig.height = 10}
-plot_surface(build.overlay(stats.group.tdic[stats.group.tdic$param == "incongruency"]$v))
-plot_surface(build.overlay(stats.group.tdic[stats.group.tdic$param == "congruency"]$v))
-plot_surface(build.overlay(stats.group.tdic[stats.group.tdic$param == "target"]$v))
-plot_surface(build.overlay(stats.group.tdic[stats.group.tdic$param == "distractor"]$v))
+
+### target (`r length(rois.targt)` parcels)
+
+
+#### unthresholded
+
+These values represent a (standardized) contrast of within-group correlations (e.g., within __target__ correlations) against between-group correlations (i.e., between items with no common target, distractor, or congruency status).
+
+Betas
+```{r taskcoding_betas_target, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
+stats.coding.targt %>% build_overlay("beta") %>% plot_surface(underlay = hcp)
 ```
 
+Test statistics (sum of sign ranks)
+```{r taskcoding_signrank_target, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
+stats.coding.targt %>% build.overlay("v") %>% plot_surface(underlay = hcp)
+```
+
+#### thresholded
+
+Now thresholded at p < 0.05, FDR-corrected.
+
+Betas
+```{r taskcoding_betas_target_thresh, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
+stats.coding.targt %>% 
+  mutate(beta = ifelse(p.fdr < 0.05, beta, NA)) %>%
+  build.overlay("beta") %>% 
+  plot_surface(underlay = hcp)
+```
+
+Test statistics (sum of sign ranks)
+```{r taskcoding_signrank_target_thresh, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
+stats.coding.targt %>% 
+  mutate(v = ifelse(p.fdr < 0.05, v, NA)) %>%
+  build.overlay("v") %>% 
+  plot_surface(underlay = hcp)
+```
+
+#### table
 
 Sorted (descending) by beta.
-
-```{r taskcoding_targt, results = "asis"}
+```{r taskcoding_table_target, results = "asis"}
 kable(
-  stats.group.tdic[param == "target" & roi %in% rois.targt] %>% arrange(-beta),
-  format = "html",
+  stats.group.tdic[param == "target" & p.fdr < 0.05] %>% arrange(-beta),
   digits = 2
-  )
+)
 ```
 
-#### distractor coding
 
-```{rtaskcoding_distr}
-kable(
-  stats.group.tdic[param == "distractor" & roi %in% rois.distr] %>% arrange(-beta),
-  format = "html",
-  digits = 2
-  )
+### distractor (`r length(rois.distr)` parcels)
+
+#### unthresholded
+
+Betas
+```{r taskcoding_betas_distractor, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
+stats.group.tdic[param == "distractor"] %>% build_overlay("beta") %>% plot_surface(underlay = hcp)
 ```
 
-#### incongruency coding
-
-```{r taskcoding_incon}
-kable(
-  stats.group.tdic[param == "incongruency" & roi %in% rois.incon] %>% arrange(-beta),
-  format = "html",
-  digits = 2
-  )
+Test statistics (sum of sign ranks)
+```{r taskcoding_signrank_distractor, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
+stats.group.tdic[param == "distractor"] %>% build_overlay("v") %>% plot_surface(underlay = hcp)
 ```
 
-#### congruency coding
+#### thresholded
 
-```{r taskcoding_cong}
+Betas
+```{r taskcoding_betas_distractor_thresh, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
+stats.coding.distr %>%
+  mutate(beta = ifelse(p.fdr < 0.05, beta, NA)) %>%
+  build.overlay("beta") %>% 
+  plot_surface(underlay = hcp)
+```
+
+Test statistics (sum of sign ranks)
+```{r taskcoding_signrank_distractor_thresh, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
+stats.coding.distr %>%
+  mutate(v = ifelse(p.fdr < 0.05, v, NA)) %>%
+  build.overlay("v") %>% 
+  plot_surface(underlay = hcp)
+```
+
+#### table
+
+Sorted (descending) by beta.
+```{r taskcoding_table_distractor, results = "asis"}
 kable(
-  stats.group.tdic[param == "congruency" & p.fdr < 0.05] %>% arrange(-beta),
-  format = "html",
+  stats.group.tdic[param == "distractor" & p.fdr < 0.05] %>% arrange(-beta),
   digits = 2
-  )
+)
+```
+
+
+### incongruency (`r length(rois.incon)` parcels)
+
+#### unthresholded
+
+Betas
+```{r taskcoding_betas_incongruency, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
+stats.group.tdic[param == "incongruency"] %>% build_overlay("beta") %>% plot_surface(underlay = hcp)
+```
+
+Test statistics (sum of sign ranks)
+```{r taskcoding_signrank_incongruency, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
+stats.group.tdic[param == "incongruency"] %>% build.overlay("v") %>% plot_surface(underlay = hcp)
+```
+
+#### thresholded
+
+Betas
+```{r taskcoding_betas_incongruency_thresh, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
+stats.coding.incon %>%
+  mutate(beta = ifelse(p.fdr < 0.05, beta, NA)) %>%
+  build.overlay("beta") %>% 
+  plot_surface(underlay = hcp)
+```
+
+Test statistics (sum of sign ranks)
+```{r taskcoding_signrank_incongruency_thresh, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
+stats.coding.incon %>% 
+  mutate(v = ifelse(p.fdr < 0.05, v, NA)) %>%
+  build.overlay("v") %>% 
+  plot_surface(underlay = hcp)
+```
+
+#### table
+
+Sorted (descending) by beta.
+```{r taskcoding_table_incongruency, results = "asis"}
+kable(
+  stats.group.tdic[param == "incongruency" & p.fdr < 0.05] %>% arrange(-beta),
+  digits = 2
+)
+```
+
+
+### intersections
+
+```{r taskcoding_table_intersections}
+
+rois.targt.incon <- intersect(rois.targt, rois.incon)
+rois.targt.distr <- intersect(rois.targt, rois.distr)
+rois.distr.incon <- intersect(rois.distr, rois.incon)
+rois.targt.distr.incon <- Reduce(intersect, list(rois.targt, rois.incon, rois.distr))
+
+rois.targt.incon
+rois.targt.distr
+rois.distr.incon
+rois.targt.distr.incon
+
 ```
 
 
@@ -333,7 +309,7 @@ stats.pairs.tdic <- stats.subjs.tdic %>%
 pvals <- vapply(stats.pairs.tdic$out, function(.) .$p.value[lower.tri(diag(2), diag = TRUE)], numeric(3))
 pvals <- t(pvals)
 colnames(pvals) <- c("p.incon.distr", "p.targt.distr", "p.targt.incon")
-stats.pairs.tdic <- as.data.frame(cbind(roi = stats.pairs.tdic$roi, pvals), stringsAsFactors = FALSE)
+stats.pairs.tdic <- data.frame(roi = stats.pairs.tdic$roi, pvals, stringsAsFactors = FALSE)
 
 ## get mean diffs
 
@@ -356,6 +332,24 @@ stats.pairs.tdic %<>% full_join(atlas.key$mmp, by = "roi") %>% as.data.table
 
 ## results
 
+```{r}
+
+rois.pref.targt.vs.distr <- stats.pairs.tdic[roi %in% rois.targt & p.targt.distr < 0.05 & b.targt.distr > 0, roi]
+rois.pref.targt.vs.incon <- stats.pairs.tdic[roi %in% rois.targt & p.targt.incon < 0.05 & b.targt.incon > 0, roi]
+
+rois.pref.distr.vs.targt <- stats.pairs.tdic[roi %in% rois.distr & p.targt.distr < 0.05 & b.targt.distr < 0, roi]
+rois.pref.distr.vs.incon <- stats.pairs.tdic[roi %in% rois.distr & b.incon.distr < 0.05 & b.incon.distr < 0, roi]
+
+rois.pref.incon.vs.distr <- stats.pairs.tdic[roi %in% rois.incon & b.incon.distr < 0.05 & b.incon.distr > 0, roi]
+rois.pref.incon.vs.targt <- stats.pairs.tdic[roi %in% rois.incon & p.targt.incon < 0.05 & b.targt.incon < 0, roi]
+
+rois.pref.targt <- intersect(rois.pref.targt.vs.incon, rois.pref.targt.vs.distr)
+rois.pref.distr <- intersect(rois.pref.distr.vs.targt, rois.pref.distr.vs.incon)
+rois.pref.incon <- intersect(rois.pref.incon.vs.targt, rois.pref.incon.vs.distr)
+
+```
+
+
 Of the task coding parcels, which show preferece for certain task dimensions over others?
 In this section, each task dimension is considered in turn.
 ROIs are identified in each subsection that meet criteria for having certain representational 'preferences'.
@@ -364,353 +358,428 @@ Within each subsection, these criteria get progressively more stringent.
 
 ### target
 
-#### target > \{distractor, 0\}
+#### target > \{distractor, 0\} (`r length(rois.pref.targt.vs.distr)` parcels)
+
+Betas
+```{r preference_targt-vs-distr_betas, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
+stats.coding.targt %>% 
+  mutate(beta = ifelse(roi %in% rois.pref.targt.vs.distr, beta, NA)) %>%
+  build.overlay("beta") %>% 
+  plot_surface(underlay = hcp)
+```
+
+Test statistics (sum of sign ranks)
+```{r preference_targt-vs-distr_signrank, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
+stats.coding.targt %>% 
+  mutate(v = ifelse(roi %in% rois.pref.targt.vs.distr, v, NA)) %>%
+  build.overlay("v") %>% 
+  plot_surface(underlay = hcp)
+```
 
 ```{r preference_targt-vs-distr}
-
-rois.pref.targt.vs.distr <- stats.pairs.tdic[
-  roi %in% rois.targt &
-  p.targt.distr < 0.05 &
-  b.targt.distr > 0,
-  roi
-  ]
-
-# stats.group.tdic[param == "target" & roi %in% rois.pref.targt.vs.distr]
 kable(
   stats.pairs.tdic[roi %in% rois.pref.targt.vs.distr] %>% arrange(-b.targt.distr),
   digits = 2
   )
-
 ```
 
-#### target > \{incongruency, 0\}
+#### target > \{incongruency, 0\} (`r length(rois.pref.targt.vs.incon)` parcels)
+
+Betas
+```{r preference_targt-vs-incon_signrank, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
+stats.coding.targt %>% 
+  mutate(beta = ifelse(roi %in% rois.pref.targt.vs.incon, beta, NA)) %>%
+  build.overlay("beta") %>% 
+  plot_surface(underlay = hcp)
+```
+
+Test statistics (sum of sign ranks)
+```{r preference_targt-vs-incon_signrank, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
+stats.coding.targt %>% 
+  mutate(v = ifelse(roi %in% rois.pref.targt.vs.incon, v, NA)) %>%
+  build.overlay("v") %>% 
+  plot_surface(underlay = hcp)
+```
+
 
 ```{r preference_targt-vs-incon}
-
-rois.pref.targt.vs.incon <- stats.pairs.tdic[
-  roi %in% rois.targt & p.targt.incon < 0.05 & b.targt.incon > 0,
-  roi
-  ]
-
 kable(
   stats.pairs.tdic[roi %in% rois.pref.targt.vs.incon] %>% arrange(-b.targt.incon),
   digits = 2
   )
-
-# stats.pairs.tdic[roi %in% rois.pref.targt.vs.incon]
-
 ```
 
-#### target > \{distractor, incongruency, 0\}
+#### target > \{distractor, incongruency, 0\} (`r length(rois.pref.targt)` parcels)
 
-```{r preference_targt-vs-all}
+Betas
+```{r preference_targt_betas, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
+stats.coding.targt %>% 
+  mutate(beta = ifelse(roi %in% rois.pref.targt, beta, NA)) %>%
+  build.overlay("beta") %>% 
+  plot_surface(underlay = hcp)
+```
 
-rois.pref.targt.vs.all <- stats.pairs.tdic[
-  roi %in% rois.targt &
-  p.targt.incon < 0.05 & p.targt.distr < 0.05 &
-  b.targt.incon > 0 & b.targt.distr > 0,
-  roi
-  ]
-
-kable(
-  stats.pairs.tdic[roi %in% rois.pref.targt.vs.all],
-  digits = 2
-  )
-
+Test statistics (sum of sign ranks)
+```{r preference_targt_v, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
+stats.coding.targt %>% 
+  mutate(v = ifelse(roi %in% rois.pref.targt, v, NA)) %>%
+  build.overlay("v") %>% 
+  plot_surface(underlay = hcp)
 ```
 
 
-### __distractor__
+```{r preference_targt}
+kable(stats.pairs.tdic[roi %in% rois.pref.targt], digits = 2)
+```
 
-#### __distractor__ > \{__target__, 0\}
+
+### distractor
+
+#### distractor > \{target, 0\} (`r length(rois.pref.distr.vs.targt)` parcels)
 
 ```{r preference_distr-vs-targt}
-
-rois.pref.distr.vs.targt <- stats.pairs.tdic[
-  roi %in% rois.distr &
-  p.targt.distr < 0.05 &
-  b.targt.distr < 0,
-  roi
-  ]
-
 kable(
   stats.pairs.tdic[roi %in% rois.pref.distr.vs.targt] %>% arrange(b.targt.distr),
   digits = 2
   )
-
 ```
 
-#### __distractor__ > \{__incongruency__, 0\}
+#### distractor > \{incongruency, 0\}(`r length(rois.pref.distr.vs.incon)` parcels)
 
 ```{r preference_distr-vs-incon}
-
-rois.pref.distr.vs.incon <- stats.pairs.tdic[
-  roi %in% rois.distr &
-  b.incon.distr < 0.05 &
-  b.incon.distr < 0,
-  roi
-  ]
-
 kable(
   stats.pairs.tdic[roi %in% rois.pref.distr.vs.incon] %>% arrange(b.incon.distr),
   digits = 2
   )
-
 ```
 
-#### __distractor__ > \{__target__, __incongruency__, 0\}
+#### distractor > \{target, incongruency, 0\}
 
 No parcels meet criteria (no parcels distractor > target).
 
-### __incongruency__
 
-##### __incongruency__ > \{__distractor__, 0\}
+### incongruency
+
+##### incongruency > \{distractor, 0\} (`r length(rois.pref.incon.vs.distr)` parcels)
+
+Betas
+```{r preference_incon-vs-distr_betas, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
+stats.coding.incon  %>% 
+  mutate(beta = ifelse(roi %in% rois.pref.incon.vs.distr, beta, NA)) %>%
+  build.overlay("beta") %>% 
+  plot_surface(underlay = hcp)
+```
+
+Test statistics (sum of sign ranks)
+```{r preference_incon-vs-distr_v, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
+stats.coding.incon  %>% 
+  mutate(v = ifelse(roi %in% rois.pref.incon.vs.distr, v, NA)) %>%
+  build.overlay("v") %>% 
+  plot_surface(underlay = hcp)
+```
+
 
 ```{r preference_incon-vs-distr}
-
-rois.pref.incon.vs.distr <- stats.pairs.tdic[
-  roi %in% rois.incon &
-  b.incon.distr < 0.05 &
-  b.incon.distr > 0,
-  roi
-  ]
-
 kable(
   stats.pairs.tdic[roi %in% rois.pref.incon.vs.distr] %>% arrange(-b.incon.distr),
   digits = 2
   )
-
 ```
 
-##### __incongruency__ > \{__target__, 0\}
+##### incongruency > \{target, 0\} (`r length(rois.pref.incon.vs.targt)` parcels)
+
+Betas
+```{r preference_incon-vs-targt_betas, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
+stats.coding.incon  %>% 
+  mutate(beta = ifelse(roi %in% rois.pref.incon.vs.targt, beta, NA)) %>%
+  build.overlay("beta") %>% 
+  plot_surface(underlay = hcp)
+```
+
+Test statistics (sum of sign ranks)
+```{r preference_incon-vs-distr_v, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
+stats.coding.incon  %>% 
+  mutate(v = ifelse(roi %in% rois.pref.incon.vs.targt, v, NA)) %>%
+  build.overlay("v") %>% 
+  plot_surface(underlay = hcp)
+```
+
 
 ```{r preference_incon-vs-targt}
-
-rois.pref.incon.vs.targt <- stats.pairs.tdic[
-  roi %in% rois.incon &
-  p.targt.incon < 0.05 &
-  b.targt.incon < 0,
-  roi
-  ]
-
 kable(
   stats.pairs.tdic[roi %in% rois.pref.incon.vs.targt] %>% arrange(b.targt.incon),
   digits = 2
   )
-
 ```
 
-##### __incongruency__ > \{__distractor__, __target__, 0\}
+#### incongruency > \{distractor, target, 0\} (`r length(rois.pref.distr.vs.targt)` parcels)
 
-```{r preference_incon-vs-all}
-
-rois.pref.incon.vs.all <- stats.pairs.tdic[
-  roi %in% rois.incon &
-  p.targt.incon < 0.05 & b.incon.distr < 0.05 &
-  b.targt.incon < 0 & p.incon.distr > 0,
-  roi
-  ]
-
+```{r preference_incon}
 kable(
-  stats.pairs.tdic[roi %in% rois.pref.incon.vs.all],
+  stats.pairs.tdic[roi %in% rois.pref.incon],
   digits = 2
   )
+```
+
+### intersections
+
+```{r preference_intersections}
+
+intersect(rois.pref.incon.vs.distr, rois.pref.targt.vs.distr)
+intersect(rois.pref.targt.vs.incon, rois.pref.distr.vs.incon)
+intersect(rois.pref.incon.vs.distr, rois.pref.distr.vs.targt)
 
 ```
 
 
-<!-- # 3. __selectivity analysis__: equivalence testing -->
+# 3. __selectivity analysis__: equivalence testing
 
-<!-- Here I establish which (if any) ROIs previously identified as having a *preference* for a task dimension(s), are *selective* for said task dimension(s). -->
-<!-- Establishing selectivity involves "confirming the null": e.g., "this ROI was only coding for target information, not distractor or incongruency". -->
-<!-- To perform such a test of equivalence, I use the two-one sided significance testing procedure (TOST). -->
+Here I establish which (if any) ROIs previously identified as having a *preference* for a task dimension(s), are *selective* for said task dimension(s).
+Establishing selectivity involves "confirming the null": e.g., "this ROI was only coding for target information, not distractor or incongruency".
+To perform such a test of equivalence, I use the two-one sided significance testing procedure (TOST).
 
-<!-- Given an effect size $\Delta$, the TOST requires specifiying two criteria: an $\alpha$, and a smallest effect size of interest, $\Delta_U$. In TOST, two one-sided tests are performed: $H_1: \Delta \geq -\Delta_U$ and $H_2: \Delta \leq \Delta_U$. Note that the null hypothesis in each of these tests is the *presence* of an effect. -->
-<!-- Thus, if both are rejected (p-values are  $< \alpha$), the test provides positive evidence for the absence of a "meaningful" effect size. -->
-<!-- TOST is the frequentist's alterntive to bayesian analysis. -->
+Given an effect size $\Delta$, the TOST requires specifiying two criteria: an $\alpha$, and a smallest effect size of interest, $\Delta_U$. In TOST, two one-sided tests are performed: $H_1: \Delta \geq -\Delta_U$ and $H_2: \Delta \leq \Delta_U$. Note that the null hypothesis in each of these tests is the *presence* of an effect.
+Thus, if both are rejected (p-values are  $< \alpha$), the test provides positive evidence for the absence of a "meaningful" effect size.
+TOST is the frequentist's alternative to bayesian analysis.
 
-<!-- In the absence of an a priori effect size of interest, I use a simulated one. -->
-<!-- Given $\alpha = 0.05$, $N = 49$, and the deisred power level of $1 - \beta = 0.8$, I simulate the smallest effect size observable via wilcoxon signed rank. -->
+In the absence of an a priori effect size of interest, I use a simulated one.
+Given $\alpha = 0.05$, $N = 49$, and assuming gaussian error, I simulate the smallest effect size observable via wilcoxon signed-rank under the deisred power level of $1 - \beta = 0.8$.
 
-<!-- ```{r tost_sesi, cache = TRUE} -->
+```{r tost_sesi, cache = TRUE, dev = "pdf"}
 
-<!-- powersim <- function(es, n = 49, a = 0.05, nsim = 5000) { -->
+fname.es <- here("analyses", "coding_profiles", "smallest-effect-size-of-interest.csv")
 
-<!--   out <- numeric(nsim) -->
+if (!file.exists(fname.es)) {
 
-<!--   for (sim.i in seq_len(nsim)) { -->
-<!--     x <- rnorm(n, es) -->
-<!--     p <- wilcox.test(x, alternative = "greater")$p.value -->
-<!--     out[sim.i] <- p < a -->
-<!--   } -->
+  powersim <- function(es, n = 49, a = 0.05, nsim = 5000) {
 
-<!--   sum(out) / nsim -->
+    out <- numeric(nsim)
 
-<!-- } -->
+    for (sim.i in seq_len(nsim)) {
+      x <- rnorm(n, es)
+      p <- wilcox.test(x, alternative = "greater")$p.value
+      out[sim.i] <- p < a
+    }
 
-<!-- es <- seq(0, 0.5, 0.001)  ## range of effect sizes to simulate -->
+    sum(out) / nsim
 
-<!-- n.cores <- detectCores() -->
-<!-- cl <- makeCluster(n.cores - 1) -->
-<!-- registerDoParallel(cl) -->
-<!-- res <- foreach(ii = es, .combine = c) %dopar% { -->
-<!--   set.seed(ii * 1000)  ## set seed anew each iteraion (on each worker) -->
-<!--   powersim(ii)  ## power -->
-<!-- } -->
-<!-- stopCluster(cl) -->
+  }
 
-<!-- plot(es, res, main = "effect size (cohen's d) by power level of signed rank") -->
+  es <- seq(0, 0.5, 0.001)  ## range of effect sizes to simulate
 
-<!-- min.d <- min(es[res >= 0.8])  ## minimum effect size detectable at 0.8 power -->
+  n.cores <- detectCores()
+  cl <- makeCluster(n.cores - 1)
+  registerDoParallel(cl)
+  res <- foreach(ii = es, .combine = c) %dopar% {
+    set.seed(ii * 1000)  ## set seed anew each iteraion (on each worker)
+    powersim(ii)  ## power
+  }
+  stopCluster(cl)
 
-<!-- min.d -->
+  plot(es, res, main = "effect size (cohen's d) by power level of signed rank")
 
-<!-- write.table(min.d, here("analyses", "coding_profiles", "smallest-effect-size-of-interest.txt")) -->
+  sesoi <- data.frame(effect.size = es, hit.rate = res)
 
-<!-- ``` -->
+  write.csv(sesoi, here("analyses", "coding_profiles", "smallest-effect-size-of-interest.csv"), row.names = FALSE)
 
-<!-- Now this minimum effect size serves as the reference (null) value in two non-central sign-rank tests. -->
-<!-- Note that I use the standardized betas (divisively normalized by their standard deviation) to conduct this test (this puts the model fits / betas in the same unit as the reference effect size). -->
+} else {
 
-<!-- ```{r tost} -->
+  sesoi <- read.csv(here("analyses", "coding_profiles", "smallest-effect-size-of-interest.csv"))
+  # sesoi8 <- min(sesoi$effect.size[sesoi$hit.rate >= 0.8])  ## minimum effect size detectable at 0.8 power
 
-<!-- stats.tosts <- stats.subjs.tdic %>% -->
-<!--   filter(param %in% params.interest) %>% -->
-<!--   group_by(param, roi) %>% -->
-<!--   summarize( -->
-<!--     du = wilcox.test(beta / sd(beta), alternative = "less", mu = min.d)$p.value,  ## less than upward bound? -->
-<!--     dl = wilcox.test(beta / sd(beta), alternative = "greater", mu = -min.d)$p.value,  ## greater than lower bound? -->
-<!--     p = max(du, dl)  ## take largest p-value -->
-<!--   ) %>% -->
-<!--   as.data.table -->
+}
 
-<!-- ``` -->
+## fit loess to generate smooth predicted values:
+fit <- loess.as(sesoi$hit.rate, sesoi$effect.size)  ## uses model selection procedure to select optimal smoothing param
 
+plot(sesoi$hit.rate, sesoi$effect.size)
+lines(sesoi$hit.rate, fit$fitted, col = "firebrick")
 
-<!-- #### __target__ -->
+(sesoi8 <- predict(fit, 0.8))  ## minimum effect size of interest
 
+```
 
-<!-- ###### __target__ > \{__distractor__, 0\} & __distractor__ ~ 0 -->
+Now this minimum effect size serves as the reference (null) value in two non-central sign-rank tests.
+Note that I use the standardized betas (divisively normalized by their standard deviation) to conduct this test (this puts the model fits / betas in the same unit as the reference effect size).
 
-<!-- Establish absence of __distractor__ coding: -->
+```{r tost}
 
-<!-- ```{r tost_targt-vs-distr} -->
+stats.tosts <- stats.subjs.tdic %>%
+  filter(param %in% params.interest) %>%
+  group_by(param, roi) %>%
+  summarize(
+    du = wilcox.test(beta / sd(beta), alternative = "less", mu = sesoi8)$p.value,  ## less than upward bound?
+    dl = wilcox.test(beta / sd(beta), alternative = "greater", mu = -sesoi8)$p.value,  ## greater than lower bound?
+    p = max(du, dl)  ## take largest p-value
+  ) %>%
+  as.data.table
 
-<!-- rois.tost.targt.vs.distr <- stats.tosts[roi %in% rois.pref.targt.vs.distr & param == "distractor", ] %>% -->
-<!--   ungroup %>% -->
-<!--   mutate(p.fdr = p.adjust(p, method = "fdr"), p.holm = p.adjust(p, method = "holm")) %>% -->
-<!--   filter(p.fdr < 0.05) %>% -->
-<!--   .$roi -->
+```
 
-<!-- stats.tosts[param == "distractor" & roi %in% rois.tost.targt.vs.distr] -->
 
-<!-- ``` -->
+## target
 
+### target > \{distractor, 0\} & distractor ~ 0
 
-<!-- ###### __target__ > \{__incongruency__, 0\} & __incongruency__ ~ 0 -->
+Establish absence of __distractor__ coding:
 
-<!-- Establish absence of __incongruency__ coding: -->
+```{r tost_targt-vs-distr}
 
-<!-- ```{r tost_targt-vs-incon} -->
+rois.tost.targt.vs.distr <- stats.tosts[roi %in% rois.pref.targt.vs.distr & param == "distractor", ] %>%
+  ungroup %>%
+  mutate(p.fdr = p.adjust(p, method = "fdr"), p.holm = p.adjust(p, method = "holm")) %>%
+  filter(p.fdr < 0.05) %>%
+  .$roi
 
-<!-- rois.tost.targt.vs.incon <- stats.tosts[roi %in% rois.pref.targt.vs.incon & param == "incongruency", ] %>% -->
-<!--   ungroup %>% -->
-<!--   mutate(p.fdr = p.adjust(p, method = "fdr"), p.holm = p.adjust(p, method = "holm")) %>% -->
-<!--   filter(p.fdr < 0.05) %>% -->
-<!--   .$roi -->
+stats.tosts[param == "distractor" & roi %in% rois.tost.targt.vs.distr]
 
+```
 
-<!-- stats.tosts[param == "incongruency" & roi %in% rois.tost.targt.vs.incon] -->
+Betas
+```{r tost_targt-vs-distr_betas, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
+stats.coding.targt 
+  mutate(beta = ifelse(roi %in% rois.tost.targt.vs.distr, beta, NA)) %>%
+  build.overlay("beta") %>% 
+  plot_surface(underlay = hcp)
+```
 
-<!-- ``` -->
+Test statistics (sum of sign ranks)
 
-<!-- ###### __target__ > \{__incongruency__, __distractor__, 0\} & \{__incongruency__, __distractor__\} ~ 0 -->
+```{r tost_targt-vs-distr_v, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
+stats.coding.targt 
+  mutate(v = ifelse(roi %in% rois.tost.targt.vs.distr, v, NA)) %>%
+  build.overlay("v") %>% 
+  plot_surface(underlay = hcp)
+```
 
-<!-- The intersection of those sets: -->
 
-<!-- ```{r tost_targt-vs-all} -->
+### target > \{incongruency, 0\} & incongruency ~ 0
 
-<!-- rois.target.selective <- intersect(rois.tost.targt.vs.incon, rois.tost.targt.vs.distr) -->
+Establish absence of __incongruency__ coding:
 
-<!-- rois.target.selective -->
+```{r tost_targt-vs-incon}
 
-<!-- ``` -->
+rois.tost.targt.vs.incon <- stats.tosts[roi %in% rois.pref.targt.vs.incon & param == "incongruency", ] %>%
+  ungroup %>%
+  mutate(p.fdr = p.adjust(p, method = "fdr"), p.holm = p.adjust(p, method = "holm")) %>%
+  filter(p.fdr < 0.05) %>%
+  .$roi
 
 
-<!-- #### __distractor__ -->
+stats.tosts[param == "incongruency" & roi %in% rois.tost.targt.vs.incon]
 
-<!-- ###### __distractor__ > \{__target__, 0\} & __target__ ~ 0 -->
+```
 
-<!-- None with preference for distractor. -->
+Betas
+```{r tost_targt-vs-incon_betas, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
+stats.coding.targt 
+  mutate(beta = ifelse(roi %in% rois.tost.targt.vs.incon, beta, NA)) %>%
+  build.overlay("beta") %>% 
+  plot_surface(underlay = hcp)
+```
 
-<!-- ###### __distractor__ > \{__incongruency__, 0\} & __incongruency__ ~ 0 -->
+Test statistics (sum of sign ranks)
 
-<!-- Establish absence of __incongruency__ coding: -->
+```{r tost_targt-vs-incon_v, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
+stats.coding.targt 
+  mutate(v = ifelse(roi %in% rois.tost.targt.vs.incon, v, NA)) %>%
+  build.overlay("v") %>% 
+  plot_surface(underlay = hcp)
+```
 
-<!-- ```{r tost_distr-vs-incon} -->
 
-<!-- rois.tost.distr.vs.incon <- stats.tosts[roi %in% rois.pref.distr.vs.incon & param == "incongruency", ] %>% -->
-<!--   ungroup %>% -->
-<!--   mutate(p.fdr = p.adjust(p, method = "fdr"), p.holm = p.adjust(p, method = "holm")) %>% -->
-<!--   filter(p.fdr < 0.05) %>% -->
-<!--   .$roi -->
+### target > \{incongruency, distractor, 0\} & \{incongruency, distractor\} ~ 0
 
+The intersection of those sets:
 
-<!-- stats.tosts[param == "incongruency" & roi %in% rois.tost.distr.vs.incon] -->
+```{r tost_targt}
 
-<!-- ``` -->
+rois.target.selective <- intersect(rois.tost.targt.vs.incon, rois.tost.targt.vs.distr)
 
-<!-- ###### __distractor__ > \{__incongruency__, __distractor__, 0\} & \{__incongruency__, __distractor__\} ~ 0 -->
+rois.target.selective
 
-<!-- The intersection of those sets: -->
+```
 
-<!-- None. -->
+Betas
+```{r tost_targt-betas, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
+# stats.coding.targt %>% with(ifelse(roi %in% rois.target.selective, beta, NA)) %>% build.overlay %>% plot_surface
+```
 
 
 
-<!-- #### __incongruency__ -->
+## distractor
 
-<!-- ###### __incongruency__ > \{__distractor__, 0\} & __distractor__ ~ 0 -->
+### distractor > \{target, 0\} & target ~ 0
 
-<!-- Establish absence of __distractor__ coding: -->
+None with preference for distractor.
 
-<!-- ```{r tost_incon-vs-distr} -->
+### distractor > \{incongruency, 0\} & incongruency ~ 0
 
-<!-- rois.tost.incon.vs.distr <- stats.tosts[roi %in% rois.pref.incon.vs.distr & param == "distractor", ] %>% -->
-<!--   ungroup %>% -->
-<!--   mutate(p.fdr = p.adjust(p, method = "fdr"), p.holm = p.adjust(p, method = "holm")) %>% -->
-<!--   filter(p.fdr < 0.05) %>% -->
-<!--   .$roi -->
+Establish absence of __incongruency__ coding:
 
-<!-- stats.tosts[param == "distractor" & roi %in% rois.tost.incon.vs.distr] -->
+```{r tost_distr-vs-incon}
 
-<!-- ``` -->
+rois.tost.distr.vs.incon <- stats.tosts[roi %in% rois.pref.distr.vs.incon & param == "incongruency", ] %>%
+  ungroup %>%
+  mutate(p.fdr = p.adjust(p, method = "fdr"), p.holm = p.adjust(p, method = "holm")) %>%
+  filter(p.fdr < 0.05) %>%
+  .$roi
 
-<!-- ###### __incongruency__ > \{__target__, 0\} & __target__ ~ 0 -->
 
-<!-- Establish absence of __target__ coding: -->
+stats.tosts[param == "incongruency" & roi %in% rois.tost.distr.vs.incon]
 
-<!-- ```{r tost_incon-vs-targt} -->
+```
 
-<!-- rois.tost.incon.vs.targt <- stats.tosts[roi %in% rois.pref.incon.vs.targt & param == "target", ] %>% -->
-<!--   ungroup %>% -->
-<!--   mutate(p.fdr = p.adjust(p, method = "fdr"), p.holm = p.adjust(p, method = "holm")) %>% -->
-<!--   filter(p.fdr < 0.05) %>% -->
-<!--   .$roi -->
+### distractor > \{incongruency, distractor, 0\} & \{incongruency, distractor\} ~ 0
 
+The intersection of those sets:
 
-<!-- stats.tosts[param == "target" & roi %in% rois.tost.incon.vs.targt] -->
+None.
 
-<!-- ``` -->
+## incongruency
 
-<!-- ###### __incongruency__ > \{__incongruency__, __distractor__, 0\} & \{__incongruency__, __distractor__\} ~ 0 -->
+### incongruency > \{distractor, 0\} & distractor ~ 0
 
-<!-- The intersection of those sets: -->
+Establish absence of __distractor__ coding:
 
-<!-- None. -->
+```{r tost_incon-vs-distr}
 
+rois.tost.incon.vs.distr <- stats.tosts[roi %in% rois.pref.incon.vs.distr & param == "distractor", ] %>%
+  ungroup %>%
+  mutate(p.fdr = p.adjust(p, method = "fdr"), p.holm = p.adjust(p, method = "holm")) %>%
+  filter(p.fdr < 0.05) %>%
+  .$roi
 
+stats.tosts[param == "distractor" & roi %in% rois.tost.incon.vs.distr]
 
-<!-- # __CONCLUSIONS__ -->
+```
+
+
+### incongruency > \{target, 0\} & target ~ 0
+
+Establish absence of __target__ coding:
+
+```{r tost_incon-vs-targt}
+
+rois.tost.incon.vs.targt <- stats.tosts[roi %in% rois.pref.incon.vs.targt & param == "target", ] %>%
+  ungroup %>%
+  mutate(p.fdr = p.adjust(p, method = "fdr"), p.holm = p.adjust(p, method = "holm")) %>%
+  filter(p.fdr < 0.05) %>%
+  .$roi
+
+
+stats.tosts[param == "target" & roi %in% rois.tost.incon.vs.targt]
+
+```
+
+### incongruency > \{target, distractor, 0\} & \{target, distractor\} ~ 0
+
+The intersection of those sets:
+
+None.
+
+
+
+# CONCLUSIONS
 
 
