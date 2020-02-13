@@ -10,7 +10,7 @@ Displays results.
 
 ```{r setup, include = FALSE}
 
-knitr::opts_chunk$set(cache = TRUE, dpi = 40)
+knitr::opts_chunk$set(cache = TRUE, dpi = 20)
 
 library(here)
 library(knitr)
@@ -148,7 +148,7 @@ stats.coding.targt %>% build_overlay("beta") %>% plot_surface(underlay = hcp)
 
 Test statistics (sum of sign ranks)
 ```{r taskcoding_signrank_target, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
-stats.coding.targt %>% build.overlay("v") %>% plot_surface(underlay = hcp)
+stats.coding.targt %>% build_overlay("v") %>% plot_surface(underlay = hcp)
 ```
 
 #### thresholded
@@ -159,7 +159,7 @@ Betas
 ```{r taskcoding_betas_target_thresh, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
 stats.coding.targt %>% 
   mutate(beta = ifelse(p.fdr < 0.05, beta, NA)) %>%
-  build.overlay("beta") %>% 
+  build_overlay("beta") %>% 
   plot_surface(underlay = hcp)
 ```
 
@@ -167,7 +167,7 @@ Test statistics (sum of sign ranks)
 ```{r taskcoding_signrank_target_thresh, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
 stats.coding.targt %>% 
   mutate(v = ifelse(p.fdr < 0.05, v, NA)) %>%
-  build.overlay("v") %>% 
+  build_overlay("v") %>% 
   plot_surface(underlay = hcp)
 ```
 
@@ -202,7 +202,7 @@ Betas
 ```{r taskcoding_betas_distractor_thresh, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
 stats.coding.distr %>%
   mutate(beta = ifelse(p.fdr < 0.05, beta, NA)) %>%
-  build.overlay("beta") %>% 
+  build_overlay("beta") %>% 
   plot_surface(underlay = hcp)
 ```
 
@@ -210,7 +210,7 @@ Test statistics (sum of sign ranks)
 ```{r taskcoding_signrank_distractor_thresh, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
 stats.coding.distr %>%
   mutate(v = ifelse(p.fdr < 0.05, v, NA)) %>%
-  build.overlay("v") %>% 
+  build_overlay("v") %>% 
   plot_surface(underlay = hcp)
 ```
 
@@ -236,7 +236,7 @@ stats.group.tdic[param == "incongruency"] %>% build_overlay("beta") %>% plot_sur
 
 Test statistics (sum of sign ranks)
 ```{r taskcoding_signrank_incongruency, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
-stats.group.tdic[param == "incongruency"] %>% build.overlay("v") %>% plot_surface(underlay = hcp)
+stats.group.tdic[param == "incongruency"] %>% build_overlay("v") %>% plot_surface(underlay = hcp)
 ```
 
 #### thresholded
@@ -245,7 +245,7 @@ Betas
 ```{r taskcoding_betas_incongruency_thresh, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
 stats.coding.incon %>%
   mutate(beta = ifelse(p.fdr < 0.05, beta, NA)) %>%
-  build.overlay("beta") %>% 
+  build_overlay("beta") %>% 
   plot_surface(underlay = hcp)
 ```
 
@@ -253,7 +253,7 @@ Test statistics (sum of sign ranks)
 ```{r taskcoding_signrank_incongruency_thresh, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
 stats.coding.incon %>% 
   mutate(v = ifelse(p.fdr < 0.05, v, NA)) %>%
-  build.overlay("v") %>% 
+  build_overlay("v") %>% 
   plot_surface(underlay = hcp)
 ```
 
@@ -283,6 +283,39 @@ rois.distr.incon
 rois.targt.distr.incon
 
 ```
+
+
+<!-- __target + incongruency__ -->
+<!-- ```{r taskcoding_betas_targt-incon_thresh, dev = "png", fig.width = 20, fig.height = 10, results = "asis"} -->
+<!-- stats.coding.targt %>% -->
+<!--   mutate(value = ifelse(roi %in% rois.targt.incon, 1, 0)) %>% -->
+<!--   build_overlay("value") %>%  -->
+<!--   plot_surface(underlay = hcp) -->
+<!-- ``` -->
+
+<!-- __target + incongruency__ -->
+<!-- ```{r taskcoding_betas_targt-distr_thresh, dev = "png", fig.width = 20, fig.height = 10, results = "asis"} -->
+<!-- stats.coding.targt %>% -->
+<!--   # mutate(value = ifelse(roi %in% rois.targt.distr, 0.5, 0)) %>% -->
+<!--   build_overlay("beta") %>%  -->
+<!--   plot_surface(underlay = hcp) -->
+<!-- ``` -->
+
+<!-- __distractor + incongruency__ -->
+<!-- ```{r taskcoding_betas_distr-incon_thresh, dev = "png", fig.width = 20, fig.height = 10, results = "asis"} -->
+<!-- stats.coding.distr %>% -->
+<!--   mutate(value = ifelse(roi %in% rois.distr.incon, 1, NA)) %>% -->
+<!--   build_overlay("value") %>%  -->
+<!--   plot_surface(underlay = hcp) -->
+<!-- ``` -->
+
+<!-- __distractor + incongruency + target__ -->
+<!-- ```{r taskcoding_betas_targt-incon-distr_thresh, dev = "png", fig.width = 20, fig.height = 10, results = "asis"} -->
+<!-- stats.coding.distr %>% -->
+<!--   mutate(value = ifelse(roi %in% rois.targt.distr.incon, 1, NA)) %>% -->
+<!--   build_overlay("value") %>%  -->
+<!--   plot_surface(underlay = hcp) -->
+<!-- ``` -->
 
 
 # 2. __preference analysis__: pairwise comparisons
@@ -364,7 +397,7 @@ Betas
 ```{r preference_targt-vs-distr_betas, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
 stats.coding.targt %>% 
   mutate(beta = ifelse(roi %in% rois.pref.targt.vs.distr, beta, NA)) %>%
-  build.overlay("beta") %>% 
+  build_overlay("beta") %>% 
   plot_surface(underlay = hcp)
 ```
 
@@ -372,7 +405,7 @@ Test statistics (sum of sign ranks)
 ```{r preference_targt-vs-distr_signrank, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
 stats.coding.targt %>% 
   mutate(v = ifelse(roi %in% rois.pref.targt.vs.distr, v, NA)) %>%
-  build.overlay("v") %>% 
+  build_overlay("v") %>% 
   plot_surface(underlay = hcp)
 ```
 
@@ -386,10 +419,10 @@ kable(
 #### target > \{incongruency, 0\} (`r length(rois.pref.targt.vs.incon)` parcels)
 
 Betas
-```{r preference_targt-vs-incon_signrank, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
+```{r preference_targt-vs-incon_betas, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
 stats.coding.targt %>% 
   mutate(beta = ifelse(roi %in% rois.pref.targt.vs.incon, beta, NA)) %>%
-  build.overlay("beta") %>% 
+  build_overlay("beta") %>% 
   plot_surface(underlay = hcp)
 ```
 
@@ -397,7 +430,7 @@ Test statistics (sum of sign ranks)
 ```{r preference_targt-vs-incon_signrank, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
 stats.coding.targt %>% 
   mutate(v = ifelse(roi %in% rois.pref.targt.vs.incon, v, NA)) %>%
-  build.overlay("v") %>% 
+  build_overlay("v") %>% 
   plot_surface(underlay = hcp)
 ```
 
@@ -415,15 +448,15 @@ Betas
 ```{r preference_targt_betas, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
 stats.coding.targt %>% 
   mutate(beta = ifelse(roi %in% rois.pref.targt, beta, NA)) %>%
-  build.overlay("beta") %>% 
+  build_overlay("beta") %>% 
   plot_surface(underlay = hcp)
 ```
 
 Test statistics (sum of sign ranks)
-```{r preference_targt_v, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
+```{r preference_targt_signrank, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
 stats.coding.targt %>% 
   mutate(v = ifelse(roi %in% rois.pref.targt, v, NA)) %>%
-  build.overlay("v") %>% 
+  build_overlay("v") %>% 
   plot_surface(underlay = hcp)
 ```
 
@@ -466,15 +499,15 @@ Betas
 ```{r preference_incon-vs-distr_betas, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
 stats.coding.incon  %>% 
   mutate(beta = ifelse(roi %in% rois.pref.incon.vs.distr, beta, NA)) %>%
-  build.overlay("beta") %>% 
+  build_overlay("beta") %>% 
   plot_surface(underlay = hcp)
 ```
 
 Test statistics (sum of sign ranks)
-```{r preference_incon-vs-distr_v, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
+```{r preference_incon-vs-distr_signrank, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
 stats.coding.incon  %>% 
   mutate(v = ifelse(roi %in% rois.pref.incon.vs.distr, v, NA)) %>%
-  build.overlay("v") %>% 
+  build_overlay("v") %>% 
   plot_surface(underlay = hcp)
 ```
 
@@ -492,15 +525,15 @@ Betas
 ```{r preference_incon-vs-targt_betas, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
 stats.coding.incon  %>% 
   mutate(beta = ifelse(roi %in% rois.pref.incon.vs.targt, beta, NA)) %>%
-  build.overlay("beta") %>% 
+  build_overlay("beta") %>% 
   plot_surface(underlay = hcp)
 ```
 
 Test statistics (sum of sign ranks)
-```{r preference_incon-vs-distr_v, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
+```{r preference_incon-vs-targt_signrank, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
 stats.coding.incon  %>% 
   mutate(v = ifelse(roi %in% rois.pref.incon.vs.targt, v, NA)) %>%
-  build.overlay("v") %>% 
+  build_overlay("v") %>% 
   plot_surface(underlay = hcp)
 ```
 
@@ -637,18 +670,18 @@ stats.tosts[param == "distractor" & roi %in% rois.tost.targt.vs.distr]
 
 Betas
 ```{r tost_targt-vs-distr_betas, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
-stats.coding.targt 
+stats.coding.targt %>%
   mutate(beta = ifelse(roi %in% rois.tost.targt.vs.distr, beta, NA)) %>%
-  build.overlay("beta") %>% 
+  build_overlay("beta") %>% 
   plot_surface(underlay = hcp)
 ```
 
 Test statistics (sum of sign ranks)
 
-```{r tost_targt-vs-distr_v, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
-stats.coding.targt 
+```{r tost_targt-vs-distr_signrank, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
+stats.coding.targt %>%
   mutate(v = ifelse(roi %in% rois.tost.targt.vs.distr, v, NA)) %>%
-  build.overlay("v") %>% 
+  build_overlay("v") %>% 
   plot_surface(underlay = hcp)
 ```
 
@@ -672,18 +705,18 @@ stats.tosts[param == "incongruency" & roi %in% rois.tost.targt.vs.incon]
 
 Betas
 ```{r tost_targt-vs-incon_betas, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
-stats.coding.targt 
+stats.coding.targt %>%
   mutate(beta = ifelse(roi %in% rois.tost.targt.vs.incon, beta, NA)) %>%
-  build.overlay("beta") %>% 
+  build_overlay("beta") %>% 
   plot_surface(underlay = hcp)
 ```
 
 Test statistics (sum of sign ranks)
 
-```{r tost_targt-vs-incon_v, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
-stats.coding.targt 
+```{r tost_targt-vs-incon_signrank, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
+stats.coding.targt %>% 
   mutate(v = ifelse(roi %in% rois.tost.targt.vs.incon, v, NA)) %>%
-  build.overlay("v") %>% 
+  build_overlay("v") %>% 
   plot_surface(underlay = hcp)
 ```
 
@@ -702,7 +735,7 @@ rois.target.selective
 
 Betas
 ```{r tost_targt-betas, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
-# stats.coding.targt %>% with(ifelse(roi %in% rois.target.selective, beta, NA)) %>% build.overlay %>% plot_surface
+# stats.coding.targt %>% with(ifelse(roi %in% rois.target.selective, beta, NA)) %>% build_overlay %>% plot_surface
 ```
 
 

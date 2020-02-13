@@ -11,15 +11,27 @@
 
 ## initialize ----
 
-mask.names <- c(
-  "vwfa"
+# mask.names <- c(
+#   "vwfa"
+# )
+# 
+# masks <- setNames(vector("list", length(mask.names)), mask.names)
+# rm(mask.names)
+# 
+# 
+# ## vwfa ----
+# 
+# masks$vwfa <- oro.nifti::readNIfTI(here::here("out", "masks", "vwfa.nii.gz"), reorient = FALSE)
+# 
+
+fnames <- list.files(here::here("out", "masks"))
+
+masks <- lapply(
+  fnames, 
+  function(x)
+  oro.nifti::readNIfTI(here::here("out", "masks", x), reorient = FALSE)
 )
 
-masks <- setNames(vector("list", length(mask.names)), mask.names)
-rm(mask.names)
+names(masks) <- gsub("\\.nii.*$", "", fnames)
 
-
-## vwfa ----
-
-masks$vwfa <- oro.nifti::readNIfTI(here::here("out", "masks", "vwfa.nii.gz"), reorient = FALSE)
 
