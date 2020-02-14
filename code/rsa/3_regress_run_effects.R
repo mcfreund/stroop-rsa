@@ -64,7 +64,7 @@ for (set.i in sets.of.rois) {
       
       ## transform and create response matrix
       
-      Y <- cbind(atanh(rsv), rank(rsv))
+      Y <- cbind(rsv, rank(rsv))  ## don't atanh betas, as betas can range |beta > 1| !
       
       ## regress run component from rsv
       
@@ -73,15 +73,10 @@ for (set.i in sets.of.rois) {
       B0 <- fits$coef[1, ]  ## intercepts
       regressed <- sweep(E, 2, B0, "+")  ## re-center residuals (add intercepts)
       
-      ## extract
+      ## extract, vector to matrix
       
-      regressed.r <- tanh(regressed[, 1])
-      regressed.rank <- regressed[, 2]
-      
-      ## vector to matrix
-      
-      rsm.line.i <- vec2mat(regressed.r, dnames = bias.items)  ## linear regressed
-      rsm.rank.i <- vec2mat(regressed.rank, dnames = bias.items)  ## rank regressed
+      rsm.line.i <- vec2mat(regressed[, 1], dnames = bias.items)  ## linear regressed
+      rsm.rank.i <- vec2mat(regressed[, 2], dnames = bias.items)  ## rank regressed
       
       ## store:
       

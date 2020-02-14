@@ -107,11 +107,11 @@ for (set.i in sets.of.rois) {
       rsm.line <- rsarray.line[, , subj.i, roi.j]  ## get slice
       rsm.rank <- rsarray.rank[, , subj.i, roi.j]
 
-      z <- atanh(rsm.line[is.lower.tri])  ## get lower.triangle vector (and transform to fisher's z)
+      r <- rsm.line[is.lower.tri]  ## get lower.triangle vector
       rank <- rsm.rank[is.lower.tri]
       
       name.ij <- paste0(subjs[subj.i], "_", rois[roi.j])  ## to match name
-      rsvectors[[name.ij]] <- cbind(z, rank)
+      rsvectors[[name.ij]] <- cbind(r, rank)
       
     }
   }
@@ -141,11 +141,11 @@ for (set.i in sets.of.rois) {
     fits <- rsvectors %>% map(~ .lm.fit( x = X, y = .))  ## fit models (two-column y)
     coefs <- as.data.frame(do.call(rbind, lapply(fits, coef))) ## to single data.frame
     
-    names(coefs) <- c("z", "rank")  ## same order as in models
+    names(coefs) <- c("r", "rank")  ## same order as in models
     coefs$param <- rep(colnames(X), n.mods)  ## same orders as in models
     coefs$id <- rep(names(rsvectors), each = ncol(X))
     coefs <- coefs[coefs$param != "b0", ]  ## ditch intercept
-    ## put rank and linear (z) coefs in single long-form column:
+    ## put rank and linear (r) coefs in single long-form column:
     coefs <- melt(as.data.table(coefs), id.vars = c("id", "param"), variable = "y", value.name = "coef")
     
     ## get betas
@@ -155,7 +155,7 @@ for (set.i in sets.of.rois) {
     fits.std <- rsvectors.std %>% map(~ .lm.fit( x = X.std, y = .))
     betas <- as.data.frame(do.call(rbind, lapply(fits.std, coef)))
     
-    names(betas) <- c("z", "rank")
+    names(betas) <- c("r", "rank")
     betas$param <- rep(colnames(X.std), n.mods)
     betas$id <- rep(names(rsvectors.std), each = ncol(X.std))
     betas <- melt(as.data.table(betas), id.vars = c("id", "param"), variable = "y", value.name = "beta")

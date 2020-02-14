@@ -10,13 +10,6 @@ library(oro.nifti)
 source(here("code", "strings.R"))
 source(here("code", "read_atlases.R"))
 
-atlas.key$mmp$X <- NULL
-atlas.key$gordon$X <- NULL
-
-atlas.key$mmp[atlas.key$mmp$hemi == "L", "num.roi"] <- atlas.key$mmp$num.roi[atlas.key$mmp$hemi == "L"] + 180
-atlas.key$mmp[atlas.key$mmp$hemi == "R", "num.roi"] <- atlas.key$mmp$num.roi[atlas.key$mmp$hemi == "R"] - 180
-
-
 write.masks <- function(l, prefix, atlas.name) {
   
   .atlas <- atlas[[atlas.name]]
