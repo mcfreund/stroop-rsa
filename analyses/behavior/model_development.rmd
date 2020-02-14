@@ -1,0 +1,532 @@
+---
+title: "developing a model of behavior"
+author: "michael freund"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include = FALSE}
+
+library(mikeutils)
+library(magrittr)
+library(here)
+library(knitr)
+library(dplyr)
+library(data.table)
+library(ggplot2)
+library(grid)
+library(gridExtra)
+library(colorspace)
+library(viridis)
+library(nlme)
+library(lme4)
+library(multcomp)
+library(HLMdiag)
+
+## opts ----
+
+opts_chunk$set(
+  cache = TRUE, fig.align = "center", echo = TRUE
+)
+theme_set(theme_bw(base_size = 12))
+
+## data ----
+
+stroop <- read.csv(here("data", "behavior-and-events_group201902.csv"),  stringsAsFactors = FALSE)
+stroop %<>%
+  arrange(subj, session, run, trial.num) %>%
+  group_by(subj, session, run) %>%
+  mutate(
+    trial.type    = ifelse(trial.type == "i", "incon", "congr"),
+    error         = 1 - acc,
+    post.error    = lag(error),
+    n1.trial.type = lag(trial.type),
+    n2.trial.type = lag(n1.trial.type)
+    )
+subj.summary <- read.csv(here("data", "summary_group201902.csv"), stringsAsFactors = FALSE) %>% 
+  filter(task == "stp", subj %in% unique(stroop$subj))
+
+## vars ----
+
+color.congruency <- c("incon" = "#b2182b", "congr" = "#2166ac")
+
+## funs ----
+
+qqr2 <- function(x, fun = qnorm, ...) {
+  x <- sort(x)
+  q <- fun(p = seq_along(x) / (length(x) + 1), ...)
+  cor(q, x)^2
+}
+
+icweight <- function(afo, ic = "BIC") {
+  delta <- afo[[ic]] - min(afo[[ic]])
+  rellik <- exp(delta / -2)
+  rellik / sum(rellik)
+}
+
+```
+
+
+## a glance at the data
+
+```{r data}
+
+stroop.pro <- stroop %>% filter(session == "pro", is.analysis.group)
+stroop.pro.rt <- stroop.pro %>% filter(acc == 1, !is.na(rt), rt > 0)
+stroop.pro.er <- stroop.pro %>% filter(!is.na(acc))
+
+```
+
+range: `range(stroop.pro.rt$rt)`
+
+```{r, fig.height = 4}
+
+grid.arrange(
+  stroop.pro.rt %>%
+    ggplot(aes(rt)) +
+    geom_density(fill = "slateblue", alpha = 0.3) +
+    labs(title = "all correct trials") +
+    theme(legend.position = "none"),
+  stroop.pro.rt %>%
+    ggplot(aes(rt)) +
+    geom_density(aes(fill = trial.type), alpha = 0.3) +
+    labs(title = "by congruency") +
+    scale_fill_manual(values = color.congruency) +
+    theme(legend.position = "none") +
+    annotate(
+      y = Inf, x = -Inf, geom = "text", label = "congruent", color = color.congruency["congr"],
+      vjust = 1, hjust = 0
+      ) +
+    annotate(
+        y = 0.0026, x = -Inf, geom = "text", label = "incongruent", color = color.congruency["incon"],
+        vjust = 1, hjust = 0
+        ),
+  ncol = 2
+)
+```
+
+
+
+```{r subjectplots, fig.height = 10, fig.width = 10}
+
+stroop.pro.rt %>%
+  ggplot(aes(pc, rt, fill = trial.type)) +
+  geom_point(
+    position = position_jitterdodge(jitter.width = 0.2),
+    size = 0.5, shape = 21, color = "white"
+    ) +
+  facet_wrap(vars(subj)) +
+  theme_minimal(base_size = 10) +
+  theme(axis.title = element_blank(), legend.position = "none") +
+  scale_fill_manual(values = color.congruency) +
+  labs(title = "response time by proportion congruency * trial type")
+
+
+stroop.pro.rt %>%
+  full_join(group_by(., subj) %>% summarize(r2norm = qqr2(rt)), by = "subj") %>%
+  ggplot(aes(sample = rt)) +
+  stat_qq(alpha = 0.8, size = 0.4) +
+  stat_qq_line(size = 0.25) +
+  facet_wrap(vars(subj)) +
+  geom_text(
+    aes(
+      x = -1.25, y = 2000,
+      label = paste0("r^2 = ", round(r2norm, 3))
+      ), size = 3, color = "grey50"
+  ) +
+  theme_minimal(base_size = 10) +
+  theme(axis.title = element_blank()) +
+  labs(
+    title    = "QQ rt versus normal",
+    subtitle = paste0("overall r^2 with normal = ", round(qqr2(stroop.pro$rt), 3))
+  )
+  
+```
+
+Looks like some problematically compressed (i.e., approx equal values) for a couple subjects: 849971 and 161832.
+This is seen as the kink in their QQ plots.
+
+I'll threshold these subjects' data at $rt > 500$ to eliminate this issue.
+A total of `r sum(stroop.pro.rt$subj == "849971" & stroop.pro.rt$rt < 500)` removed from 849971 and 
+`r sum(stroop.pro.rt$subj == "161832" & stroop.pro.rt$rt < 500)` for 161832.
+
+```{r}
+stroop.pro.rt <- stroop.pro.rt[!(stroop.pro.rt$subj %in% c("849971", "161832") & stroop.pro.rt$rt < 500), ]
+```
+
+```{r}
+stroop.pro.rt %>%
+  filter(subj %in% c("849971", "161832")) %>%
+  full_join(group_by(., subj) %>% summarize(r2norm = qqr2(rt)), by = "subj") %>%
+  ggplot(aes(sample = rt)) +
+  stat_qq(alpha = 0.8, size = 0.4) +
+  stat_qq_line(size = 0.25) +
+  facet_wrap(vars(subj)) +
+  geom_text(
+    aes(
+      x = -1.25, y = 2000,
+      label = paste0("r^2 = ", round(r2norm, 3))
+      ), size = 3, color = "grey50"
+  ) +
+  theme_minimal(base_size = 10) +
+  theme(axis.title = element_blank()) +
+  labs(
+    title    = "after exclusion of rt < 500",
+    subtitle = paste0("overall r^2 with normal = ", round(qqr2(stroop.pro$rt), 3))
+  )
+```
+
+### errors
+
+```{r errors, fig.width = 10, fig.height = 3}
+
+stroop.pro.er %>%
+  transmute(error = mean(acc.final %in% c("0", "no.response"))) %>%
+  ggplot(aes(x = subj, y = error)) +
+  geom_col(position = position_dodge(width = 1.25), width = 0.75, color = "black") +
+  scale_fill_brewer(type = "qual", palette = 1) +
+  theme(
+    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1), 
+    axis.ticks.x =  element_line(),
+    legend.position = "none"
+    ) +
+  labs(title = "error rates")
+
+stroop.pro.er %>%
+  group_by(subj) %>%
+    transmute(
+    p.com = mean(acc.final == "0"),
+    p.omi = mean(acc.final == "no.response")
+  ) %>%
+  reshape2::melt(id.vars = "subj") %>%
+  ggplot(aes(x = subj, y = value, fill = variable)) +
+  geom_col(position = position_dodge(width = 0.5), width = 0.5, color = "black") +
+  scale_fill_brewer(type = "qual", palette = 1) +
+  theme(
+    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1), 
+    axis.ticks.x =  element_line(),
+    legend.position = "none"
+    ) +
+  labs(title = "commission and omission error rates (omission in purple)")
+
+```
+
+160830 missed nearly 10/% of their trials (omitted response).
+This person may have been feeling drowsy.
+Will leave them in, though, but keep an eye on their estimates.
+
+
+## model building
+
+Set liberal bounds on RT, and count number of trials per subj * condition:
+
+```{r initial-rt-model_subset, results = "asis"}
+
+stroop.pro.rt <- stroop.pro.rt %>% filter(rt < 3000, rt > 250)
+
+counts.subj <- table(stroop.pro.rt$subj, stroop.pro.rt$trial.type) %>% as.data.frame
+tidyr::spread(counts.subj, Var2, Freq) %>% 
+  rename(subj = Var1) %>%
+  kable(digits = 2)
+
+```
+
+### initial model comparison
+
+```{r initial-rt-models, cache = TRUE}
+
+cl1 <- lmeControl(maxIter = 1e5, msMaxIter = 1e5, niterEM = 1e5, msMaxEval = 1e5)
+cl2 <- lmeControl(maxIter = 1e5, msMaxIter = 1e5, niterEM = 1e5, msMaxEval = 1e5, opt = "nlm")
+
+fit0 <- lme(rt ~ trial.type, stroop.pro.rt, ~ 1 | subj)
+summary(fit0)
+fit1.hom <- lme(rt ~ trial.type, stroop.pro.rt, ~ trial.type | subj)
+summary(fit1.hom)
+fit1.het <- lme(
+  rt ~ trial.type, stroop.pro.rt, ~ trial.type | subj,
+  weights = varIdent(form = ∼ 1 | subj),
+  control = cl1
+  )
+summary(fit1.het)
+fit1.het1 <- lme(
+  rt ~ trial.type, stroop.pro.rt, ~ trial.type | subj,
+  weights = varIdent(form = ~ 1 | subj * trial.type),
+  control = cl1
+  )
+summary(fit1.het1)
+fit0.het1 <- lme(
+  rt ~ trial.type, stroop.pro.rt, ~ 1 | subj,
+  weights = varIdent(form = ~ 1 | subj * trial.type),
+  control = cl1
+  )
+summary(fit0.het1)
+
+afo <- anova(fit0, fit1.hom, fit1.het, fit1.het1, fit0.het1)
+
+cbind(
+  afo,
+  BICweight = icweight(afo, "BIC"),
+  AICweight = icweight(afo, "AIC")
+  ) %>%
+  kable(digits = 2)
+
+```
+
+* `fit0` vs `fit1.hom`: assuming homogeneous variance across individuals, Stroop effect is variable across individuals
+* `fit1.hom` vs `fit1.het`: homogeneity of variance  assumption is violated: substantial variance exists in RT across subjects in overall RT 
+* `fit1.het` vs `fit1.het1`: further, variance not only differs across subjects, but within subject, across trial types (incon, congr).
+    * although here, the statistics do not agree. BIC indicates the more parsimonious `fit1.het` is better, whereas LRT and AIC indicate the additional subj*trial.type variances are warranted.
+* `fit1.het1` vs `fit0.het1`: when this subject*trial.type variance is modeled, the variance in the stroop effect across subjects 
+remains.
+
+It is clear that
+
+1. subjects differ in the size of the stroop effect
+2. subjects also differ in the level of 'noise' (level-1 variance)
+
+movign forward, I will try to use additional information to assess which model to prefer between `fit1.het` and `fit.het1`.
+
+### diagnostics
+
+```{r intial-rt-models_diagnostics}
+
+grid.arrange(
+  plot(fit1.het, main = "by subject"),
+  plot(fit1.het1, main = "by subject*trial.type"),
+  ncol = 2
+)
+
+plot(fit1.het, subj ~ resid(., type = "p"), main = "pearson's resids by subject (fit1.het)")
+plot(fit1.het, interaction(trial.type, pc) ~ resid(., type = "p"), main = "pearson's resids (fit1.het)")
+plot(fit1.het, subj ~ resid(., type = "p") | pc * trial.type, main = "pearson's resids by subject (fit1.het)")
+
+## missing any key interactions?
+
+plot(
+  fit1.het, 
+  interaction(pc, trial.type) ~ resid(., type = "p") | subj,
+  main = "pc*trial.type ~ resids | subject (fit1.het)"
+  )
+
+plot(
+  fit1.het, 
+  interaction(trial.type, run) ~ resid(., type = "p") | subj,
+  main = "run*trial.type ~ resids | subject (fit1.het)"
+  )
+
+plot(fit1.het, resid(., type = "p") ~ trial.num | subj, abline = 0, main = "resids ~ trial.num by subj (fit1het)")
+plot(
+  fit1.het,
+  resid(., type = "p") ~ trial.num | subj * trial.type, abline = 0,
+  main = "resids ~ trial.num by subj (fit1het)"
+  )
+
+plot(fit1.het, resid(., type = "p") ~ run | subj, abline = 0, main = "run ~ resids by subj (fit1het)")
+plot(fit1.het, resid(., type = "p") ~ iti | subj, abline = 0)
+
+## by trialtype
+
+plot(fit1.het, resid(., type = "p") ~ fitted(.) | trial.type * as.factor(run), abline = 0)
+plot(
+  fit1.het,
+  resid(., type = "p") ~ trial.num | trial.type * as.factor(run), 
+  abline = 0, 
+  main = "resids ~ fitted | trial.type * run (fit1het)"
+  )
+plot(
+  fit1.het,
+  resid(., type = "p") ~ trial.num | trial.type * as.factor(run) * pc, 
+  abline = 0, 
+  main = "resids ~ fitted | trial.type * run (fit1het)"
+  )
+
+plot(
+  fit1.het,
+  resid(., type = "p") ~ trial.num | trial.type * as.factor(run) * pc, 
+  abline = 0, 
+  main = "resids ~ fitted | trial.type * run (fit1het)"
+  )
+
+
+## by item
+
+plot(fit1.het, resid(., type = "p") ~ fitted(.) | pc * trial.type, abline = 0)
+
+
+plot(fit1.het1, resid(., type = "p") ~ trial.num | subj, abline = 0)
+head(stroop.pro.rt)
+
+
+
+plot(fit1.het1, rt ~ fitted(.) | subj)
+
+ggplot_qqnorm(resid(fit1.het))
+
+
+ggplot_qqnorm(resid(fit1.het1))
+
+
+group_qqnorm(
+  resid(fit1.het1), stroop.pro.rt$trial.type, alpha_point = 0.2,
+  fill = stroop.pro.rt$trial.type
+  )
+
+group_qqnorm(resid(fit1.het1), stroop.pro.rt$trial.type, alpha_point = 0.2)  ## by subj
+
+
+qqnorm(fit1.hom, ~ ranef(., level = 1))
+
+
+```
+
+```{r model_trialtype-pc}
+
+fit1.het.pc <- lme(
+  rt ~ trial.type * pc, stroop.pro.rt, ~ trial.type | subj,
+  weights = varIdent(form = ∼ 1 | subj),
+  control = cl1
+  )
+summary(fit1.het.pc)
+
+fit1.het.pc1 <- lme(
+  rt ~ trial.type * pc, stroop.pro.rt, ~ trial.type * pc | subj,
+  weights = varIdent(form = ∼ 1 | subj),
+  control = cl1
+  )
+summary(fit1.het.pc1)
+
+
+cbind(
+  anova(fit1.het.pc, fit1.het.pc1),
+  BICweight = icweight(anova(fit1.het.pc, fit1.het.pc1), "BIC"),
+  AICweight = icweight(anova(fit1.het.pc, fit1.het.pc1), "AIC")
+  ) %>%
+  kable(digits = 2)
+
+```
+
+
+### assessing shrinkage
+
+
+```{r shrinkage}
+
+l <- split(stroop.pro.rt, stroop.pro.rt$subj)
+f <- lapply(l, function(x) coef(lm(rt ~ trial.type, x)))
+ols <- as.data.frame(do.call(rbind, f))
+
+coefs <- rbind(
+  cbind(tibble::rownames_to_column(coef(fit1.hom), "subj"), model = "hom"),
+  cbind(tibble::rownames_to_column(coef(fit1.het), "subj"), model = "het"),
+  cbind(tibble::rownames_to_column(ols, "subj"), model = "ols")
+)
+
+coefs %<>% rename(congr = "(Intercept)", stroop = trial.typeincon)
+coefs$model <- relevel(coefs$model, "ols")
+
+coefs %>%
+  ggplot(aes(congr, stroop, fill = model)) +
+  geom_line(aes(group = subj)) +
+  geom_point(shape = 21, color = "black", size = 2) +
+  scale_fill_manual(
+    values = c(ols = "#fee0d2", hom = "#fc9272", het = "#de2d26"),
+    labels = c(ols = "ols", hom = "homogeneous var", het = "heterogeneous var")
+    ) +
+  theme(legend.position = c(0.2, 0.2), legend.background = element_blank())
+
+```
+
+* Slopes (stroop effects) are shrunk more than intercepts (congruent RT). This was expected.
+* Also seems the heterogeneous variance model increased the shrinkage relative to the homogenous model.
+And that this shrinkage was generally linear or proportional across subjects relative to the ols $\rightarrow$ homogeneous variance model.
+
+
+
+### assessing split-half-consistency
+
+Here I assess the split-half consistency, or cross-run correlation, via the heterogeneous model.
+First I fit a model containing an interaction between trial.type and run, for each subject:
+```{r split-half-reliability_model}
+
+fit1.het.run <- lme(
+  rt ~ trial.type * run, stroop.pro.rt, ~ trial.type * run | subj,
+  weights = varIdent(form = ∼ 1 | subj),
+  control = cl1,
+  method = "REML"
+  )
+
+summary(fit1.het.run)
+
+```
+
+Within this model, there are two estimates available of the consistency or correlation between split halves.
+
+1. One is _conditional_ on the observed data (y). This is obtained by extracting the "conditional modes" of the estimate, and estimating pearson's correlation between them. These conditional modes are the most likely value of $b$, given (conditioned on) y; i.e., the random slopes for each subject.
+
+2. the other method gives a correlation statistic that is not conditioned on the data, but rather is marginalized across all possible values of the data ("unconditional").
+What this means exactly I don't know.
+But see [here](https://stats.stackexchange.com/questions/153253/random-slope-and-intercept-correlation-not-consistent-in-output-vs-manual-calcu) or [here](https://stat.ethz.ch/pipermail/r-sig-mixed-models/2009q1/001763.html) for further reading.
+
+Note that because of the way I coded the `trial.type` and `run` variables in my model, I will need to do some algebra to get the stroop effects and (co)variance thereof in each run.
+
+
+```{r split-half-reliability_correlations}
+
+m <- rbind(c(0, 1, 0, 0), c(0, 1, 0, 1))  ## a contrast matrix that gives us what we want
+
+## conditional covariances
+
+u <- as.matrix(coef(fit1.het.run)) %*% t(m)
+cov(u)
+(r.conditional <- cor(u)[1, 2])  ## correlation of conditional modes
+
+
+## unconditional / marginal covariances
+
+tau <- getVarCov(fit1.het.run)
+(tau <- m %*% tau %*% t(m))
+
+r.marginal <- cov2cor(tau)[1, 2]
+
+```
+
+
+```{r split-half-reliability_posterior-modes}
+
+u <- as.data.frame(u)
+
+names(u) <- c("stroop.run1", "stroop.run2")
+
+u %>%
+  ggplot(aes(stroop.run1, stroop.run2)) +
+  stat_boot_ci(n = 1E4, alpha = 0.2) +
+  geom_smooth(method = "lm", se = FALSE, color = "grey30") +
+  geom_point(shape = 21, color = "white", fill = "black", size = 2) +
+  annotate(geom = "text", label = paste0("r = ", round(r.marginal, 2)), y = 150, x = 20, vjust = 1, hjust = 0) +
+  theme(panel.grid = element_blank())
+
+```
+
+
+
+```{r}
+cl3 <- lmeControl(maxIter = 1e5, msMaxIter = 1e5, niterEM = 1e5, msMaxEval = 1e5, apVar = FALSE)
+
+fit1.het.reml <- lme(
+  rt ~ trial.type, stroop.pro.rt, ~ trial.type | subj,
+  weights = varIdent(form = ∼ 1 | subj),
+  control = cl1,
+  method = "REML"
+  )
+summary(fit1.het.reml)
+
+fit1.het.reml.noapvar <- lme(
+  rt ~ trial.type, stroop.pro.rt, ~ trial.type | subj,
+  weights = varIdent(form = ∼ 1 | subj),
+  control = cl3,
+  method = "REML"
+  )
+summary(fit1.het.reml.noapvar)
+
+```
+
