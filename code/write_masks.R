@@ -19,11 +19,11 @@ atlas.key$mmp[atlas.key$mmp$hemi == "R", "num.roi"] <- atlas.key$mmp$num.roi[atl
 
 write.masks <- function(l, prefix, atlas.name) {
   
-  .atlas <- atlas.key[[atlas.name]]
+  .atlas <- atlas[[atlas.name]]
   .atlas.key <- atlas.key[[atlas.name]]
   
   for (ii in seq_along(l)) {
-    num.rois <- .atlas$num.roi[.atlas.key$roi %in% l[[ii]]]
+    num.rois <- .atlas.key$num.roi[.atlas.key$roi %in% l[[ii]]]
     mask.i <- array(as.numeric(.atlas@.Data %in% num.rois), dim = c(75, 90, 75))
     
     writeNIfTI(as.nifti(mask.i), here::here("out", "masks", paste0(prefix, names(l)[ii])))
@@ -63,6 +63,7 @@ anatomical <- c(
 )
 
 write.masks(anatomical, "anat_", "mmp")
+
 
 ## from gordon
 ## smmouth (bil)
