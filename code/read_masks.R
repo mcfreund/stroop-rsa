@@ -33,5 +33,3 @@ masks <- lapply(
 )
 
 names(masks) <- gsub("\\.nii.*$", "", fnames)
-
-

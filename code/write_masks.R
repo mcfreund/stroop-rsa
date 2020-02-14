@@ -132,7 +132,7 @@ orig <- list(
   premotor.R = paste0(c("FEF", "55b", "PEF", "6v", "6r", "43", "6a"), "_R"),
   dlpfc.L    = paste0(c("p9-46v", "8C", "8Av", "i6-8"), "_L"),
   dlpfc.R    = paste0(c("p9-46v", "8C", "8Av", "i6-8"), "_R"),
-  mpfc.L     = paste0(c("a32pr", "p32pr", "8BM", "SCEF"), "L"),
+  mpfc.L     = paste0(c("a32pr", "p32pr", "8BM", "SCEF"), "_L"),
   mpfc.R     = paste0(c("a32pr", "p32pr", "8BM", "SCEF"), "_R"),
   ins.L      = paste0(c("FOP4", "FOP5", "FOP3"), "_L"),
   ins.R      = paste0(c("FOP4", "FOP5", "FOP3"), "_R"),
