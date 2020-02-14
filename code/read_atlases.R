@@ -12,9 +12,6 @@ atlas <- setNames(vector("list", 2), c("mmp", "gordon"))
 
 atlas$mmp <- oro.nifti::readNIfTI(here::here("out", "atlases", "mmp.nii.gz"), reorient = FALSE)
 
-atlas.key$mmp[atlas.key$mmp$hemi == "L", "num.roi"] <- atlas.key$mmp$num.roi[atlas.key$mmp$hemi == "L"] + 180
-atlas.key$mmp[atlas.key$mmp$hemi == "R", "num.roi"] <- atlas.key$mmp$num.roi[atlas.key$mmp$hemi == "R"] - 180
-
 atlas$gordon <- oro.nifti::readNIfTI(here::here("out", "atlases", "gordon.nii.gz"), reorient = FALSE)
 
 
@@ -28,3 +25,5 @@ atlas.key$gordon <- read.csv(here::here("out", "atlases", "gordon.csv"), strings
 atlas.key$mmp$X <- NULL
 atlas.key$gordon$X <- NULL
 
+atlas.key$mmp[atlas.key$mmp$hemi == "L", "num.roi"] <- atlas.key$mmp$num.roi[atlas.key$mmp$hemi == "L"] + 180
+atlas.key$mmp[atlas.key$mmp$hemi == "R", "num.roi"] <- atlas.key$mmp$num.roi[atlas.key$mmp$hemi == "R"] - 180
