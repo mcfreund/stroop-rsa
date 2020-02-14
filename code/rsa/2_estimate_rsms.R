@@ -73,7 +73,7 @@ if (do.masks) sets.of.rois <- c(sets.of.rois, "masks")
 ## loop over sets of ROIs ----
 
 for (set.i in sets.of.rois) {
-  # set.i = "mmp"
+  # set.i = "masks"
   
   ## get numbers and create storage objects
   
@@ -130,25 +130,8 @@ for (set.i in sets.of.rois) {
       
       image.label <- paste0(reg.i, "#0_Coef")
       
-      ## TODO: move this into wrapper function?
-      if (nodename == "CCP-FREUND") {
-        
-        brick.str <- system2(
-          "wsl",
-          args = paste("/home/mcf/abin/3dinfo", "-label2index", image.label, fname.nii),
-          stdout = TRUE
-        )
-        
-      } else if (nodename == "ccplinux1"){
-        
-        brick.str <- system2(
-          "/usr/local/pkg/linux_openmp_64/3dinfo",
-          args = paste("-label2index", image.label, fname.nii),
-          stdout = TRUE
-        )  ## doesn't matter which run.
-        
-      }
-      
+      brick.str <- mikeutils::afni("3dinfo", paste("-label2index", image.label, fname.nii))
+
       ## for error checking
       
       has.error <- grepl("error", brick.str, ignore.case = TRUE)
