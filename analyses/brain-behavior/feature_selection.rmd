@@ -242,11 +242,6 @@ d <- stats.subjs.tdic %>%
 
 ## top 20: need conduct robust!
 
-outs <- d %>%
-  group_by(superparcel, param) %>%
-  summarize(outlist = list(outpro(beta, stroop)))
-outs$outlist
-
 top20 <- d %>%
   group_by(superparcel, param) %>%
   summarize(
