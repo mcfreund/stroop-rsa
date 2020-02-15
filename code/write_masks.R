@@ -40,7 +40,7 @@ anatomical <- list(
   mfc   = c("SCEF", "8BM",  "p32pr", "a32pr"),  ## medial fc
   dlpfc = c("p9-46v", "i6-8", "8Av", "8C", "46"),
   dpm   = c("6a", "FEF", "6ma"), ## dorsal premotor
-  vpm   = c("6v", "6v", "PEF"),  ## ventral premotor
+  vpm   = c("6v", "6v", "PEF", "6r"),  ## ventral premotor
   ifj   = c("IFJp", "IFJa"),
   vvis  = c("FFC", "VVC", "PIT", "V8", "LO2", "TE2p", "VMV3", "VMV2", "VMV1", "PH", "PHA3", "PHA2", "PHA1"),
   ins   = c("FOP4", "FOP5", "FOP3", "AVI", "MI"),
