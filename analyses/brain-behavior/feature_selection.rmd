@@ -57,7 +57,7 @@ color.congruency <- c("incon" = "#b2182b", "congr" = "#2166ac")
 
 ```
 
-```{r}
+```{r, include = FALSE}
 outpro<-function(m,gval=NA,center=NA,plotit=TRUE,op=TRUE,MM=FALSE,cop=3,
 xlab="VAR 1",ylab="VAR 2",STAND=TRUE,tr=.2,q=.5,pr=TRUE,...){
 #
@@ -232,7 +232,7 @@ elimna
 ```
 
 
-```{r quicklook_anatfunc}
+```{r quicklook_anatfunc, fig.width = 20, fig.height = 7}
 
 d <- stats.subjs.tdic %>% 
   filter(param %in% c("distractor", "incongruency", "target")) %>%
@@ -242,37 +242,55 @@ d <- stats.subjs.tdic %>%
 
 ## top 20: need conduct robust!
 
-top20 <- d %>%
+d %<>%
+  group_by(superparcel, param) %>%
+  mutate(
+    n = seq_len(n()),
+    is.out.line = n %in% outpro(beta, stroop)$out.id,
+    is.out.rank = n %in% outpro(rank(beta), rank(stroop))$out.id
+  )
+
+topcors <- d %>%
   group_by(superparcel, param) %>%
   summarize(
-    r2 = cor(rank(beta), rank(stroop))^2,
-    out = list(outpro(rank(beta), rank(stroop)))
+    r.line = cor(beta, stroop),
+    r.rank = cor(beta, stroop, method = "spearman"),
+    r2.line = r.line^2,
+    r2.rank = r.rank^2,
+    r.line.nout = sum(is.out.line),
+    r.rank.nout = sum(is.out.rank)
     ) %>%
   ungroup %>%
-  arrange(-r2) %>%
-  filter(row_number() <= 20)
-top20$out
-
-
-
-
-  # top_n(20) %>%
+  filter(rank(-r2.line) < 21 & rank(-r2.rank) < 21) %>%
+  arrange(-r2.line) %>%
   mutate(id = interaction(superparcel, param))
 
-d %>% 
-  mutate(id = interaction(superparcel, param)) %>%
-  filter(id %in% top20$id) %>%
+topcors
+
+d %<>% 
+  mutate(id = as.character(interaction(superparcel, param))) %>%
+  filter(id %in% topcors$id)
+
+d %>%
   group_by(id) %>%
   mutate(
     beta.z = scale(beta), 
-    stroop.z = scale(stroop)
+    stroop.z = scale(stroop),
+    r = cor(beta, stroop)
   ) %>%
   ggplot(aes(beta.z, stroop.z, fill = param)) +
-  facet_wrap(vars(id)) +
+  facet_grid(vars(param), vars(superparcel)) +
   geom_smooth(method = "lm", se = FALSE, color = "black") +
   stat_boot_ci(fill = "grey50", alpha = 0.5) +
   geom_point(shape = 21, color = "white", size = 2)
-  
+
+```
+
+
+```{r model}
+
+d %>%
+  select()
 
 
 ```
