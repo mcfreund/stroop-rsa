@@ -103,6 +103,7 @@ grid.arrange(
         ),
   ncol = 2
 )
+
 ```
 
 
@@ -527,6 +528,110 @@ fit1.het.reml.noapvar <- lme(
   method = "REML"
   )
 summary(fit1.het.reml.noapvar)
+
+```
+
+## outlier exclusion
+
+```{r trimming}
+
+stroop.pro.rt$resid.p <- resid(fit1.het.reml, type = "p")
+
+plot(stroop.pro.rt$resid.p)
+
+
+farout <- function(x) {
+  
+  q1 <- quantile(x, 0.25)
+  q3 <- quantile(x, 0.75)
+  iqr3 <- IQR(x) * 3
+  
+  x < (q1 - iqr3) | x > (q3 + iqr3)
+  
+}
+
+stroop.pro.rt$is.far.out <- farout(stroop.pro.rt$resid.p)
+
+plot(
+  stroop.pro.rt$resid.p,
+  col = ifelse(stroop.pro.rt$is.far.out, "firebrick", "black")
+  )
+
+sum(stroop.pro.rt$is.far.out)
+
+## outlier exclusions per subject * condition
+
+counts.subj.out <- table(stroop.pro.rt$subj, stroop.pro.rt$trial.type, stroop.pro.rt$is.far.out) %>% as.data.frame
+tidyr::spread(counts.subj.out, Var2, Freq) %>% 
+  filter(Var3 == TRUE) %>% dplyr::select(-Var3) %>%
+  rename(subj = Var1) %>%
+  kable(digits = 2)
+
+## refit model
+
+fit1.het.reml.trim <- update(fit1.het.reml, subset = !is.far.out)
+
+summary(fit1.het.reml.trim)
+
+plot(
+  coef(fit1.het.reml)[, "trial.typeincon"],
+  coef(fit1.het.reml.trim)[, "trial.typeincon"]
+)
+
+qqnorm(coef(fit1.het.reml)[, "trial.typeincon"])
+
+qqnorm(coef(fit1.het.reml.trim)[, "trial.typeincon"])
+
+```
+
+## re-estimate internal consistency
+
+```{r split-half-reliability_model_trimmed}
+
+fit1.het.run.reml.trim <- lme(
+  rt ~ trial.type * run, stroop.pro.rt, ~ trial.type * run | subj,
+  weights = varIdent(form = ∼ 1 | subj),
+  control = cl1,
+  method = "REML",
+  subset = !is.far.out
+  )
+
+summary(fit1.het.run.reml.trim)
+
+## conditional covariances
+
+u.trim <- as.matrix(coef(fit1.het.run.reml.trim)) %*% t(m)
+cov(u.trim)
+(r.conditional.trim <- cor(u.trim)[1, 2])  ## correlation of conditional modes
+
+
+## unconditional / marginal covariances
+
+tau.trim <- getVarCov(fit1.het.run.reml.trim)
+(tau.trim <- m %*% tau.trim %*% t(m))
+
+(r.marginal.trim <- cov2cor(tau.trim)[1, 2])
+
+```
+
+
+```{r split-half-reliability_posterior-modes_trimmed}
+
+u.trim <- as.data.frame(u.trim)
+
+names(u.trim) <- c("stroop.run1", "stroop.run2")
+
+u.trim %>%
+  ggplot(aes(stroop.run1, stroop.run2)) +
+  geom_abline() +
+  stat_boot_ci(n = 1E4, alpha = 0.2) +
+  # geom_smooth(method = "lm", se = FALSE, color = "grey30") +
+  geom_point(shape = 21, color = "white", fill = "black", size = 2) +
+  annotate(
+    geom = "text", label = paste0("r(unconditional) = ", round(r.marginal.trim, 2)), 
+    y = 150, x = 20, vjust = 1, hjust = 0
+    ) +
+  theme(panel.grid = element_blank())
 
 ```
 

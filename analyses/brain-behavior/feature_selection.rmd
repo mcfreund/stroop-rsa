@@ -1,0 +1,98 @@
+---
+title: "developing a model of behavior"
+author: "michael freund"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+
+```{r setup, include = FALSE}
+
+library(mikeutils)
+library(magrittr)
+library(here)
+library(knitr)
+library(dplyr)
+library(data.table)
+library(ggplot2)
+library(grid)
+library(gridExtra)
+library(colorspace)
+library(viridis)
+
+## opts ----
+
+opts_chunk$set(
+  cache = TRUE, fig.align = "center", echo = TRUE
+)
+theme_set(theme_bw(base_size = 12))
+
+## data ----
+
+blups <- read.csv(here("out", "behav", "stroop_blups_rt_group201902.csv"), stringsAsFactors = FALSE)
+stats.subjs.tdic <- fread(
+  here("out", "rsa", "stats", paste0("subjs_pro_bias_acc-only_masks_pearson_residual_glm-tdic.csv"))
+  )
+stats.subjs.tdic <- stats.subjs.tdic[is.analysis.group == TRUE & y == "rank", ]  ## EXCLUDE HELD OUT SUBJECTS!
+stats.subjs.tdic <- stats.subjs.tdic[, c("coef", "y", "model") := NULL]  ## remove useless cols
+
+stats.subjs.tdic <- full_join(blups, stats.subjs.tdic, by = "subj")
+
+## format cols
+
+stats.subjs.tdic <- cbind(
+  stats.subjs.tdic,
+  reshape2::colsplit(stats.subjs.tdic$roi, "_", c("roi.set", "superparcel"))
+)
+stats.subjs.tdic$superparcel[stats.subjs.tdic$superparcel == ""] <- "vwfa"
+
+
+## vars ----
+
+params.interest <- c("target", "distractor", "incongruency")
+color.congruency <- c("incon" = "#b2182b", "congr" = "#2166ac")
+
+## funs ----
+
+
+```
+
+
+
+```{r quicklook_anatfunc}
+
+d <- stats.subjs.tdic %>% 
+  filter(param %in% c("distractor", "incongruency", "target")) %>%
+  filter(
+    roi.set == "anatfunc" | superparcel %in% c("vwfa", "smmouth", "ifc.L", "ifc.R", "ins.L", "ins.R")
+  )
+
+## top 20: need conduct robust!
+
+top20 <- d %>%
+  group_by(superparcel, param) %>%
+  summarize(r2 = cor(beta, stroop)^2) %>%
+  ungroup %>%
+  arrange(-r2) %>%
+  slice(1:15) %>%
+  mutate(id = interaction(superparcel, param))
+
+d %>% 
+  mutate(id = interaction(superparcel, param)) %>%
+  filter(id %in% top20$id) %>%
+  group_by(id) %>%
+  mutate(
+    beta.z = scale(beta), 
+    stroop.z = scale(stroop)
+  ) %>%
+  ggplot(aes(beta.z, stroop.z, fill = param)) +
+  facet_wrap(vars(id)) +
+  geom_smooth(method = "lm", se = FALSE, color = "black") +
+  stat_boot_ci(fill = "grey50", alpha = 0.5) +
+  geom_point(shape = 21, color = "white", size = 2)
+  
+
+
+  
+```
+

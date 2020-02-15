@@ -24,6 +24,3 @@ atlas.key$gordon <- read.csv(here::here("out", "atlases", "gordon.csv"), strings
 
 atlas.key$mmp$X <- NULL
 atlas.key$gordon$X <- NULL
-
-atlas.key$mmp[atlas.key$mmp$hemi == "L", "num.roi"] <- atlas.key$mmp$num.roi[atlas.key$mmp$hemi == "L"] + 180
-atlas.key$mmp[atlas.key$mmp$hemi == "R", "num.roi"] <- atlas.key$mmp$num.roi[atlas.key$mmp$hemi == "R"] - 180

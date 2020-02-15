@@ -42,8 +42,13 @@ anatomical <- list(
   dpm   = c("6a", "FEF", "6ma"), ## dorsal premotor
   vpm   = c("6v", "6v", "PEF"),  ## ventral premotor
   ifj   = c("IFJp", "IFJa"),
-  vvis  = c("FFC", "PH", "VVC", "PIT", "V8", "LO2", "TE2p", "VMV3", "VMV2", "VMV1", "PHA3", "PHA2", "PHA1")
+  vvis  = c("FFC", "VVC", "PIT", "V8", "LO2", "TE2p", "VMV3", "VMV2", "VMV1", "PH", "PHA3", "PHA2", "PHA1"),
+  ins   = c("FOP4", "FOP5", "FOP3", "AVI", "MI"),
+  ifc   = c("44", "45", "IFSa", "p47r"),
+  ofc   = c("47s", "47m", "11l", "13l", "OFC", "10pp"),
+  fpc   = c("9-46d", "a9-46v", "a10p", "p10p", "a47r")
 )
+
 anatomical.r <- lapply(anatomical, function(x) paste0(x, "_R"))
 anatomical.l <- lapply(anatomical, function(x) paste0(x, "_L"))
 anatomical <- c(
@@ -69,7 +74,7 @@ writeNIfTI(as.nifti(smmouth), here::here("out", "masks", "anat_smmouth"))
 ## assem (mmp) ----
 
 md <- list(
-  core       = c("p9-46v", "a9-46v", "i6-8", "AVi", "8C", "IFJp", "IP2", "IP1", "PFm", "8BM"),
+  core       = c("p9-46v", "a9-46v", "i6-8", "AVi", "8C", "IFJp", "IP2", "IP1", "PFm", "8BM", "SCEF"),
   extended   = c(
     "p9-46v", "a9-46v", "i6-8", "AVi", "8C", "IFJp", "IP2", "IP1", "PFm", "8BM",
     "TE1m", "TE1p", "PGs", "PFm", "AIP", "MIP", "LIPd", "IP1", "IP2", "s6-8", 

@@ -28,6 +28,10 @@ library(colorspace)
 source(here("code", "strings.R"))
 source(here("code", "read_atlases.R"))
 
+# atlas.key$mmp[atlas.key$mmp$hemi == "L", "num.roi"] <- atlas.key$mmp$num.roi[atlas.key$mmp$hemi == "L"] + 180
+# atlas.key$mmp[atlas.key$mmp$hemi == "R", "num.roi"] <- atlas.key$mmp$num.roi[atlas.key$mmp$hemi == "R"] - 180
+
+
 params <- c("target", "distractor", "incongruency", "congruency")
 
 par(mar = c(2, 2, 2, 2))
@@ -49,6 +53,9 @@ mmp <- list(
   L = read_gifti2matrix(file.path(dir.atlas, "MMP_surface", "mmpL.func.gii")) %>% c,
   R = read_gifti2matrix(file.path(dir.atlas, "MMP_surface", "mmpR.func.gii")) %>% c
 )
+
+mmp$L <- mmp$L[mmp$L > 0] - 180
+mmp$R <- mmp$R[mmp$R > 0] + 180
 
 ```
 

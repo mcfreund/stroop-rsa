@@ -58,7 +58,7 @@ m.std <- lapply(m, function(x) scale(x[, -1]))  ## drop the intercept
 sets.of.rois <- c("mmp", "gordon", "masks")
 
 for (set.i in sets.of.rois) {
-  # set.i = "mmp"
+  # set.i = "masks"
   
   ## read observed similarity matrices (arrays)
   
