@@ -102,12 +102,13 @@ stats.subjs.tdic %<>% full_join(atlas.key$mmp, by = "roi")
 ## get stats
 
 stats.group.tdic <- stats.subjs.tdic %>%
-  group_by(num.roi, model, param) %>%
+  group_by(num.roi, param) %>%
   summarize(
     v    = wilcox.test(beta, alternative = "greater")$statistic,
     p    = wilcox.test(beta, alternative = "greater")$p.value,
     beta = tanh(mean(atanh(beta))),  ## must be last in this summarize()
   ) %>%
+  group_by(param) %>%
   mutate(p.fdr = p.adjust(p, method = "fdr"), p.holm = p.adjust(p, method = "holm")) %>%
   ungroup
 

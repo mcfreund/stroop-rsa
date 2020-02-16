@@ -85,6 +85,9 @@ params.interest <- c("target", "distractor", "conclust")
 
 stats.subjs.tdic %<>% full_join(atlas.key$mmp, by = "roi")
 
+stats.subjs.tdic$beta <- NULL
+stats.subjs.tdic <- stats.subjs.tdic %>% rename(beta = partr)
+
 ```
 
 # 1. __task coding analysis__: test each regressor against zero (baseline)
@@ -107,6 +110,7 @@ stats.group.tdic <- stats.subjs.tdic %>%
     p    = wilcox.test(beta, alternative = "greater")$p.value,
     beta = tanh(mean(atanh(beta))),  ## must be last in this summarize()
   ) %>%
+  group_by(param) %>%
   mutate(p.fdr = p.adjust(p, method = "fdr"), p.holm = p.adjust(p, method = "holm")) %>%
   ungroup
 

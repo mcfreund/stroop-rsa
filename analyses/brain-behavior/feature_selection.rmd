@@ -30,8 +30,12 @@ theme_set(theme_bw(base_size = 12))
 ## data ----
 
 blups <- read.csv(here("out", "behav", "stroop_blups_rt_group201902.csv"), stringsAsFactors = FALSE)
+blups$old <- read.csv(
+    here("old", "wustl_proj_stroop-rsa", "sheets", "stroop-estimates_group201902.csv"),
+    stringsAsFactors = FALSE
+  )$rt.mlm.hetvar.trim
 stats.subjs.tdic <- fread(
-  here("out", "rsa", "stats", paste0("subjs_pro_bias_acc-only_masks_pearson_residual_glm-tdic.csv"))
+  here("out", "rsa", "stats", paste0("subjs_pro_bias_acc-only_masks_pearson_residual_glm-tdclust.csv"))
   )
 stats.subjs.tdic <- stats.subjs.tdic[is.analysis.group == TRUE & y == "rank", ]  ## EXCLUDE HELD OUT SUBJECTS!
 stats.subjs.tdic <- stats.subjs.tdic[, c("coef", "y", "model") := NULL]  ## remove useless cols
@@ -52,7 +56,43 @@ stats.subjs.tdic$superparcel[stats.subjs.tdic$superparcel == ""] <- "vwfa"
 params.interest <- c("target", "distractor", "incongruency")
 color.congruency <- c("incon" = "#b2182b", "congr" = "#2166ac")
 
+
 ## funs ----
+# 
+# 
+# masks <- readRDS(
+#   here("out", "rsa", "obsv", "rsarray_pro_bias_acc-only_masks_pearson_residual-rank.rds")
+# )
+# masks.old <- readRDS(
+#   here("old", "wustl_proj_stroop-rsa", "data", "rsarray_pearson_mmp_group-201902_pro_bias_acc-only_rank-residual_multiparcel.rds")
+#   )
+# 
+# masks <- masks[, , , grep("orig", dimnames(masks)$roi)]
+# masks.old <- masks.old[, , dimnames(masks)$subj, , ]
+# dimnames(masks.old)
+# dimnames(masks)
+# 
+# 
+# masks.old.l <- masks.old[, , , , "r"]
+# dimnames(masks.old.l)$roi <- paste0("orig_", dimnames(masks.old.l)$roi, ".R")
+# dim(masks.old.l)
+# dim(masks)
+# 
+# 
+# 
+# for (ii in dimnames(masks.old.l)$roi) {
+#   ## ii = "orig_evis.L"
+#   if (grepl("premotorv", ii)) next
+#   
+#   is.identical <- identical(c(masks.old.l[, , , ii]), c(masks[, , , ii]))
+#   
+#   if (!is.identical) print(ii)
+#   
+# }
+# 
+# 
+# 
+# plot(c(masks.old[, , "115825", "mpfc", "r"]), c(masks[, , "115825", "orig_mpfc.R"]))
 
 
 ```
@@ -235,9 +275,9 @@ elimna
 ```{r quicklook_anatfunc, fig.width = 20, fig.height = 7}
 
 d <- stats.subjs.tdic %>% 
-  filter(param %in% c("distractor", "incongruency", "target")) %>%
+  filter(param %in% c("distractor", "conclust", "target")) %>%
   filter(
-    roi.set == "anatfunc" | superparcel %in% c("vwfa", "smmouth", "ifc.L", "ifc.R", "ins.L", "ins.R")
+    roi.set == "orig" | superparcel %in% c("vwfa", "smmouth")
   )
 
 ## top 20: need conduct robust!
@@ -246,15 +286,15 @@ d %<>%
   group_by(superparcel, param) %>%
   mutate(
     n = seq_len(n()),
-    is.out.line = n %in% outpro(beta, stroop)$out.id,
-    is.out.rank = n %in% outpro(rank(beta), rank(stroop))$out.id
+    is.out.line = n %in% outpro(partr, stroop)$out.id,
+    is.out.rank = n %in% outpro(rank(partr), rank(stroop))$out.id
   )
 
 topcors <- d %>%
   group_by(superparcel, param) %>%
   summarize(
-    r.line = cor(beta, stroop),
-    r.rank = cor(beta, stroop, method = "spearman"),
+    r.line = cor(partr, old),
+    r.rank = cor(partr, old, method = "spearman"),
     r2.line = r.line^2,
     r2.rank = r.rank^2,
     r.line.nout = sum(is.out.line),
@@ -289,9 +329,12 @@ d %>%
 
 ```{r model}
 
-d %>%
-  select()
+w <- d %>%
+  ungroup %>%
+  select(subj, congr, stroop, beta, id) %>%
+  tidyr::spread(id, beta)
 
-
+w %>% select(-subj) %>% cor %>% .["smmouth.distractor", ]
+  
 ```
 

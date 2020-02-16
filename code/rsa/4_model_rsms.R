@@ -52,13 +52,21 @@ m <- list(
   )
 m.std <- lapply(m, function(x) scale(x[, -1]))  ## drop the intercept
 
+## funs
+
+get.partr <- function(x, colname, ...) {
+  rsv <- x[, colname]
+  d <- cbind(rsv, X[, -1])
+  psych::partial.r(d, ...)[1, -1]
+}
+
 
 ## loop over sets of ROIs ----
 
 sets.of.rois <- c("mmp", "gordon", "masks")
 
 for (set.i in sets.of.rois) {
-  # set.i = "masks"
+  # set.i = "mmp"
   
   ## read observed similarity matrices (arrays)
   
@@ -131,7 +139,7 @@ for (set.i in sets.of.rois) {
   stats.subjs <- setNames(vector("list", length(m)), names(m))
   
   for (m.i in seq_along(m)) {
-    # m.i = 1
+    # m.i = 3
     
     X <- m[[m.i]]
     X.std <- m.std[[m.i]]
@@ -159,10 +167,25 @@ for (set.i in sets.of.rois) {
     betas$param <- rep(colnames(X.std), n.mods)
     betas$id <- rep(names(rsvectors.std), each = ncol(X.std))
     betas <- melt(as.data.table(betas), id.vars = c("id", "param"), variable = "y", value.name = "beta")
-
+    
+    ## get partial cors
+    
+    partr.r <- do.call(rbind, lapply(rsvectors, get.partr, colname = "r", method = "pearson"))
+    partr.r <- tibble::rownames_to_column(as.data.frame(partr.r), "id")
+    partr.r <- reshape2::melt(partr.r, variable = "param", value.name = "partr", id.vars = "id")
+    
+    partr.rank <- do.call(rbind, lapply(rsvectors, get.partr, "rank", method = "spearman"))
+    partr.rank <- tibble::rownames_to_column(as.data.frame(partr.rank), "id")
+    partr.rank <- reshape2::melt(partr.rank, variable = "param", value.name = "partr", id.vars = "id")
+    
+    partr.r$y <- "r"
+    partr.rank$y <- "rank"
+    partr <- rbind(partr.r, partr.rank)
+    
     ## bind and save
     
-    stats.subjs[[m.i]] <- full_join(coefs, betas, by = c("y", "id", "param"))
+    d <- full_join(coefs, betas, by = c("y", "id", "param"))
+    stats.subjs[[m.i]] <- full_join(d, partr, by = c("y", "id", "param"))
     
   }
   
@@ -188,7 +211,7 @@ for (set.i in sets.of.rois) {
   
   ## rearrange cols (and drop id col)
   
-  stats.subjs %<>% select(subj, is.analysis.group, roi, model, y, param, coef, beta)
+  stats.subjs %<>% select(subj, is.analysis.group, roi, model, y, param, coef, beta, partr)
   
   
   ## write ----
@@ -210,4 +233,3 @@ for (set.i in sets.of.rois) {
   }
 
 }
-

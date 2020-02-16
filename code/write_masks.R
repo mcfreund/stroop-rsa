@@ -132,7 +132,7 @@ orig <- list(
   vvis.L     = paste0(c("FFC", "VVC", "V8", "VMV3"), "_L"),
   vvis.R     = paste0(c("FFC", "VVC", "V8", "VMV3", "VMV2"), "_R"),
   ips.L      = paste0(c("IP0", "IP1", "LIPd", "VIP", "LIPv", "AIP", "7PC"), "_L"),
-  ips.R      = paste0(c("IP0", "IP1", "IP2", "IPS1", "MIP", "LIPd", "LIPv", "AIP", "7PC"), "_R"),
+  ips.R      = paste0(c("IP0", "IP1", "IP2", "IPS1", "MIP", "LIPd", "LIPv", "AIP", "7PC", "7PL"), "_R"),
   premotor.L = paste0(c("FEF", "55b", "PEF", "6v", "6r", "43", "6d"), "_L"),
   premotor.R = paste0(c("FEF", "55b", "PEF", "6v", "6r", "43", "6a"), "_R"),
   dlpfc.L    = paste0(c("p9-46v", "8C", "8Av", "i6-8"), "_L"),
@@ -155,3 +155,5 @@ write.masks(orig, "orig_", "mmp")
 
 
 
+tolower(c("IP0_r", "IP1_r", "IP2_r", "IPS1_r", "MIP_r", "LIPd_r", "LIPv_r", "AIP_r", "7PC_r", "7PL_r")) %>%
+  setdiff(., tolower(anatomical$lppc_R))
