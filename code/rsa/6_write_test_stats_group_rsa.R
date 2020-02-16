@@ -20,6 +20,7 @@ measures <- c("coef", "beta", "partr")
 ## read ----
 
 for (model.i in models) {
+  ## model.i = "tdic"
   
   stats.subjs <- fread(
     here("out", "rsa", "stats", paste0("subjs_pro_bias_acc-only_mmp_pearson_residual_glm-tdic.csv"))
@@ -77,21 +78,17 @@ for (model.i in models) {
     stats.group.partr %<>% full_join(atlas.key$mmp, by = "num.roi") %>% as.data.table
     
     
-    ## write ----
+    ## bind & write ----
     
-    fwrite(
-      stats.group.partr,
-      here("out", "rsa", "stats", paste0("group_pro_bias_acc-only_mmp_pearson_residual_glm-", model.i, "_coef.csv"))
+    stats.group <- bind_rows(
+      stats.group.beta %>% mutate(measure = "beta"),
+      stats.group.coef %>% mutate(measure = "coef"),
+      stats.group.partr %>% mutate(measure = "partr")
     )
     
     fwrite(
-      stats.group.partr,
-      here("out", "rsa", "stats", paste0("group_pro_bias_acc-only_mmp_pearson_residual_glm-", model.i, "_beta.csv"))
-    )
-    
-    fwrite(
-      stats.group.partr,
-      here("out", "rsa", "stats", paste0("group_pro_bias_acc-only_mmp_pearson_residual_glm-", model.i, "_partr.csv"))
+      stats.group,
+      here("out", "rsa", "stats", paste0("group_pro_bias_acc-only_mmp_pearson_residual_glm-", model.i, ".csv"))
     )
   
 }

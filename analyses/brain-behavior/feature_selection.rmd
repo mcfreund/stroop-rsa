@@ -35,7 +35,7 @@ blups$old <- read.csv(
     stringsAsFactors = FALSE
   )$rt.mlm.hetvar.trim
 stats.subjs.tdic <- fread(
-  here("out", "rsa", "stats", paste0("subjs_pro_bias_acc-only_masks_pearson_residual_glm-tdclust.csv"))
+  here("out", "rsa", "stats", paste0("subjs_pro_bias_acc-only_masks_pearson_residual_glm-tdi.csv"))
   )
 stats.subjs.tdic <- stats.subjs.tdic[is.analysis.group == TRUE & y == "rank", ]  ## EXCLUDE HELD OUT SUBJECTS!
 stats.subjs.tdic <- stats.subjs.tdic[, c("coef", "y", "model") := NULL]  ## remove useless cols
@@ -275,7 +275,7 @@ elimna
 ```{r quicklook_anatfunc, fig.width = 20, fig.height = 7}
 
 d <- stats.subjs.tdic %>% 
-  filter(param %in% c("distractor", "conclust", "target")) %>%
+  filter(param %in% c("distractor", "incongruency", "target")) %>%
   filter(
     roi.set == "orig" | superparcel %in% c("vwfa", "smmouth")
   )
@@ -293,8 +293,8 @@ d %<>%
 topcors <- d %>%
   group_by(superparcel, param) %>%
   summarize(
-    r.line = cor(partr, old),
-    r.rank = cor(partr, old, method = "spearman"),
+    r.line = cor(beta, stroop),
+    r.rank = cor(beta, stroop, method = "spearman"),
     r2.line = r.line^2,
     r2.rank = r.rank^2,
     r.line.nout = sum(is.out.line),
