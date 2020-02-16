@@ -335,6 +335,23 @@ w <- d %>%
   tidyr::spread(id, beta)
 
 w %>% select(-subj) %>% cor %>% .["smmouth.distractor", ]
-  
+
+X <- w %>% select(-subj, -congr, -stroop) %>% as.matrix
+
+
+library(ggplot2)
+library(qqplotr)
+dists <- data.frame(mahal2 = mahalanobis(X, colMeans(X), cov(X))^2)
+
+dists %>%
+  ggplot(aes(sample = mahal2)) + 
+  stat_qq_band(distribution = "chisq",dparams = list(df = ncol(X))) + 
+  stat_qq_line(distribution = "chisq", dparams = list(df = ncol(X))) + 
+  stat_qq_point(distribution = "chisq", dparams = list(df = ncol(X))) +
+  labs(x = expression(paste("theoretical (", chi^2, ", df = 17)"))) +
+  ylab("sample (X)")
+
+
+
 ```
 
