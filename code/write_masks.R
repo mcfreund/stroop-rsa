@@ -102,8 +102,7 @@ stats.subjs <- fread(
 
 stats.group.sig <- stats.subjs %>%
   filter(y == "rank", param %in% c("target", "incongruency", "distractor"), measure == "beta", p.fdr < 0.05)
-  mutate(p.fdr = p.adjust(p, method = "fdr"), p.holm = p.adjust(p, method = "holm")) %>%
-  ungroup
+
 
 rois <- unique(stats.group.sig$roi)
 
