@@ -497,21 +497,21 @@ No parcels meet criteria (no parcels distractor > target).
 
 ##### incongruency > \{distractor, 0\} (`r length(rois.pref.incon.vs.distr)` parcels)
 
-Betas
-```{r preference_incon-vs-distr_betas, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
-stats.coding.incon  %>% 
-  mutate(beta = ifelse(roi %in% rois.pref.incon.vs.distr, beta, NA)) %>%
-  build_overlay("beta") %>% 
-  plot_surface(underlay = hcp)
-```
+<!-- Betas -->
+<!-- ```{r preference_incon-vs-distr_betas, dev = "png", fig.width = 20, fig.height = 10, results = "asis"} -->
+<!-- stats.coding.incon  %>%  -->
+<!--   mutate(beta = ifelse(roi %in% rois.pref.incon.vs.distr, beta, NA)) %>% -->
+<!--   build_overlay("beta") %>%  -->
+<!--   plot_surface(underlay = hcp) -->
+<!-- ``` -->
 
-Test statistics (sum of sign ranks)
-```{r preference_incon-vs-distr_signrank, dev = "png", fig.width = 20, fig.height = 10, results = "asis"}
-stats.coding.incon  %>% 
-  mutate(v = ifelse(roi %in% rois.pref.incon.vs.distr, v, NA)) %>%
-  build_overlay("v") %>% 
-  plot_surface(underlay = hcp)
-```
+<!-- Test statistics (sum of sign ranks) -->
+<!-- ```{r preference_incon-vs-distr_signrank, dev = "png", fig.width = 20, fig.height = 10, results = "asis"} -->
+<!-- stats.coding.incon  %>%  -->
+<!--   mutate(v = ifelse(roi %in% rois.pref.incon.vs.distr, v, NA)) %>% -->
+<!--   build_overlay("v") %>%  -->
+<!--   plot_surface(underlay = hcp) -->
+<!-- ``` -->
 
 
 ```{r preference_incon-vs-distr}
