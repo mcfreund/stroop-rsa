@@ -38,7 +38,7 @@ write.masks <- function(l, prefix, atlas.name) {
 anatomical <- list(
   lppc   = c("IP0", "IPS1", "IP1", "MIP", "7PL", "7Pm", "7Am", "7PL", "7AL", "7PC", "VIP", "LIPv", "LIPd", "AIP", "IP2"),
   mfc    = c("SCEF", "8BM",  "p32pr", "a32pr"),  ## medial fc
-  dlpfc  = c("p9-46v", "i6-8", "8Av", "8C", "46"),
+  dlpfc  = c("p9-46v", "i6-8", "8Av", "8C"),
   dpm    = c("6a", "FEF", "6ma"), ## dorsal premotor
   vpm    = c("6v", "6v", "PEF", "6r"),  ## ventral premotor
   ifj    = c("IFJp", "IFJa"),
