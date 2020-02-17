@@ -95,27 +95,17 @@ write.masks(md, "md_", "mmp")
 ## anat * func ----
 
 ## get names of task-responsive ROIs
-stats.subjs.tdic <- fread(
-  here("out", "rsa", "stats", paste0("subjs_pro_bias_acc-only_mmp_pearson_residual_glm-tdic.csv"))
+
+stats.subjs <- fread(
+  here("out", "rsa", "stats", paste0("group_pro_bias_acc-only_mmp_pearson_residual_glm-tdic.csv"))
 )
-stats.subjs.tdic <- stats.subjs.tdic[is.analysis.group == TRUE & y == "rank", ]  ## EXCLUDE HELD OUT SUBJECTS!
-stats.subjs.tdic <- stats.subjs.tdic[, "coef" := NULL]
 
-stats.subjs.tdic %<>% full_join(atlas.key$mmp, by = "roi")
-
-stats.group.tdic <- stats.subjs.tdic %>%
-  group_by(num.roi, model, param) %>%
-  summarize(
-    v    = wilcox.test(beta, alternative = "greater")$statistic,
-    p    = wilcox.test(beta, alternative = "greater")$p.value,
-    beta = tanh(mean(atanh(beta))),  ## must be last in this summarize()
-  ) %>%
+stats.group.sig <- stats.subjs %>%
+  filter(y == "rank", param %in% c("target", "incongruency", "distractor"), measure == "beta", p.fdr < 0.05)
   mutate(p.fdr = p.adjust(p, method = "fdr"), p.holm = p.adjust(p, method = "holm")) %>%
   ungroup
 
-stats.group.tdic %<>% full_join(atlas.key$mmp, by = "num.roi") %>% as.data.table
-
-rois <- unique(stats.group.tdic[p.fdr < 0.05]$roi)
+rois <- unique(stats.group.sig$roi)
 
 
 ## get intersection with anatomical / apriori ROIs

@@ -30,12 +30,8 @@ theme_set(theme_bw(base_size = 12))
 ## data ----
 
 blups <- read.csv(here("out", "behav", "stroop_blups_rt_group201902.csv"), stringsAsFactors = FALSE)
-blups$old <- read.csv(
-    here("old", "wustl_proj_stroop-rsa", "sheets", "stroop-estimates_group201902.csv"),
-    stringsAsFactors = FALSE
-  )$rt.mlm.hetvar.trim
 stats.subjs.tdic <- fread(
-  here("out", "rsa", "stats", paste0("subjs_pro_bias_acc-only_masks_pearson_residual_glm-tdi.csv"))
+  here("out", "rsa", "stats", paste0("subjs_pro_bias_acc-only_masks_pearson_residual_glm-tdclust.csv"))
   )
 stats.subjs.tdic <- stats.subjs.tdic[is.analysis.group == TRUE & y == "rank", ]  ## EXCLUDE HELD OUT SUBJECTS!
 stats.subjs.tdic <- stats.subjs.tdic[, c("coef", "y", "model") := NULL]  ## remove useless cols
@@ -56,44 +52,48 @@ stats.subjs.tdic$superparcel[stats.subjs.tdic$superparcel == ""] <- "vwfa"
 params.interest <- c("target", "distractor", "incongruency")
 color.congruency <- c("incon" = "#b2182b", "congr" = "#2166ac")
 
-
 ## funs ----
-# 
-# 
-# masks <- readRDS(
-#   here("out", "rsa", "obsv", "rsarray_pro_bias_acc-only_masks_pearson_residual-rank.rds")
-# )
-# masks.old <- readRDS(
-#   here("old", "wustl_proj_stroop-rsa", "data", "rsarray_pearson_mmp_group-201902_pro_bias_acc-only_rank-residual_multiparcel.rds")
-#   )
-# 
-# masks <- masks[, , , grep("orig", dimnames(masks)$roi)]
-# masks.old <- masks.old[, , dimnames(masks)$subj, , ]
-# dimnames(masks.old)
-# dimnames(masks)
-# 
-# 
-# masks.old.l <- masks.old[, , , , "r"]
-# dimnames(masks.old.l)$roi <- paste0("orig_", dimnames(masks.old.l)$roi, ".R")
-# dim(masks.old.l)
-# dim(masks)
-# 
-# 
-# 
-# for (ii in dimnames(masks.old.l)$roi) {
-#   ## ii = "orig_evis.L"
-#   if (grepl("premotorv", ii)) next
-#   
-#   is.identical <- identical(c(masks.old.l[, , , ii]), c(masks[, , , ii]))
-#   
-#   if (!is.identical) print(ii)
-#   
-# }
-# 
-# 
-# 
-# plot(c(masks.old[, , "115825", "mpfc", "r"]), c(masks[, , "115825", "orig_mpfc.R"]))
 
+
+masks <- readRDS(
+  here("out", "rsa", "obsv", "rsarray_pro_bias_acc-only_masks_pearson_residual-rank.rds")
+)
+masks.old <- readRDS(
+  here("old", "wustl_proj_stroop-rsa", "data", "rsarray_pearson_mmp_group-201902_pro_bias_acc-only_rank-residual_multiparcel.rds")
+  )
+
+masks <- masks[, , , grep("orig", dimnames(masks)$roi)]
+masks.old <- masks.old[, , dimnames(masks)$subj, , ]
+dimnames(masks.old)
+dimnames(masks)
+
+
+masks.old.l <- masks.old[, , , , "r"]
+dimnames(masks.old.l)$roi <- paste0("orig_", dimnames(masks.old.l)$roi, ".R")
+dim(masks.old.l)
+dim(masks)
+
+
+
+for (ii in dimnames(masks.old.l)$roi) {
+  ## ii = "orig_evis.L"
+  if (grepl("premotorv", ii)) next
+  
+  is.identical <- identical(c(masks.old.l[, , , ii]), c(masks[, , , ii]))
+  
+  if (!is.identical) print(ii)
+  
+}
+
+
+
+plot(c(masks.old[, , "115825", "mpfc", "r"]), c(masks[, , "115825", "orig_mpfc.R"]))
+
+
+
+
+## ips_R ??
+## smmouth: averaged across hemisphere
 
 ```
 
@@ -275,9 +275,9 @@ elimna
 ```{r quicklook_anatfunc, fig.width = 20, fig.height = 7}
 
 d <- stats.subjs.tdic %>% 
-  filter(param %in% c("distractor", "incongruency", "target")) %>%
+  filter(param %in% c("distractor", "conclust", "target")) %>%
   filter(
-    roi.set == "orig" | superparcel %in% c("vwfa", "smmouth")
+    roi.set == "anatfunc" | superparcel %in% c("vwfa", "smmouth")
   )
 
 ## top 20: need conduct robust!
@@ -335,23 +335,6 @@ w <- d %>%
   tidyr::spread(id, beta)
 
 w %>% select(-subj) %>% cor %>% .["smmouth.distractor", ]
-
-X <- w %>% select(-subj, -congr, -stroop) %>% as.matrix
-
-
-library(ggplot2)
-library(qqplotr)
-dists <- data.frame(mahal2 = mahalanobis(X, colMeans(X), cov(X))^2)
-
-dists %>%
-  ggplot(aes(sample = mahal2)) + 
-  stat_qq_band(distribution = "chisq",dparams = list(df = ncol(X))) + 
-  stat_qq_line(distribution = "chisq", dparams = list(df = ncol(X))) + 
-  stat_qq_point(distribution = "chisq", dparams = list(df = ncol(X))) +
-  labs(x = expression(paste("theoretical (", chi^2, ", df = 17)"))) +
-  ylab("sample (X)")
-
-
-
+  
 ```
 
