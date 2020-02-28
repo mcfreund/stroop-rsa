@@ -36,17 +36,17 @@ write.masks <- function(l, prefix, atlas.name) {
 ## ips (l, r)
 
 anatomical <- list(
-  lppc  = c("IP0", "IPS1", "IP1", "MIP", "7PL", "7Pm", "7Am", "7PL", "7AL", "7PC", "VIP", "LIPv", "LIPd", "AIP", "IP2"),
-  mfc   = c("SCEF", "8BM",  "p32pr", "a32pr"),  ## medial fc
-  dlpfc = c("p9-46v", "i6-8", "8Av", "8C", "46"),
-  dpm   = c("6a", "FEF", "6ma"), ## dorsal premotor
-  vpm   = c("6v", "6v", "PEF", "6r"),  ## ventral premotor
-  ifj   = c("IFJp", "IFJa"),
-  vvis  = c("FFC", "VVC", "PIT", "V8", "LO2", "TE2p", "VMV3", "VMV2", "VMV1", "PH", "PHA3", "PHA2", "PHA1"),
-  ins   = c("FOP4", "FOP5", "FOP3", "AVI", "MI"),
-  ifc   = c("44", "45", "IFSa", "p47r"),
-  ofc   = c("47s", "47m", "11l", "13l", "OFC", "10pp"),
-  fpc   = c("9-46d", "a9-46v", "a10p", "p10p", "a47r")
+  lppc   = c("IP0", "IPS1", "IP1", "MIP", "7PL", "7Pm", "7Am", "7PL", "7AL", "7PC", "VIP", "LIPv", "LIPd", "AIP", "IP2"),
+  mfc    = c("SCEF", "8BM",  "p32pr", "a32pr"),  ## medial fc
+  dlpfc  = c("p9-46v", "i6-8", "8Av", "8C"),
+  dpm    = c("6a", "FEF", "6ma"), ## dorsal premotor
+  vpm    = c("6v", "6v", "PEF", "6r"),  ## ventral premotor
+  ifj    = c("IFJp", "IFJa"),
+  vvis   = c("FFC", "VVC", "V8", "VMV3"),
+  ins    = c("FOP4", "FOP5", "FOP3", "AVI", "MI"),
+  ifc    = c("44", "45", "IFSa", "p47r"),
+  ofc    = c("47s", "47m", "11l", "13l", "OFC", "10pp"),
+  fpc    = c("9-46d", "a9-46v", "a10p", "p10p", "a47r")
 )
 
 anatomical.r <- lapply(anatomical, function(x) paste0(x, "_R"))
@@ -113,35 +113,7 @@ anatfunc <- lapply(anatomical, intersect, rois)
 write.masks(anatfunc, "anatfunc_", "mmp")
 
 
-## orig ----
-
-orig <- list(
-  evis.L     = paste0(c("V1", "V2", "V3"), "_L"),
-  evis.R     = paste0(c("V1", "V2", "V3"), "_R"),
-  vvis.L     = paste0(c("FFC", "VVC", "V8", "VMV3"), "_L"),
-  vvis.R     = paste0(c("FFC", "VVC", "V8", "VMV3", "VMV2"), "_R"),
-  ips.L      = paste0(c("IP0", "IP1", "LIPd", "VIP", "LIPv", "AIP", "7PC"), "_L"),
-  ips.R      = paste0(c("IP0", "IP1", "IP2", "IPS1", "MIP", "LIPd", "LIPv", "AIP", "7PC", "7PL"), "_R"),
-  premotor.L = paste0(c("FEF", "55b", "PEF", "6v", "6r", "43", "6d"), "_L"),
-  premotor.R = paste0(c("FEF", "55b", "PEF", "6v", "6r", "43", "6a"), "_R"),
-  dlpfc.L    = paste0(c("p9-46v", "8C", "8Av", "i6-8"), "_L"),
-  dlpfc.R    = paste0(c("p9-46v", "8C", "8Av", "i6-8"), "_R"),
-  mpfc.L     = paste0(c("a32pr", "p32pr", "8BM", "SCEF"), "_L"),
-  mpfc.R     = paste0(c("a32pr", "p32pr", "8BM", "SCEF"), "_R"),
-  ins.L      = paste0(c("FOP4", "FOP5", "FOP3"), "_L"),
-  ins.R      = paste0(c("FOP4", "FOP5", "FOP3"), "_R"),
-  ifc.L      = paste0(c("44", "45", "IFSa", "IFSp", "p47r", "p47l"), "_L"),
-  ifc.R      = paste0(c("44", "45", "IFSa", "IFSp", "p47r", "p47l"), "_R"),
-  lang.L     = paste0(c("PSL", "55b", "44", "45", "SFL"), "_L"),
-  lang.R     = paste0(c("PSL", "55b", "44", "45", "SFL"), "_R")
-)
-
-write.masks(orig, "orig_", "mmp")
-
-
 ## func ----
-
-
 
 
 tolower(c("IP0_r", "IP1_r", "IP2_r", "IPS1_r", "MIP_r", "LIPd_r", "LIPv_r", "AIP_r", "7PC_r", "7PL_r")) %>%

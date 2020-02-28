@@ -4997,7 +4997,7 @@ num.roi,param,y,v,p,m,p.fdr,roi,hemi,community,community.short,measure
 169,target,,3727,2.01147019521515e-06,0.0451156306975968,1.85674171866014e-05,FOP5_L,L,insular and frontal opercular cortex,insular and FO,partr
 170,congruency,,2371,0.577263104589913,-0.000504566627711647,0.999998713932226,p10p_L,L,orbital and polar frontal cortex,oFC and pFC,partr
 170,distractor,,2325,0.639791402004055,-0.00064621738906156,0.999918495817204,p10p_L,L,orbital and polar frontal cortex,oFC and pFC,partr
-170,incongruency,,3098,0.00862620884339763,0.0375460978770464,0.0435477394964089,p10p_L,L,orbital and polar frontal cortex,oFC and pFC,partr
+170,incongruency,,3098,0.00862620884339763,0.0375460978770465,0.0435477394964089,p10p_L,L,orbital and polar frontal cortex,oFC and pFC,partr
 170,target,,3835,2.97396828419974e-07,0.0442468764181661,5.35314291155953e-06,p10p_L,L,orbital and polar frontal cortex,oFC and pFC,partr
 171,congruency,,2790,0.0985492842313786,0.00875067965680707,0.771255267897745,p47r_L,L,inferior frontal cortex,iFC,partr
 171,distractor,,2423,0.504240968171799,0.00134399111125584,0.999918495817204,p47r_L,L,inferior frontal cortex,iFC,partr
