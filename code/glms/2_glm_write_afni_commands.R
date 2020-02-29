@@ -210,6 +210,7 @@ dmat.blocks <-   rbind(
 )
 dmat <- rbind(dmat.events, dmat.blocks)
 
+
 ## proactive
 
 lapply(
@@ -258,7 +259,7 @@ lapply(
       run           = 1,
       .dmat         = dmat,
       code.dir      = "code/glms/",
-      out.folder    = "bas_bias_acc-only",
+      out.folder    = "bas_bias_acc-only_run1",
       .dir.image    = dir.nil.dmcc2.afni,
       .dir.analysis = here("glms")
     )
@@ -273,7 +274,7 @@ lapply(
       run           = 2,
       .dmat         = dmat,
       code.dir      = "code/glms/",
-      out.folder    = "bas_bias_acc-only",
+      out.folder    = "bas_bias_acc-only_run2",
       .dir.image    = dir.nil.dmcc2.afni,
       .dir.analysis = here("glms")
     )

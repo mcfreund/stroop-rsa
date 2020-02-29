@@ -46,19 +46,24 @@ for (dir.i in seq_along(dirs.input)) {
   
   fnames.i <- list.files(name.dir.i)
   fnames.stimtimes.i <- fnames.i[grep(paste0("^", subjs[dir.i]), fnames.i)]  ## discard movregs
-  fnames.stimtimes.i <- fnames.i[grep("acc-only\\.txt$", fnames.i)]  ## discard run-wise times
-  if (length(fnames.stimtimes.i)!= 19) stop("bad length")
+  fnames.stimtimes.i <- fnames.i[grep("sustained|transient|acc-only\\.txt$", fnames.i)]  ## discard run-wise times
+  if (length(fnames.stimtimes.i) != 21) stop("bad length")
   
   for (name.stimtime.i in fnames.stimtimes.i) {
     # name.stimtime.i <- fnames.stimtimes.i[1]
     
     fname.i <- file.path(name.dir.i, name.stimtime.i)
     
-    run1 <- readLines(fname.i, 1)
-    run2 <- readLines(fname.i, 2)
+    # run1 <- readLines(fname.i, 1)
+    # run2 <- readLines(fname.i, 2)
     
-    onsets2file(run1, paste0(gsub(".txt", "", fname.i), "_run1"))
-    onsets2file(run2, paste0(gsub(".txt", "", fname.i), "_run2"))
+    stimtimes <- readChar(fname.i, file.info(fname.i)$size)
+    stimtimes <- strsplit(stimtimes, split = "\n")[[1]]
+    
+    if (length(stimtimes) != 2) stop("bad length stimtimes")
+    
+    onsets2file(stimtimes[1], paste0(gsub(".txt", "", fname.i), "_run1"))
+    onsets2file(stimtimes[2], paste0(gsub(".txt", "", fname.i), "_run2"))
     
   }
   
@@ -84,4 +89,4 @@ sum(!was.copied)
 sum(was.copied)  ## full baseline set
 subjs.bas <- names(was.copied)[was.copied]
 
-write.csv(subjs.bas)
+write.csv(subjs.bas, "glms/subjs_bas.csv")
