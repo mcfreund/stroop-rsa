@@ -1,0 +1,32 @@
+** ERROR: matrix column #7 is all zero!?
+** ERROR: matrix column #8 is all zero!?
+** ERROR: matrix column #12 is all zero!?
+** ERROR: matrix column #13 is all zero!?
+** ERROR: matrix column #17 is all zero!?
+** ERROR: matrix column #18 is all zero!?
+*+ WARNING: You said to GOFORIT, so here we GO!
+*+ WARNING: !! in  matrix:
+ * Largest singular value=2.07698
+ * 6 singular values are less than cutoff=2.07698e-07
+ * Implies strong collinearity in the matrix columns! 
+*+ WARNING: -GOFORIT ==> Charging ahead into battle!
+*+ WARNING: -----
+*+ WARNING: QR decomposition of [R]^(-1/2) [X] had 6 collinearity problems
+*+ WARNING: -----
+*+ WARNING: GLT setup 38x1 matrix is all zero?
+*+ WARNING: Zero-ed 806316 float errors in dataset ./stats_DMCC6371570.nii.gz
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: Smallest FDR q [68 transient#3_Tstat] = 0.608608 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [70 transient#4_Tstat] = 0.936152 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [72 transient#5_Tstat] = 0.990708 ==> few true single voxel detections

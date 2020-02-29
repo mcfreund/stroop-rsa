@@ -1,0 +1,35 @@
+** ERROR: matrix column #9 is all zero!?
+** ERROR: matrix column #10 is all zero!?
+** ERROR: matrix column #14 is all zero!?
+** ERROR: matrix column #15 is all zero!?
+** ERROR: matrix column #19 is all zero!?
+** ERROR: matrix column #20 is all zero!?
+*+ WARNING: You said to GOFORIT, so here we GO!
+*+ WARNING: !! in  matrix:
+ * Largest singular value=2.2985
+ * 6 singular values are less than cutoff=2.2985e-07
+ * Implies strong collinearity in the matrix columns! 
+*+ WARNING: -GOFORIT ==> Charging ahead into battle!
+*+ WARNING: -----
+*+ WARNING: QR decomposition of [R]^(-1/2) [X] had 6 collinearity problems
+*+ WARNING: -----
+*+ WARNING: GLT setup 38x1 matrix is all zero?
+*+ WARNING: Zero-ed 797556 float errors in dataset ./stats_182436.nii.gz
+*+ WARNING: Smallest FDR q [5 purpleBLUE#0_Tstat] = 0.285739 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [6 purpleBLUE_Fstat] = 0.285739 ==> few true single voxel detections
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: Smallest FDR q [56 nuisance#0_Tstat] = 0.715968 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [57 nuisance_Fstat] = 0.715967 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [70 transient#4_Tstat] = 0.631234 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [72 transient#5_Tstat] = 0.598059 ==> few true single voxel detections

@@ -1,0 +1,34 @@
+** ERROR: matrix column #9 is all zero!?
+** ERROR: matrix column #10 is all zero!?
+** ERROR: matrix column #14 is all zero!?
+** ERROR: matrix column #15 is all zero!?
+** ERROR: matrix column #19 is all zero!?
+** ERROR: matrix column #20 is all zero!?
+*+ WARNING: You said to GOFORIT, so here we GO!
+*+ WARNING: !! in  matrix:
+ * Largest singular value=2.04595
+ * 6 singular values are less than cutoff=2.04595e-07
+ * Implies strong collinearity in the matrix columns! 
+*+ WARNING: -GOFORIT ==> Charging ahead into battle!
+*+ WARNING: -----
+*+ WARNING: QR decomposition of [R]^(-1/2) [X] had 6 collinearity problems
+*+ WARNING: -----
+*+ WARNING: GLT setup 38x1 matrix is all zero?
+*+ WARNING: Zero-ed 783186 float errors in dataset ./stats_DMCC6721369.nii.gz
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: Smallest FDR q [62 transient#0_Tstat] = 0.183126 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [66 transient#2_Tstat] = 0.635979 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [68 transient#3_Tstat] = 0.999622 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [70 transient#4_Tstat] = 0.460448 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [72 transient#5_Tstat] = 0.999775 ==> few true single voxel detections

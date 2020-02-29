@@ -1,0 +1,49 @@
+** ERROR: matrix column #9 is all zero!?
+** ERROR: matrix column #10 is all zero!?
+** ERROR: matrix column #14 is all zero!?
+** ERROR: matrix column #15 is all zero!?
+** ERROR: matrix column #19 is all zero!?
+** ERROR: matrix column #20 is all zero!?
+*+ WARNING: You said to GOFORIT, so here we GO!
+*+ WARNING: !! in  matrix:
+ * Largest singular value=1.93946
+ * 6 singular values are less than cutoff=1.93946e-07
+ * Implies strong collinearity in the matrix columns! 
+*+ WARNING: -GOFORIT ==> Charging ahead into battle!
+*+ WARNING: -----
+*+ WARNING: QR decomposition of [R]^(-1/2) [X] had 6 collinearity problems
+*+ WARNING: -----
+*+ WARNING: GLT setup 38x1 matrix is all zero?
+*+ WARNING: Zero-ed 786882 float errors in dataset ./stats_160830.nii.gz
+*+ WARNING: Smallest FDR q [5 purpleBLUE#0_Tstat] = 0.98031 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [6 purpleBLUE_Fstat] = 0.98031 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [8 redBLUE#0_Tstat] = 0.999889 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [9 redBLUE_Fstat] = 0.999889 ==> few true single voxel detections
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: Smallest FDR q [20 redPURPLE#0_Tstat] = 0.999801 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [21 redPURPLE_Fstat] = 0.999801 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [23 whitePURPLE#0_Tstat] = 0.442074 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [24 whitePURPLE_Fstat] = 0.442074 ==> few true single voxel detections
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: Smallest FDR q [35 whiteRED#0_Tstat] = 0.71937 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [36 whiteRED_Fstat] = 0.719371 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [38 blueWHITE#0_Tstat] = 0.239712 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [39 blueWHITE_Fstat] = 0.239712 ==> few true single voxel detections
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: Smallest FDR q [56 nuisance#0_Tstat] = 0.190641 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [57 nuisance_Fstat] = 0.190641 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [64 transient#1_Tstat] = 0.90346 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [66 transient#2_Tstat] = 0.481018 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [68 transient#3_Tstat] = 0.999624 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [70 transient#4_Tstat] = 0.821773 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [72 transient#5_Tstat] = 0.611986 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [73 transient_Fstat] = 0.155265 ==> few true single voxel detections

@@ -1,0 +1,39 @@
+*+ WARNING: '-stim_times 2' didn't read any good times from file '/data/nil-external/ccp/freund/stroop-rsa/glms/132017/input/bas/132017_bas_purpleBLUE_acc-only_run2.txt'
+*+ WARNING: '-stim_times 3' didn't read any good times from file '/data/nil-external/ccp/freund/stroop-rsa/glms/132017/input/bas/132017_bas_redBLUE_acc-only_run2.txt'
+*+ WARNING: '-stim_times 7' didn't read any good times from file '/data/nil-external/ccp/freund/stroop-rsa/glms/132017/input/bas/132017_bas_redPURPLE_acc-only_run2.txt'
+*+ WARNING: '-stim_times 8' didn't read any good times from file '/data/nil-external/ccp/freund/stroop-rsa/glms/132017/input/bas/132017_bas_whitePURPLE_acc-only_run2.txt'
+*+ WARNING: '-stim_times 12' didn't read any good times from file '/data/nil-external/ccp/freund/stroop-rsa/glms/132017/input/bas/132017_bas_whiteRED_acc-only_run2.txt'
+*+ WARNING: '-stim_times 13' didn't read any good times from file '/data/nil-external/ccp/freund/stroop-rsa/glms/132017/input/bas/132017_bas_blueWHITE_acc-only_run2.txt'
+*+ WARNING: '-stim_times 19' didn't read any good times from file '/data/nil-external/ccp/freund/stroop-rsa/glms/132017/input/bas/132017_bas_nuisance_acc-only_run2.txt'
+*+ WARNING: -stim_times 2 has all times equal to '*' ?!?!
+*+ WARNING: !! '-stim_times 2' file '/data/nil-external/ccp/freund/stroop-rsa/glms/132017/input/bas/132017_bas_purpleBLUE_acc-only_run2.txt' has no good stimulus time values
+*+ WARNING: -stim_times 3 has all times equal to '*' ?!?!
+*+ WARNING: !! '-stim_times 3' file '/data/nil-external/ccp/freund/stroop-rsa/glms/132017/input/bas/132017_bas_redBLUE_acc-only_run2.txt' has no good stimulus time values
+*+ WARNING: -stim_times 7 has all times equal to '*' ?!?!
+*+ WARNING: !! '-stim_times 7' file '/data/nil-external/ccp/freund/stroop-rsa/glms/132017/input/bas/132017_bas_redPURPLE_acc-only_run2.txt' has no good stimulus time values
+*+ WARNING: -stim_times 8 has all times equal to '*' ?!?!
+*+ WARNING: !! '-stim_times 8' file '/data/nil-external/ccp/freund/stroop-rsa/glms/132017/input/bas/132017_bas_whitePURPLE_acc-only_run2.txt' has no good stimulus time values
+*+ WARNING: -stim_times 12 has all times equal to '*' ?!?!
+*+ WARNING: !! '-stim_times 12' file '/data/nil-external/ccp/freund/stroop-rsa/glms/132017/input/bas/132017_bas_whiteRED_acc-only_run2.txt' has no good stimulus time values
+*+ WARNING: -stim_times 13 has all times equal to '*' ?!?!
+*+ WARNING: !! '-stim_times 13' file '/data/nil-external/ccp/freund/stroop-rsa/glms/132017/input/bas/132017_bas_blueWHITE_acc-only_run2.txt' has no good stimulus time values
+*+ WARNING: -stim_times 19 has all times equal to '*' ?!?!
+*+ WARNING: !! '-stim_times 19' file '/data/nil-external/ccp/freund/stroop-rsa/glms/132017/input/bas/132017_bas_nuisance_acc-only_run2.txt' has no good stimulus time values
+*+ WARNING: -------------------------------------------------
+*+ WARNING: Problems with the X matrix columns, listed below:
+*+ WARNING:    * Column 7 [purpleBLUE#0] is all zeros
+*+ WARNING:    * Column 8 [redBLUE#0] is all zeros
+*+ WARNING:    * Column 12 [redPURPLE#0] is all zeros
+*+ WARNING:    * Column 13 [whitePURPLE#0] is all zeros
+*+ WARNING:    * Column 17 [whiteRED#0] is all zeros
+*+ WARNING:    * Column 18 [blueWHITE#0] is all zeros
+*+ WARNING:    * Column 24 [nuisance#0] is all zeros
+*+ WARNING: -------------------------------------------------
+*+ WARNING: !! in Signal+Baseline matrix:
+ * Largest singular value=2.18214
+ * 7 singular values are less than cutoff=2.18214e-07
+ * Implies strong collinearity in the matrix columns! 
+*+ WARNING: !! in Signal-only matrix:
+ * Largest singular value=1.62166
+ * 7 singular values are less than cutoff=1.62166e-07
+ * Implies strong collinearity in the matrix columns! 
