@@ -12,3 +12,6 @@
 *+ WARNING: Zero-ed 130495 float errors in dataset ./stats_DMCC1971064.nii.gz
 *+ WARNING: Smallest FDR q [35 whiteRED#0_Tstat] = 0.247029 ==> few true single voxel detections
 *+ WARNING: Smallest FDR q [36 whiteRED_Fstat] = 0.247029 ==> few true single voxel detections
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: Smallest FDR q [70 transient#4_Tstat] = 0.129586 ==> few true single voxel detections

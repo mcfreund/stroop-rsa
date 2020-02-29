@@ -1,0 +1,22 @@
+** ERROR: matrix column #30 is all zero!?
+*+ WARNING: You said to GOFORIT, so here we GO!
+*+ WARNING: !! in  matrix:
+ * Largest singular value=1.97013
+ * 1 singular value is less than cutoff=1.97013e-07
+ * Implies strong collinearity in the matrix columns! 
+*+ WARNING: -GOFORIT ==> Charging ahead into battle!
+*+ WARNING: -----
+*+ WARNING: QR decomposition of [R]^(-1/2) [X] had 1 collinearity problem
+*+ WARNING: -----
+*+ WARNING: GLT setup 44x1 matrix is all zero?
+*+ WARNING: Zero-ed 131081 float errors in dataset ./stats_DMCC4854075.nii.gz
+*+ WARNING: Smallest FDR q [38 blueWHITE#0_Tstat] = 0.151903 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [39 blueWHITE_Fstat] = 0.151903 ==> few true single voxel detections
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: Smallest FDR q [64 transient#1_Tstat] = 0.182258 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [66 transient#2_Tstat] = 0.393503 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [68 transient#3_Tstat] = 0.381514 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [70 transient#4_Tstat] = 0.133659 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [72 transient#5_Tstat] = 0.212382 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [73 transient_Fstat] = 0.136198 ==> few true single voxel detections

@@ -1,0 +1,15 @@
+*+ WARNING: '-stim_times 19' didn't read any good times from file '/data/nil-external/ccp/freund/stroop-rsa/glms/DMCC6418065/input/bas/DMCC6418065_bas_nuisance_acc-only.txt'
+*+ WARNING: -stim_times 19 has all times equal to '*' ?!?!
+*+ WARNING: !! '-stim_times 19' file '/data/nil-external/ccp/freund/stroop-rsa/glms/DMCC6418065/input/bas/DMCC6418065_bas_nuisance_acc-only.txt' has no good stimulus time values
+*+ WARNING: -------------------------------------------------
+*+ WARNING: Problems with the X matrix columns, listed below:
+*+ WARNING:    * Column 30 [nuisance#0] is all zeros
+*+ WARNING: -------------------------------------------------
+*+ WARNING: !! in Signal+Baseline matrix:
+ * Largest singular value=1.94562
+ * 1 singular value is less than cutoff=1.94562e-07
+ * Implies strong collinearity in the matrix columns! 
+*+ WARNING: !! in Signal-only matrix:
+ * Largest singular value=1.61064
+ * 1 singular value is less than cutoff=1.61064e-07
+ * Implies strong collinearity in the matrix columns! 
