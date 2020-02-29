@@ -65,7 +65,7 @@ if (do.masks) source(here::here("code", "read_masks.R"))
 ## paths, vars
 
 dir.analysis <- here::here("glms")
-glm.name <- ifelse(do.basli, "bas_bias_acc-only", "pro_bias_acc-only")
+glm.name <- ifelse(do.basli, "bas_bias_acc-only_downsamp", "pro_bias_acc-only")
 files.dir.analysis <- list.files(dir.analysis, pattern = "stats_var", recursive = TRUE)  ## get fit.subjs
 files.dir.analysis <- files.dir.analysis[grep(glm.name, files.dir.analysis)]
 fit.subjs <- unique(gsub("/results/.*", "", files.dir.analysis))
