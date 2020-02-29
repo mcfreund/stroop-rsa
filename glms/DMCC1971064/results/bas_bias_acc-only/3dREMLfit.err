@@ -9,3 +9,6 @@
 *+ WARNING: QR decomposition of [R]^(-1/2) [X] had 1 collinearity problem
 *+ WARNING: -----
 *+ WARNING: GLT setup 44x1 matrix is all zero?
+*+ WARNING: Zero-ed 130495 float errors in dataset ./stats_DMCC1971064.nii.gz
+*+ WARNING: Smallest FDR q [35 whiteRED#0_Tstat] = 0.247029 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [36 whiteRED_Fstat] = 0.247029 ==> few true single voxel detections

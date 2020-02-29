@@ -29,6 +29,7 @@ for f in "${glms[@]:36:48}"; do
 done
 
 
+
 for f in "${glms[@]:48:60}"; do
     "$f"
 done
