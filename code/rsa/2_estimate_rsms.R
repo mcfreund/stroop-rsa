@@ -11,6 +11,12 @@
 ## this script is configured to run as an executable on a *nix system.
 ## however, it can also be run locally (on mike's lenovo) in an interactive session.
 ## 
+## update: 2020-02-29
+## configured to get RSMs for baseline GLMs.
+## when baseline option specified, only RSMs for Glasser's MMP are estimated, and no univariate stats are calculated, 
+## or saved.
+## i.e., the other input options (a, m, u) are disregarded.
+## 
 ## mike freund, 2019-12-24
 
 ## TODO
@@ -24,7 +30,7 @@ Options:
    -a Conduct analysis using atlases (Glasser's Multi Modal Parcellation, and Gordon's RSFC communities)? [default: 0]
    -m Conduct analysis using user-specified masks? [default: 0]
    -u Estimate univariate statistics? [default: 0]
-
+   -b Do baseline instead of proactive? [default: 0]
  ]"
 
 opts <- docopt::docopt(doc)
@@ -32,26 +38,34 @@ opts <- docopt::docopt(doc)
 do.atlas <- as.logical(as.integer(opts$a))
 do.masks <- as.logical(as.integer(opts$m))
 do.univa <- as.logical(as.integer(opts$u))
+do.basli <- as.logical(as.integer(opts$b))
 
 ## defaults for interactive use (e.g., debugging, ...):
 if (interactive()) {
-  do.atlas <- TRUE
-  do.masks <- TRUE
-  do.univa <- TRUE
+  do.atlas <- FALSE
+  do.masks <- FALSE
+  do.univa <- FALSE
+  do.basli <- TRUE
 }
 
-if (!any(do.atlas, do.masks, do.univa)) stop(paste0("you must do something!"))
+if (all(!do.atlas, !do.masks, !do.univa, !do.basli)) stop(paste0("you must do something!"))
 
 ## setup ----
 
 source(here::here("code", "strings.R"))
-if (do.atlas) source(here::here("code", "read_atlases.R"))
+if (do.atlas | do.basli | do.univa) source(here::here("code", "read_atlases.R"))
+if (do.basli) {
+  atlas$gordon <- NULL
+  atlas.key$gordon <- NULL
+  do.univa <- FALSE
+  do.masks <- FALSE
+}
 if (do.masks) source(here::here("code", "read_masks.R"))
 
 ## paths, vars
 
 dir.analysis <- here::here("glms")
-glm.name <- "pro_bias_acc-only"
+glm.name <- ifelse(do.basli, "bas_bias_acc-only", "pro_bias_acc-only")
 files.dir.analysis <- list.files(dir.analysis, pattern = "stats_var", recursive = TRUE)  ## get fit.subjs
 files.dir.analysis <- files.dir.analysis[grep(glm.name, files.dir.analysis)]
 fit.subjs <- unique(gsub("/results/.*", "", files.dir.analysis))
@@ -66,14 +80,14 @@ n.bias.items <- length(bias.items)
 ## this variable defines the outermost loop.
 ## each iteration collates RSMs into a single array, and saves it as a single .rds file.
 sets.of.rois <- character(0)
-if (do.atlas) sets.of.rois <- c(sets.of.rois, names(atlas))
+if (do.atlas | do.basli) sets.of.rois <- c(sets.of.rois, names(atlas))
 if (do.masks) sets.of.rois <- c(sets.of.rois, "masks")
 
 
 ## loop over sets of ROIs ----
 
 for (set.i in sets.of.rois) {
-  # set.i = "masks"
+  # set.i = "mmp"
   
   ## get numbers and create storage objects
   
@@ -234,14 +248,14 @@ for (set.i in sets.of.rois) {
   data.table::fwrite(
     voxels.silent,
     here::here(
-      "out", "summaries", paste0("voxel-counts_unresponsive_", set.i, ".csv")
+      "out", "summaries", paste0("voxel-counts_unresponsive_", set.i, "_", glm.name, ".csv")
     )
   )
   
   data.table::fwrite(
     data.table::data.table(roi = roi.names, n.total = voxels.number),
     here::here(
-      "out", "summaries", paste0("voxel-counts_total_", set.i, ".csv")
+      "out", "summaries", paste0("voxel-counts_total_", set.i, "_", glm.name, ".csv")
     )
   )
   

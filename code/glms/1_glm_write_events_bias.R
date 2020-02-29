@@ -20,12 +20,13 @@ library(dplyr)
 library(data.table)
 library(purrr)
 
-source(here("code", "_strings.R"))
+source(here("code", "strings.R"))
 
 
 stroop <- fread(here("data", "behavior-and-events_group201902.csv"))
 subj_sum <- fread(here("data", "summary_group201902.csv"))
 stroop.pro <- subset(stroop, session == "pro")
+stroop.bas <- subset(stroop, session == "bas")
 
 
 ## funs ----
@@ -126,12 +127,12 @@ write.blocks <- function(
     if (nrow(block.events.ii) > 2) stop("should've been caught earlier (weird...)")
     dir.input <- file.path(dir.analysis, subj.ii, "input", session.ii)
     block.events.ii %>%
-      melt(id = c("subj", "session", "run")) %>%
+      reshape2::melt(id = c("subj", "session", "run")) %>%
       mutate(
         block = gsub(".*([1-3]).*", "\\1", variable),  ## pull out block
         variable = gsub("time.block[1-3].", "", variable)  ## pull out on / off
       ) %>%
-      spread(variable, value) %>%
+      tidyr::spread(variable, value) %>%
       mutate(
         dm = off - on,
         ## for blocks with no off value (e.g. truncated run), replace duration with mean:
@@ -204,7 +205,13 @@ copy.movregs <- function(
 }
 
 
-## use ----
+
+
+
+
+
+
+## use (proactive) ----
 
 ## make grouping.var:
 is.nuisance <- stroop.pro$acc.final %in% c("0", "no.response", "unintelligible")
@@ -257,3 +264,74 @@ write.csv(df.num.events.written, here("out", "summaries", "event-files_group2019
 ## movregs
 summary.movregs <- summary.movregs %>% filter(session == "pro")
 write.csv(summary.movregs, here("out", "summaries", "moveregs_group201902.csv"))
+
+
+
+
+
+
+
+
+
+
+## use (baseline) ----
+
+## make grouping.var:
+is.nuisance <- stroop.bas$acc.final %in% c("0", "no.response", "unintelligible")
+stroop.bas <- stroop.bas %>%
+  ungroup %>%
+  mutate(
+    reg = item,
+    reg = ifelse(pc == "pc50", paste0("pc50_", trial.type), reg),
+    reg = ifelse(is.nuisance, "nuisance", reg)
+  )
+unique(stroop.bas$reg)
+sum(is.na(stroop.bas$reg))
+
+## NB: write events checks for "run1" and "run2" text in column "run"!!!
+if (any(unique(stroop.bas$run) %in% 1:2)) stroop.bas$run <- ifelse(stroop.bas$run == 1, "run1", "run2")
+
+dir.to.write.in <- here("glms")
+
+## first, check:
+## should be length 1, of value 216:
+
+stroop.bas.subj.nums <- stroop.bas %>% split(list(.$subj, .$session)) %>% map_dbl(nrow)
+stroop.bas.subjs <- names(stroop.bas.subj.nums)[stroop.bas.subj.nums == 216] %>% gsub(".bas", "", .)
+stroop.bas %<>% filter(subj %in% stroop.bas.subjs)
+
+stroop.bas %>% split(list(.$subj, .$session)) %>% map_dbl(nrow) %>% unique  ## should be length 1, of value 216
+head(stroop.bas[, grep("time.block", names(stroop.bas))])
+stroop.bas[, grep("time.block", names(stroop.bas))] %>% range
+
+## write events
+
+num.events.written <- stroop.bas %>% 
+  split(list(.$subj, .$session)) %>%
+  map(
+    write.events, 
+    grouping.var.name   = "reg",
+    grouping.var.values = unique(stroop.bas$reg),
+    dir.analysis        = dir.to.write.in,
+    onset.var.name      = "time.target.onset",
+    reg.suffix          = "acc-only"
+  )
+
+## write blocks
+stroop.bas %>% write.blocks(dir.analysis = dir.to.write.in)  ## runs silently
+
+## copy movregs
+summary.movregs <- copy.movregs(.dir.analysis = dir.to.write.in)
+
+
+## write summaries ----
+
+## event files
+df.num.events.written <- matrix(unlist(num.events.written), nrow = length(stroop.bas.subjs), byrow = TRUE)
+df.num.events.written <- data.frame(stroop.bas.subjs, df.num.events.written)
+names(df.num.events.written) <- c("subj", unique(stroop.bas$reg))
+write.csv(df.num.events.written, here("out", "summaries", "event-files_bas_group201902.csv"))
+
+## movregs
+summary.movregs <- summary.movregs %>% filter(session == "bas")
+write.csv(summary.movregs, here("out", "summaries", "moveregs_bas_group201902.csv"))

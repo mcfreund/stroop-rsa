@@ -15,7 +15,7 @@ library(magrittr)
 library(dplyr)
 library(data.table)
 
-source(here("code", "_strings.R"))
+source(here("code", "strings.R"))
 stroop <- fread(here("data", "behavior-and-events_group201902.csv"))
 subj_sum <- fread(here("data", "summary_group201902.csv"))
 
@@ -108,6 +108,7 @@ write.afni.cmds <- function(
 
 ## write ----
 
+
 dmat.events <- cbind(
   .time.opt = "stim_times",
   .label    = c(bias.items, "pc50_i", "pc50_c", "nuisance"),
@@ -120,6 +121,7 @@ dmat.blocks <-   rbind(
 )
 dmat <- rbind(dmat.events, dmat.blocks)
 
+## proactive
 
 lapply(
   unique(stroop$subj),
@@ -130,6 +132,29 @@ lapply(
       .dmat         = mixed.type,
       code.dir      = "code/glms/",
       out.folder    = "pro_bias_acc-only",
+      .dir.image    = dir.nil.dmcc2.afni,
+      .dir.analysis = here("glms")
+    )
+)
+
+
+
+
+## baseline
+
+
+stroop.bas.subj.nums <- stroop %>% filter(session == "bas") %>% split(list(.$subj)) %>% purrr::map_dbl(nrow)
+stroop.bas.subjs <- names(stroop.bas.subj.nums)[stroop.bas.subj.nums == 216]
+
+lapply(
+  stroop.bas.subjs,
+  function(x)
+    write.afni.cmds(
+      subj          = x,
+      session       = "baseline", 
+      .dmat         = dmat,
+      code.dir      = "code/glms/",
+      out.folder    = "bas_bias_acc-only",
       .dir.image    = dir.nil.dmcc2.afni,
       .dir.analysis = here("glms")
     )
