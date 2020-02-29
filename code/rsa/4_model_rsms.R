@@ -22,6 +22,8 @@ source(here("code", "strings.R"))
 source(here("code", "read_atlases.R"))
 source(here("code", "read_masks.R"))
 
+session <- "bas"
+
 ## read models
 
 rsv.models.ltri <- fread(here("out", "rsa", "mods", "rsv_bias_lower-triangles.csv"), data.table = FALSE)
@@ -64,24 +66,43 @@ get.partr <- function(x, colname, ...) {
 ## loop over sets of ROIs ----
 
 sets.of.rois <- c("mmp", "gordon", "masks")
+if (session == "bas") sets.of.rois <- "mmp"
 
 for (set.i in sets.of.rois) {
   # set.i = "mmp"
   
   ## read observed similarity matrices (arrays)
   
-  rsarray.rank <- readRDS(
-    here(
-      "out", "rsa", "obsv",
-      paste0("rsarray_pro_bias_acc-only_", set.i, "_pearson_residual-rank.rds")
+  if (session == "bas") {
+    
+    rsarray.rank <- readRDS(
+      here(
+        "out", "rsa", "obsv",
+        paste0("rsarray_", session, "_bias_acc-only_", set.i, "_pearson.rds")
+      )
     )
-  )
-  rsarray.line <- readRDS(
-    here(
-      "out", "rsa", "obsv",
-      paste0("rsarray_pro_bias_acc-only_", set.i, "_pearson_residual-linear.rds")
+    
+    rsarray.rank <- rsarray.rank[, , -grep("197449", dimnames(rsarray.rank)$subj), ]
+    rsarray.line <- rsarray.rank
+    
+  } else if (session == "pro") {
+    
+    rsarray.rank <- readRDS(
+      here(
+        "out", "rsa", "obsv",
+        paste0("rsarray_", session, "_bias_acc-only_", set.i, "_pearson_residual-rank.rds")
+      )
     )
-  )
+    rsarray.line <- readRDS(
+      here(
+        "out", "rsa", "obsv",
+        paste0("rsarray_", session, "_bias_acc-only_", set.i, "_pearson_residual-linear.rds")
+      )
+    )
+      
+  }
+  
+  
   
   
   ## prepare similarity matrices for regression ----
@@ -117,6 +138,7 @@ for (set.i in sets.of.rois) {
 
       r <- rsm.line[is.lower.tri]  ## get lower.triangle vector
       rank <- rsm.rank[is.lower.tri]
+      if (session == "bas") rank <- rank(rank)
       
       name.ij <- paste0(subjs[subj.i], "_", rois[roi.j])  ## to match name
       rsvectors[[name.ij]] <- cbind(r, rank)
@@ -222,13 +244,29 @@ for (set.i in sets.of.rois) {
     
     model.i <- names(structures)[ii]
     stats.i <- filter(stats.subjs, model == model.i)
-    fwrite(
-      stats.i,
-      here(
-        "out", "rsa", "stats", 
-        paste0("subjs_pro_bias_acc-only_", set.i, "_pearson_residual_glm-", model.i, ".csv")
+    
+    if (session == "bas") {
+      
+      fwrite(
+        stats.i,
+        here(
+          "out", "rsa", "stats", 
+          paste0("subjs_", session, "_bias_acc-only_", set.i, "_pearson_glm-", model.i, ".csv")
         )
-    )
+      )
+    
+    } else if (session == "pro") {
+      
+      fwrite(
+        stats.i,
+        here(
+          "out", "rsa", "stats", 
+          paste0("subjs_", session, "_bias_acc-only_", set.i, "_pearson_residual_glm-", model.i, ".csv")
+          )
+      )
+      
+    }
+    
     
   }
 

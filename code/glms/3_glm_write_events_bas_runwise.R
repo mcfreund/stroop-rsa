@@ -46,7 +46,7 @@ for (dir.i in seq_along(dirs.input)) {
   
   fnames.i <- list.files(name.dir.i)
   fnames.stimtimes.i <- fnames.i[grep(paste0("^", subjs[dir.i]), fnames.i)]  ## discard movregs
-  fnames.stimtimes.i <- fnames.i[grep("sustained|transient|acc-only\\.txt$", fnames.i)]  ## discard run-wise times
+  fnames.stimtimes.i <- fnames.i[grep("sustained\\.txt|transient\\.txt|acc-only\\.txt$", fnames.i)]  ## discard run-wise times
   if (length(fnames.stimtimes.i) != 21) stop("bad length")
   
   for (name.stimtime.i in fnames.stimtimes.i) {
@@ -77,7 +77,7 @@ for (dir.i in seq_along(dirs.input)) {
   fname.movregs <- c(
     file.path(fname.movregs, "movregs_FD_mask_run1.txt"),
     file.path(fname.movregs, "movregs_FD_mask_run2.txt"),
-    file.path(fname.movregs, "motion_demean_baseline_run2.1D"),
+    file.path(fname.movregs, "motion_demean_baseline_run1.1D"),
     file.path(fname.movregs, "motion_demean_baseline_run2.1D")
   )
 
