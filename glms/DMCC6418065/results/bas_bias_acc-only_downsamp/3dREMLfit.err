@@ -1,0 +1,15 @@
+** ERROR: matrix column #30 is all zero!?
+*+ WARNING: You said to GOFORIT, so here we GO!
+*+ WARNING: !! in  matrix:
+ * Largest singular value=1.94571
+ * 1 singular value is less than cutoff=1.94571e-07
+ * Implies strong collinearity in the matrix columns! 
+*+ WARNING: -GOFORIT ==> Charging ahead into battle!
+*+ WARNING: -----
+*+ WARNING: QR decomposition of [R]^(-1/2) [X] had 1 collinearity problem
+*+ WARNING: -----
+*+ WARNING: GLT setup 45x1 matrix is all zero?
+*+ WARNING: Zero-ed 132375 float errors in dataset ./stats_DMCC6418065.nii.gz
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: Smallest FDR q [71 transient#3_Tstat] = 0.198082 ==> few true single voxel detections

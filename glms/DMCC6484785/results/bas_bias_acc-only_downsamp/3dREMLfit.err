@@ -10,3 +10,7 @@
 *+ WARNING: -----
 *+ WARNING: GLT setup 45x1 matrix is all zero?
 *+ WARNING: Zero-ed 132974 float errors in dataset ./stats_DMCC6484785.nii.gz
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: Smallest FDR q [69 transient#2_Tstat] = 0.299917 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [73 transient#4_Tstat] = 0.788604 ==> few true single voxel detections

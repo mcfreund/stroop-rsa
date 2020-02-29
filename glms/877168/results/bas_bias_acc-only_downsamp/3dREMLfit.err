@@ -1,0 +1,5 @@
+*+ WARNING: Smallest FDR q [65 transient#0_Tstat] = 0.252228 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [69 transient#2_Tstat] = 0.999784 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [71 transient#3_Tstat] = 0.99989 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [73 transient#4_Tstat] = 0.999883 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [75 transient#5_Tstat] = 0.172 ==> few true single voxel detections

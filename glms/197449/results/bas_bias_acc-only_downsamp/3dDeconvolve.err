@@ -1,0 +1,19 @@
+*+ WARNING: '-stim_times 7' didn't read any good times from file '/data/nil-external/ccp/freund/stroop-rsa/glms/197449/input/bas/197449_bas_blueRED_acc-only.txt'
+*+ WARNING: '-stim_times 11' didn't read any good times from file '/data/nil-external/ccp/freund/stroop-rsa/glms/197449/input/bas/197449_bas_purpleWHITE_acc-only.txt'
+*+ WARNING: -stim_times 7 has all times equal to '*' ?!?!
+*+ WARNING: !! '-stim_times 7' file '/data/nil-external/ccp/freund/stroop-rsa/glms/197449/input/bas/197449_bas_blueRED_acc-only.txt' has no good stimulus time values
+*+ WARNING: -stim_times 11 has all times equal to '*' ?!?!
+*+ WARNING: !! '-stim_times 11' file '/data/nil-external/ccp/freund/stroop-rsa/glms/197449/input/bas/197449_bas_purpleWHITE_acc-only.txt' has no good stimulus time values
+*+ WARNING: -------------------------------------------------
+*+ WARNING: Problems with the X matrix columns, listed below:
+*+ WARNING:    * Column 18 [blueRED#0] is all zeros
+*+ WARNING:    * Column 22 [purpleWHITE#0] is all zeros
+*+ WARNING: -------------------------------------------------
+*+ WARNING: !! in Signal+Baseline matrix:
+ * Largest singular value=1.91267
+ * 2 singular values are less than cutoff=1.91267e-07
+ * Implies strong collinearity in the matrix columns! 
+*+ WARNING: !! in Signal-only matrix:
+ * Largest singular value=1.58091
+ * 2 singular values are less than cutoff=1.58091e-07
+ * Implies strong collinearity in the matrix columns! 
