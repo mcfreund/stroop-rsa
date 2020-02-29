@@ -1,0 +1,12 @@
+** ERROR: matrix column #30 is all zero!?
+*+ WARNING: You said to GOFORIT, so here we GO!
+*+ WARNING: !! in  matrix:
+ * Largest singular value=2.05681
+ * 1 singular value is less than cutoff=2.05681e-07
+ * Implies strong collinearity in the matrix columns! 
+*+ WARNING: -GOFORIT ==> Charging ahead into battle!
+*+ WARNING: -----
+*+ WARNING: QR decomposition of [R]^(-1/2) [X] had 1 collinearity problem
+*+ WARNING: -----
+*+ WARNING: GLT setup 44x1 matrix is all zero?
+*+ WARNING: Zero-ed 134179 float errors in dataset ./stats_393550.nii.gz
