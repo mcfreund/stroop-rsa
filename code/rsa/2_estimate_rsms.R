@@ -24,7 +24,7 @@
 
 doc <- 
 "Usage:
-   2_estimate_rsms.R [-a <do_atlases> -m <do_masks> -u <univariate>]
+   2_estimate_rsms.R [-a <do_atlases> -m <do_masks> -u <univariate> -b <baseline>]
 
 Options:
    -a Conduct analysis using atlases (Glasser's Multi Modal Parcellation, and Gordon's RSFC communities)? [default: 0]
