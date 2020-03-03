@@ -49,10 +49,9 @@ colors.model <- c(incongruency = "#d95f02", target = "#1b9e77", distractor = "#7
 colors.congruency <- c(I = "#d01c8b", C = "#4dac26")
 colors.targets <- c(blue = "#08519c", red = "#a50f15", white = "grey50", purple = "#54278f")
   
-## (a) pca ----
 
 d <- stats.subjs.tdic %>% filter(
-  roi.set == "anatfunc", 
+  roi.set == "anatfunc",
   superparcel %in% c("dlpfc_L", "dlpfc_R", "mfc_L", "mfc_R", "lppc_L", "lppc_R")
 )
 
@@ -63,71 +62,72 @@ w <- d %>%
   ungroup %>%
   dplyr::select(subj, stroop, id, beta) %>%
   tidyr::spread(id, beta)
-m <- w[, -c(1, 2)]
-rownames(m) <- w$subj
 
-pca <- prcomp(scale(m))
+## (a) pca ----
+# m <- w[, -c(1, 2)]
+# rownames(m) <- w$subj
+# 
+# pca <- prcomp(scale(m))
+# 
+# plot(pca)
+# 
+# 
+# p.pca <- pca$rotation[, 1:2] %>%
+#   as.data.frame %>%
+#   tibble::rownames_to_column("id") %>%
+#   mutate(
+#     roi = gsub("(.*_.).*", "\\1", id),
+#     param = gsub(".*_..(.*)", "\\1", id)
+#   ) %>%
+#   ggplot(aes(PC1, PC2, color = param)) +
+#   geom_point() +
+#   geom_text(aes(label = roi, color = param), nudge_y = 0.025, nudge_x = 0, fontface = "bold", size = 2.5) +
+#   geom_segment(
+#     aes(x = 0, y = 0, xend = 0, yend = 0.1), 
+#     arrow = arrow(length = unit(0.01, "npc"), type = "closed"), color = "grey40", size = 1
+#   ) +
+#   geom_segment(
+#     aes(x = 0, y = 0, xend = 0.1, yend = 0),
+#     arrow = arrow(length = unit(0.01, "npc"), type = "closed"), color = "grey40", size = 1
+#   ) +
+#   scale_color_manual(values = c(colors.model)) +
+#   annotate(geom = "text", label = "PC1", x = 0.05, y = 0, vjust = 1, fontface = "bold.italic", color = "grey40") +
+#   annotate(geom = "text", label = "PC2", x = 0, y = 0.05, angle = 90, vjust = 0, fontface = "bold.italic", color = "grey40") +
+#   annotate(geom = "text", label = "0.1", x = -0.0025, y = 0.1, hjust = 1) +
+#   annotate(geom = "text", label = "0.1", y = -0.005, x = 0.1, vjust = 1) +
+#   annotate(geom = "text", label = "0", y = -0.005, x = -0.0025, vjust = 1) +
+#   theme(
+#     axis.ticks.x = element_blank(),
+#     panel.background = element_blank(),
+#     panel.grid = element_blank(),
+#     legend.position = "none",
+#     axis.ticks = element_blank(), 
+#     axis.text = element_blank(),
+#     axis.title = element_blank(),
+#     panel.border = element_blank()
+#   ) +
+#   annotate(
+#     geom = "text", y = 0.24, x = -Inf, color = colors.model["target"], fontface = "bold.italic", label = "target coding",
+#     size = 3, hjust = 0) +
+#   annotate(
+#     geom = "text", y = 0.22, x = -Inf, color = colors.model["distractor"], fontface = "bold.italic", label = "distractor coding",
+#     size = 3, hjust = 0) +
+#   annotate(
+#     geom = "text", y = 0.20, x = -Inf, color = colors.model["incongruency"], fontface = "bold.italic", label = "conflict coding",
+#     size = 3, hjust = 0) +
+#   labs(title = "a")
+# 
+# p.pca
+# 
 
-plot(pca)
+## (a) brains ----
+
+## see write_masks.R
+
+## (b) scatterplot ----
 
 
-p.pca <- pca$rotation[, 1:2] %>%
-  as.data.frame %>%
-  tibble::rownames_to_column("id") %>%
-  mutate(
-    roi = gsub("(.*_.).*", "\\1", id),
-    param = gsub(".*_..(.*)", "\\1", id)
-  ) %>%
-  ggplot(aes(PC1, PC2, color = param)) +
-  geom_point() +
-  geom_text(aes(label = roi, color = param), nudge_y = 0.025, nudge_x = 0, fontface = "bold", size = 2.5) +
-  geom_segment(
-    aes(x = 0, y = 0, xend = 0, yend = 0.1), 
-    arrow = arrow(length = unit(0.01, "npc"), type = "closed"), color = "grey40", size = 1
-  ) +
-  geom_segment(
-    aes(x = 0, y = 0, xend = 0.1, yend = 0),
-    arrow = arrow(length = unit(0.01, "npc"), type = "closed"), color = "grey40", size = 1
-  ) +
-  scale_color_manual(values = c(colors.model)) +
-  annotate(geom = "text", label = "PC1", x = 0.05, y = 0, vjust = 1, fontface = "bold.italic", color = "grey40") +
-  annotate(geom = "text", label = "PC2", x = 0, y = 0.05, angle = 90, vjust = 0, fontface = "bold.italic", color = "grey40") +
-  annotate(geom = "text", label = "0.1", x = -0.0025, y = 0.1, hjust = 1) +
-  annotate(geom = "text", label = "0.1", y = -0.005, x = 0.1, vjust = 1) +
-  annotate(geom = "text", label = "0", y = -0.005, x = -0.0025, vjust = 1) +
-  theme(
-    axis.ticks.x = element_blank(),
-    panel.background = element_blank(),
-    panel.grid = element_blank(),
-    legend.position = "none",
-    axis.ticks = element_blank(), 
-    axis.text = element_blank(),
-    axis.title = element_blank(),
-    panel.border = element_blank()
-  ) +
-  annotate(
-    geom = "text", y = 0.24, x = -Inf, color = colors.model["target"], fontface = "bold.italic", label = "target coding",
-    size = 3, hjust = 0) +
-  annotate(
-    geom = "text", y = 0.22, x = -Inf, color = colors.model["distractor"], fontface = "bold.italic", label = "distractor coding",
-    size = 3, hjust = 0) +
-  annotate(
-    geom = "text", y = 0.20, x = -Inf, color = colors.model["incongruency"], fontface = "bold.italic", label = "conflict coding",
-    size = 3, hjust = 0) +
-  labs(title = "a")
-
-p.pca
-
-
-## (b) scatterplot
-
-
-cor(w$stroop, (w$lppc_R.target + w$dlpfc_R.target) / 2)
-cor(w$stroop, (w$lppc_R.target + w$dlpfc_R.target) / 2, method = "spearman")
 w$lfp_R.target <- (w$lppc_R.target + w$dlpfc_R.target) / 2
-w$conflict <- (w$lppc_L.incongruency + w$mfc_L.incongruency + w$mfc_R.incongruency) / 3
-cor(w$stroop, w$mfc_L.incongruency)
-cor(w$mfc_R.incongruency, w$stroop)
 
 p.dissoc.scatter <- w %>%
   ggplot(aes(y = stroop)) +
@@ -161,127 +161,137 @@ p.dissoc.scatter <- w %>%
 
 
 
-## (b) trichotomized MDS
+## (c) trichotomized MDS
 
-subjs <- blups$subj
-n.subj <- length(subjs)
-n.stim <- length(bias.items)
+fname <- here("out", "indif", "mds_trichotomy_bootstrap.csv")
 
-## get data
-
-R <- readRDS(here("out", "rsa", "obsv", "rsarray_pro_bias_acc-only_masks_pearson_residual-linear.rds"))
-dimnames(R)
-R <- R[, , subjs, c("anatfunc_lppc_R", "anatfunc_mfc_L", "anatfunc_dlpfc_R")]
-R <- abind::abind(
-  R,
-  apply(R[, , , c("anatfunc_lppc_R", "anatfunc_dlpfc_R")], 1:3, function(.) tanh(mean(atanh(.))))
-)
-names(dimnames(R)) <- c(".row", ".col", "subj", "roi")
-dimnames(R)[["roi"]] <- c("lppc_R", "mfc_L", "dlpfc_R", "lfp_R")
+if (file.exists(fname)) {
   
-## mean matrices
+  mrot.boot <- fread(fname)
 
-Rbar <- apply(R, c(1:2, 4), function(x) tanh(mean(atanh(x))))  ## cross-subject average RSM per region
-Dbar <- 1 - Rbar  ## same, but correlation distance
-
-rois <- dimnames(Dbar)$roi
-Mbar <- array(
-  NA, 
-  dim = c(stim = n.stim, dim = 2, roi = length(rois)), 
-  dimnames = list(stim = bias.items, dims = c("MDS1", "MDS2"), roi = rois)
-)
-p.mds.ave <- vector("list", length(rois)) %>% setNames(rois)
-for (roi in rois) {
+} else {
   
-  Mbar[, , roi] <- Dbar[, , roi] %>% vegan::metaMDS(k = 2, trace = FALSE) %>% .$points
+  subjs <- blups$subj
+  n.subj <- length(subjs)
+  n.stim <- length(bias.items)
   
-  p.mds.ave[[roi]] <- Dbar[, , roi] %>% 
-    vegan::metaMDS(k = 2, trace = FALSE) %>% 
-    .$points %>%
-    as.data.frame %>%
-    tibble::rownames_to_column("stim") %>%
-    bind_cols(., split.str.item(.$stim)) %>% 
-    ggplot(aes(MDS1, MDS2)) +
-    geom_label(aes(label = word, color = color), fill = "grey60", fontface = "bold", label.size = 0) +
-    scale_color_manual(values = setNames(bias.colors, bias.colors)) +
-    theme(
-      panel.background = element_blank(), 
-      axis.text = element_blank(), 
-      legend.position = "none", 
-      axis.ticks = element_blank()
-    ) +
-    labs(title = roi)
+  ## get data
   
-}
-grid.arrange(p.mds.ave[[1]], p.mds.ave[[2]], p.mds.ave[[3]], p.mds.ave[[4]], ncol = 4)
-
-
-topthird <- w$subj[w$stroop < quantile(w$stroop, 1/3)]
-midthird <- w$subj[w$stroop < quantile(w$stroop, 2/3) & w$stroop > quantile(w$stroop, 1/3)]
-botthird <- w$subj[w$stroop > quantile(w$stroop, 2/3)]
-
-par(mfrow = c(1, 1))
-plot(
-  w$stroop,
-  pch = 16,
-  col = ifelse(w$subj %in% topthird, "black", ifelse(w$subj %in% midthird, "orange", "firebrick")),
-  main = "stroop RTs, split into 3 quantiles"
-)
-
-
-## resamples
-
-n.resamples <- 1E4
-l.mrot.boot <- vector("list", length(rois)) %>% setNames(rois)
-# set.seed(0)
-time.beg <- Sys.time()
-for (roi in rois) {
+  R <- readRDS(here("out", "rsa", "obsv", "rsarray_pro_bias_acc-only_masks_pearson_residual-linear.rds"))
+  dimnames(R)
+  R <- R[, , subjs, c("anatfunc_lppc_R", "anatfunc_mfc_L", "anatfunc_dlpfc_R")]
+  R <- abind::abind(
+    R,
+    apply(R[, , , c("anatfunc_lppc_R", "anatfunc_dlpfc_R")], 1:3, function(.) tanh(mean(atanh(.))))
+  )
+  names(dimnames(R)) <- c(".row", ".col", "subj", "roi")
+  dimnames(R)[["roi"]] <- c("lppc_R", "mfc_L", "dlpfc_R", "lfp_R")
+    
+  ## mean matrices
   
-  n.cores <- detectCores()
-  cl <- makeCluster(n.cores - 1)
-  registerDoParallel(cl)
+  Rbar <- apply(R, c(1:2, 4), function(x) tanh(mean(atanh(x))))  ## cross-subject average RSM per region
+  Dbar <- 1 - Rbar  ## same, but correlation distance
   
-  mrot.boot <- foreach(sample.i = seq_len(n.resamples)) %dopar% {
+  rois <- dimnames(Dbar)$roi
+  Mbar <- array(
+    NA, 
+    dim = c(stim = n.stim, dim = 2, roi = length(rois)), 
+    dimnames = list(stim = bias.items, dims = c("MDS1", "MDS2"), roi = rois)
+  )
+  p.mds.ave <- vector("list", length(rois)) %>% setNames(rois)
+  for (roi in rois) {
     
-    set.seed(sample.i)  ## set seed anew each iteration (on each worker)
+    Mbar[, , roi] <- Dbar[, , roi] %>% vegan::metaMDS(k = 2, trace = FALSE) %>% .$points
     
-    topthird.i <- sample(topthird, replace = TRUE)
-    midthird.i <- sample(midthird, replace = TRUE)
-    botthird.i <- sample(botthird, replace = TRUE)
-    
-    ## get stats
-    
-    D.top <- 1 - apply(R[, , topthird.i, roi], 1:2, function(x) tanh(mean(atanh(x))))
-    D.mid <- 1 - apply(R[, , midthird.i, roi], 1:2, function(x) tanh(mean(atanh(x))))
-    D.bot <- 1 - apply(R[, , botthird.i, roi], 1:2, function(x) tanh(mean(atanh(x))))
-    
-    M.top <- vegan::metaMDS(D.top, k = 2, trace = FALSE)$points
-    M.mid <- vegan::metaMDS(D.mid, k = 2, trace = FALSE)$points
-    M.bot <- vegan::metaMDS(D.bot, k = 2, trace = FALSE)$points
-    
-    mrot.boot <- rbind(
-      data.frame(tri = "top", vegan::procrustes(Mbar[, , roi], M.top, scale = TRUE)$Yrot),
-      data.frame(tri = "mid", vegan::procrustes(Mbar[, , roi], M.mid, scale = TRUE)$Yrot),
-      data.frame(tri = "bot", vegan::procrustes(Mbar[, , roi], M.bot, scale = TRUE)$Yrot)
-    )
-    mrot.boot$iter <- sample.i
-    
-    mrot.boot
+    p.mds.ave[[roi]] <- Dbar[, , roi] %>% 
+      vegan::metaMDS(k = 2, trace = FALSE) %>% 
+      .$points %>%
+      as.data.frame %>%
+      tibble::rownames_to_column("stim") %>%
+      bind_cols(., split.str.item(.$stim)) %>% 
+      ggplot(aes(MDS1, MDS2)) +
+      geom_label(aes(label = word, color = color), fill = "grey60", fontface = "bold", label.size = 0) +
+      scale_color_manual(values = setNames(bias.colors, bias.colors)) +
+      theme(
+        panel.background = element_blank(), 
+        axis.text = element_blank(), 
+        legend.position = "none", 
+        axis.ticks = element_blank()
+      ) +
+      labs(title = roi)
     
   }
-  stopCluster(cl)
+  grid.arrange(p.mds.ave[[1]], p.mds.ave[[2]], p.mds.ave[[3]], p.mds.ave[[4]], ncol = 4)
   
-  l.mrot.boot[[roi]] <- do.call(rbind, mrot.boot)
   
-  print(roi)
+  topthird <- w$subj[w$stroop < quantile(w$stroop, 1/3)]
+  midthird <- w$subj[w$stroop < quantile(w$stroop, 2/3) & w$stroop > quantile(w$stroop, 1/3)]
+  botthird <- w$subj[w$stroop > quantile(w$stroop, 2/3)]
+  
+  par(mfrow = c(1, 1))
+  plot(
+    w$stroop,
+    pch = 16,
+    col = ifelse(w$subj %in% topthird, "black", ifelse(w$subj %in% midthird, "orange", "firebrick")),
+    main = "stroop RTs, split into 3 quantiles"
+  )
+  
+  
+  ## resamples
+  
+  n.resamples <- 1E4
+  l.mrot.boot <- vector("list", length(rois)) %>% setNames(rois)
+  # set.seed(0)
+  time.beg <- Sys.time()
+  for (roi in rois) {
+    
+    n.cores <- detectCores()
+    cl <- makeCluster(n.cores - 1)
+    registerDoParallel(cl)
+    
+    mrot.boot <- foreach(sample.i = seq_len(n.resamples)) %dopar% {
+      
+      set.seed(sample.i)  ## set seed anew each iteration (on each worker)
+      
+      topthird.i <- sample(topthird, replace = TRUE)
+      midthird.i <- sample(midthird, replace = TRUE)
+      botthird.i <- sample(botthird, replace = TRUE)
+      
+      ## get stats
+      
+      D.top <- 1 - apply(R[, , topthird.i, roi], 1:2, function(x) tanh(mean(atanh(x))))
+      D.mid <- 1 - apply(R[, , midthird.i, roi], 1:2, function(x) tanh(mean(atanh(x))))
+      D.bot <- 1 - apply(R[, , botthird.i, roi], 1:2, function(x) tanh(mean(atanh(x))))
+      
+      M.top <- vegan::metaMDS(D.top, k = 2, trace = FALSE)$points
+      M.mid <- vegan::metaMDS(D.mid, k = 2, trace = FALSE)$points
+      M.bot <- vegan::metaMDS(D.bot, k = 2, trace = FALSE)$points
+      
+      mrot.boot <- rbind(
+        data.frame(tri = "top", vegan::procrustes(Mbar[, , roi], M.top, scale = TRUE)$Yrot),
+        data.frame(tri = "mid", vegan::procrustes(Mbar[, , roi], M.mid, scale = TRUE)$Yrot),
+        data.frame(tri = "bot", vegan::procrustes(Mbar[, , roi], M.bot, scale = TRUE)$Yrot)
+      )
+      mrot.boot$iter <- sample.i
+      
+      mrot.boot
+      
+    }
+    stopCluster(cl)
+    
+    l.mrot.boot[[roi]] <- do.call(rbind, mrot.boot)
+    
+    print(roi)
+    
+  }
+  (time.run <- Sys.time() - time.beg)
+  
+  mrot.boot <- bind_rows(lapply(l.mrot.boot, tibble::rownames_to_column, var = "stim"), .id = "roi")
+  mrot.boot$stim <- gsub("[0-9]", "", mrot.boot$stim)
+  mrot.boot %<>% cbind(., split.str.item(.$stim))
+  fwrite(mrot.boot, here("out", "indif", "mds_trichotomy_bootstrap.csv"))
   
 }
-(time.run <- Sys.time() - time.beg)
-
-mrot.boot <- bind_rows(lapply(l.mrot.boot, tibble::rownames_to_column, var = "stim"), .id = "roi")
-mrot.boot$stim <- gsub("[0-9]", "", mrot.boot$stim)
-mrot.boot %<>% cbind(., split.str.item(.$stim))
-fwrite(mrot.boot, here("out", "indif", "mds_trichotomy_bootstrap.csv"))
 
 
 ## lppc
@@ -300,10 +310,9 @@ mrot.boot.4plot <- bind_rows(
     rename(variable = congruency)
 )
 
-
 p.mdstri.dot <- mrot.boot.4plot %>%
   ungroup %>%
-  mutate(tri = relevel(tri, "top")) %>%
+  mutate(tri = relevel(as.factor(tri), "top")) %>%
   ggplot(aes(x = MDS1, y = MDS2, fill = variable, color = variable)) +
   # stat_ellipse(type = "norm", level = 0.96, size = 0.5) +
   geom_point(alpha = 0.01, shape = 21, color = "transparent") +
@@ -330,7 +339,7 @@ p.mdstri.dot <- mrot.boot.4plot %>%
 
 p.mdstri <- mrot.boot.4plot %>%
   ungroup %>%
-  mutate(tri = relevel(tri, "top")) %>%
+  mutate(tri = relevel(as.factor(tri), "top")) %>%
   # filter(roi == "lfp_R") %>%
   ggplot(aes(x = MDS1, y = MDS2)) +
   
@@ -428,7 +437,7 @@ p.mdstri <- mrot.boot.4plot %>%
   geom_text(
     data = data.frame(roi = "lfp_R", tri = "bot"),
     inherit.aes = FALSE, fontface = "bold.italic",
-    hjust = 0, x = -Inf, y = Inf, label = "\nblues (hue)", color = colors.targets["blue"],
+    hjust = 0, x = -Inf, y = Inf, label = "\nblues", color = colors.targets["blue"],
     size = 3
   ) +
   
@@ -456,19 +465,19 @@ p.mdstri <- mrot.boot.4plot %>%
 
 ## put together and write ----
 
-p.dissoc.tryp <- grid.arrange(
-  p.pca, p.dissoc.scatter, p.mdstri, ncol = 3, widths = c(2/3, 1, 2/3)
-)
-
-
-ggsave(
-  here("out", "figs", "ms_v1_2020-03", "indiff_dissoc", "indif_dissoc_tryp.pdf"), 
-  plot = p.dissoc.tryp,
-  units = "cm",
-  device = "pdf",
-  height = 10,
-  width = 10 * 7/3
-)
+# p.dissoc.tryp <- grid.arrange(
+#   p.pca, p.dissoc.scatter, p.mdstri, ncol = 3, widths = c(2/3, 1, 2/3)
+# )
+# 
+# 
+# ggsave(
+#   here("out", "figs", "ms_v1_2020-03", "indiff_dissoc", "indif_dissoc_tryp.pdf"), 
+#   plot = p.dissoc.tryp,
+#   units = "cm",
+#   device = "pdf",
+#   height = 10,
+#   width = 10 * 7/3
+# )
 
 
 
@@ -477,12 +486,12 @@ p.dissoc <- grid.arrange(
 )
 
 ggsave(
-  here("out", "figs", "ms_v1_2020-03", "indiff_dissoc", "indif_dissoc.pdf"), 
+  here("out", "figs", "ms_v1_2020-03", "indif_dissoc", "indif_dissoc.pdf"), 
   plot = p.dissoc,
   units = "cm",
   device = "pdf",
   height = 9,
-  width = 9 * 5/3
+  width = 9 * 6/3
 )
 
 

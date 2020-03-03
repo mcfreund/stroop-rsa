@@ -9,6 +9,7 @@ library(data.table)
 library(oro.nifti)
 source(here("code", "strings.R"))
 source(here("code", "read_atlases.R"))
+source(here("code", "funs.R"))
 
 write.masks <- function(l, prefix, atlas.name) {
   
@@ -113,8 +114,65 @@ anatfunc <- lapply(anatomical, intersect, rois)
 write.masks(anatfunc, "anatfunc_", "mmp")
 
 
-## func ----
+
+## write parcel IDs ----
+
+saveRDS(anatfunc, here::here("out", "masks", "ids_anatfunc.RDS"))
+saveRDS(anatomical, here::here("out", "masks", "ids_anat.RDS"))
+saveRDS(md, here::here("out", "masks", "ids_md.RDS"))
 
 
-tolower(c("IP0_r", "IP1_r", "IP2_r", "IPS1_r", "MIP_r", "LIPd_r", "LIPv_r", "AIP_r", "7PC_r", "7PL_r")) %>%
-  setdiff(., tolower(anatomical$lppc_R))
+## create workbench files ----
+
+## all superparcels
+
+superparcels <- atlas.key$mmp
+superparcels$id <- "none"
+for (superparcel.i in seq_along(anatfunc)) {
+  superparcels$id[superparcels$roi %in% anatfunc[[superparcel.i]]] <- names(anatfunc)[superparcel.i]
+}
+superparcels$id <- relevel(as.factor(superparcels$id), "none")
+overlay <- superparcels %>% select(roi, id)
+overlay$id <- as.numeric(overlay$id) - 1
+
+inds.left <- atlas.key$mmp$roi %>% grep("_L$", .)
+inds.right <- atlas.key$mmp$roi %>% grep("_R$", .)
+atlas.key$mmp$roi <- atlas.key$mmp$roi[c(inds.right, inds.left)]
+
+overlay$roi.num <- match(overlay$roi, atlas.key$mmp$roi)
+overlay %<>% arrange(roi.num)
+
+cifti.convert(
+  fname.overlay = "superparcels_anatfunc",
+  values.overlay = overlay$id,
+  dir.template = here("out", "figs"),
+  name.atlas = "glasser",
+  dir.to.write = here("out", "figs", "ms_v1_2020-03", "indif_explor")
+)
+
+
+## only lateral and medial pfc, ips
+
+superparcels$id <- "none"
+anatfunc.dissoc <- anatfunc[grep("lppc|mfc|dlpfc", names(anatfunc))]
+for (superparcel.i in seq_along(anatfunc.dissoc)) {
+  superparcels$id[superparcels$roi %in% anatfunc.dissoc[[superparcel.i]]] <- names(anatfunc.dissoc)[superparcel.i]
+}
+superparcels$id <- relevel(as.factor(superparcels$id), "none")
+overlay <- superparcels %>% select(roi, id)
+overlay$id <- as.numeric(overlay$id) - 1
+
+inds.left <- atlas.key$mmp$roi %>% grep("_L$", .)
+inds.right <- atlas.key$mmp$roi %>% grep("_R$", .)
+atlas.key$mmp$roi <- atlas.key$mmp$roi[c(inds.right, inds.left)]
+
+overlay$roi.num <- match(overlay$roi, atlas.key$mmp$roi)
+overlay %<>% arrange(roi.num)
+
+cifti.convert(
+  fname.overlay = "superparcels_anatfunc_dissoc",
+  values.overlay = overlay$id,
+  dir.template = here("out", "figs"),
+  name.atlas = "glasser",
+  dir.to.write = here("out", "figs", "ms_v1_2020-03", "indif_dissoc")
+)

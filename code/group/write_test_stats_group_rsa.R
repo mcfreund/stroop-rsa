@@ -17,26 +17,28 @@ models <- c("tdic", "tdi", "tdclust")
 measures <- c("coef", "beta", "partr")
 session <- "bas"
 
+if (session == "bas") {
+  glmname <- "bas_bias_acc-only_downsamp"
+  sets.of.rois <- "mmp"
+} else if (session == "pro") {
+  glmname <- "pro_bias_acc-only"
+  sets.of.rois <- c("mmp", "gordon", "masks")
+}
+
+
 ## read ----
 
 for (model.i in models) {
   ## model.i = "tdic"
   
-  if (session == "pro") {
-    stats.subjs <- fread(
-      here("out", "rsa", "stats", paste0("subjs_pro_bias_acc-only_mmp_pearson_residual_glm-tdic.csv"))
-    )
-  } else if (session == "bas") {
-    stats.subjs <- fread(
-      here("out", "rsa", "stats", paste0("subjs_bas_bias_acc-only_mmp_pearson_glm-tdic.csv"))
-    )
-  }
-  
+  stats.subjs <- fread(
+    here("out", "rsa", "stats", paste0("subjs_", glmname, "_mmp_pearson_residual_glm-tdic.csv"))
+  )
+
   
   # stats.subjs <- stats.subjs[is.analysis.group == TRUE, ]  ## EXCLUDE HELD OUT SUBJECTS!
   stats.subjs %<>% full_join(atlas.key$mmp, by = "roi")
-    
-    
+
     ## test ----
     
     ## beta
@@ -93,19 +95,10 @@ for (model.i in models) {
       stats.group.partr %>% mutate(measure = "partr")
     )
     
-    if (session == "pro") {
-      fwrite(
-        stats.group,
-        here("out", "rsa", "stats", paste0("group_pro_bias_acc-only_mmp_pearson_residual_glm-", model.i, ".csv"))
-      )
-      
-    } else if (session == "bas") {
-      fwrite(
-        stats.group,
-        here("out", "rsa", "stats", paste0("group_bas_bias_acc-only_mmp_pearson_residual_glm-", model.i, ".csv"))
-      )
-      
-    }
-    
+    fwrite(
+      stats.group,
+      here("out", "rsa", "stats", paste0("group_", glmname, "_mmp_pearson_residual_glm-", model.i, ".csv"))
+    )
+
 }
 

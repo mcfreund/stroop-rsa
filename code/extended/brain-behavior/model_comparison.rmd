@@ -450,6 +450,152 @@ d.long %>%
     fontface = "bold", vjust = 0, hjust = 0
     )
 
+
+
+p.selected.model <- d.long %>%
+  filter(is.selected.param) %>%
+  ggplot(
+    aes(beta, stroop, fill = param, color = param)
+    ) +
+  stat_boot_ci(alpha = 0.4, n = nsim, color = "transparent") +
+  geom_smooth(
+    alpha = 0.5,
+    # data = d.long %>% filter(is.selected.param),
+    # aes(alpha = ifelse(is.selected.param, 0.5, 0.1)), 
+    method = "lm", se = FALSE
+    ) +
+  # scale_alpha_identity() +
+  geom_point(data = d.long %>% filter(is.selected.param), shape = 21, color = "white", size = 2) +
+  facet_grid(cols = vars(superparcel)) +
+  scale_color_manual(values = c(incongruency = "#d95f02", target = "#1b9e77", distractor = "#7570b3")) +
+  scale_fill_manual(values = c(incongruency = "#d95f02", target = "#1b9e77", distractor = "#7570b3")) +
+  theme_minimal(base_size = 15) +
+  theme(
+    axis.ticks       = element_line(),
+    axis.text        = element_text(size = rel(0.5), color = "grey30"),
+    # axis.text.y      = element_text(color = "transparent"),
+    axis.title       = element_text(color = "grey30", face = "bold.italic"),
+    # axis.title.y     = element_text(color = "transparent"),
+    panel.background = element_blank(),
+    panel.grid       =  element_blank(),
+    legend.position  = "none",
+    legend.direction = "horizontal",
+    legend.title     = element_blank(),
+    legend.text      = element_text(color = "grey30"),
+    axis.line        = element_blank(),
+    strip.background = element_blank(),
+    strip.text       = element_text(face = "bold.italic", size = rel(0.75)),
+    title            = element_text(face = "bold")
+  ) +
+  scale_x_continuous(
+    breaks = c(plot.range$min.beta, 0, plot.range$max.beta) %>% round(2)
+  ) +
+  scale_y_continuous(
+    breaks = c(plot.range$min.stroop, plot.range$max.stroop) %>% round(2)
+  ) +
+  geom_segment(
+    aes(y = plot.range$min.stroop, yend = plot.range$max.stroop, x = -Inf, xend = -Inf),
+    color = "grey50", size = 0.25
+    ) +
+  geom_segment(
+      aes(x = plot.range$min.beta, xend = plot.range$max.beta, y = -Inf, yend = -Inf),
+      color = "grey50", size = 0.25
+      ) +
+  labs(x = "RSA model fit (beta)", y = "Stroop effect (RT)", title = "a") +
+  geom_text(
+    data = note.incon, aes(label = lab), color = colors.model["incongruency"], x = -Inf, y = 10, 
+    fontface = "bold", vjust = 0, hjust = 0
+    ) +
+  geom_text(
+    data = note.targt, aes(label = lab), color = colors.model["target"], x = -Inf, y = 20, 
+    fontface = "bold", vjust = 0, hjust = 0
+    ) +
+  geom_text(
+    data = note.distr, aes(label = lab), color = colors.model["distractor"], x = -Inf, y = 30, 
+    fontface = "bold", vjust = 0, hjust = 0
+    )
+
+p.selected.model
+
+ggsave(
+  here("out", "figs", "ms_v1_2020-03", "indif_explor", "indif_explor.pdf"), 
+  plot = p.selected.model,
+  units = "cm",
+  device = "pdf",
+  height = 9,
+  width = 9 * 3
+)
+
+
+p.additional <- d.long %>%
+  filter(is.selected.param, roi %in% c("anatfunc_vvis_L", "anatfunc_dlpfc_L")) %>%
+  ggplot(
+    aes(beta, stroop, fill = param, color = param)
+    ) +
+  stat_boot_ci(alpha = 0.4, n = nsim, color = "transparent") +
+  geom_smooth(
+    alpha = 0.5,
+    # data = d.long %>% filter(is.selected.param),
+    # aes(alpha = ifelse(is.selected.param, 0.5, 0.1)), 
+    method = "lm", se = FALSE
+    ) +
+  # scale_alpha_identity() +
+  geom_point(data = d.long %>% filter(is.selected.param, roi %in% c("anatfunc_vvis_L", "anatfunc_dlpfc_L")), shape = 21, color = "white", size = 2) +
+  facet_grid(cols = vars(superparcel)) +
+  scale_color_manual(values = c(incongruency = "#d95f02", target = "#1b9e77", distractor = "#7570b3")) +
+  scale_fill_manual(values = c(incongruency = "#d95f02", target = "#1b9e77", distractor = "#7570b3")) +
+  theme_minimal(base_size = 15) +
+  theme(
+    axis.ticks       = element_line(),
+    axis.text        = element_text(size = rel(0.5), color = "grey30"),
+    # axis.text.y      = element_text(color = "transparent"),
+    axis.title       = element_text(color = "grey30", face = "bold.italic"),
+    # axis.title.y     = element_text(color = "transparent"),
+    panel.background = element_blank(),
+    panel.grid       =  element_blank(),
+    legend.position  = "none",
+    legend.direction = "horizontal",
+    legend.title     = element_blank(),
+    legend.text      = element_text(color = "grey30"),
+    axis.line        = element_blank(),
+    strip.background = element_blank(),
+    strip.text       = element_text(face = "bold.italic", size = rel(0.75)),
+    title            = element_text(face = "bold")
+  ) +
+  scale_x_continuous(
+    breaks = c(plot.range$min.beta, 0, plot.range$max.beta) %>% round(2)
+  ) +
+  scale_y_continuous(
+    breaks = c(plot.range$min.stroop, plot.range$max.stroop) %>% round(2)
+  ) +
+  geom_segment(
+    aes(y = plot.range$min.stroop, yend = plot.range$max.stroop, x = -Inf, xend = -Inf),
+    color = "grey50", size = 0.25
+    ) +
+  geom_segment(
+      aes(x = plot.range$min.beta, xend = plot.range$max.beta, y = -Inf, yend = -Inf),
+      color = "grey50", size = 0.25
+      ) +
+  labs(x = "RSA model fit (beta)", y = "Stroop effect (RT)") +
+  geom_text(
+    data = note.incon, aes(label = lab), color = colors.model["incongruency"], x = -Inf, y = 10, 
+    fontface = "bold", vjust = 0, hjust = 0
+    ) +
+  geom_text(
+    data = note.distr, aes(label = lab), color = colors.model["distractor"], x = -Inf, y = 30, 
+    fontface = "bold", vjust = 0, hjust = 0
+    )
+
+ggsave(
+  here("out", "figs", "ms_v1_2020-03", "indif_explor", "fig_indif_explor_additional.pdf"), 
+  plot = p.additional,
+  units = "cm",
+  device = "pdf",
+  height = 7,
+  width = 8 * 2
+)
+
+
 ```
 
 ## testing hypotheses in MLM

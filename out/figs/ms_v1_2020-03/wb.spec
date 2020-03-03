@@ -44,12 +44,32 @@
    </DataFile>
    <DataFile Structure="All"
              DataFileType="CONNECTIVITY_PARCEL_SCALAR"
-             Selected="true">
+             Selected="false">
       ../Q1-Q6_RelatedValidation210.CorticalAreas_dil_Final_Final_Areas_Group_Colors.32k_fs_LR.pscalar.nii
    </DataFile>
    <DataFile Structure="All"
-             DataFileType="SCENE"
+             DataFileType="CONNECTIVITY_PARCEL_SCALAR"
              Selected="true">
+      group/group_coding.pscalar.nii
+   </DataFile>
+   <DataFile Structure="All"
+             DataFileType="CONNECTIVITY_PARCEL_SCALAR"
+             Selected="true">
+      group/group_selective_v1.pscalar.nii
+   </DataFile>
+   <DataFile Structure="All"
+             DataFileType="CONNECTIVITY_PARCEL_SCALAR"
+             Selected="true">
+      indif_explor/superparcels_anatfunc.pscalar.nii
+   </DataFile>
+   <DataFile Structure="All"
+             DataFileType="CONNECTIVITY_PARCEL_SCALAR"
+             Selected="true">
+      indif_dissoc/superparcels_anatfunc_dissoc.pscalar.nii
+   </DataFile>
+   <DataFile Structure="All"
+             DataFileType="SCENE"
+             Selected="false">
       wb.scene
    </DataFile>
 </CaretSpecFile>

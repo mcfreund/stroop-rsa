@@ -6,31 +6,36 @@ bash
 
 shopt -s nullglob
 cd /data/nil-external/ccp/freund/stroop-rsa/code/glms
-glms=(./bas_bias_acc-only/*)
+glms=(./pro_bias_acc-only_downsamp/*)
 nglms=${#glms[@]}
 echo $nglms
 
 
 ## change index to run different subsets:
-for f in "${glms[@]:0:12}"; do
+
+for f in "${glms[@]:0:11}"; do
     "$f"
 done
 
-for f in "${glms[@]:12:24}"; do
+for f in "${glms[@]:11:22}"; do
     "$f"
 done
 
-for f in "${glms[@]:24:36}"; do
+for f in "${glms[@]:22:33}"; do
     "$f"
 done
 
-for f in "${glms[@]:36:48}"; do
+for f in "${glms[@]:33:44}"; do
     "$f"
 done
 
 
+for f in "${glms[@]:44:55}"; do
+    "$f"
+done
 
-for f in "${glms[@]:48:60}"; do
+
+for f in "${glms[@]:55:66}"; do
     "$f"
 done
 
