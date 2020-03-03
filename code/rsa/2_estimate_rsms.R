@@ -30,7 +30,6 @@ Options:
    -a Conduct analysis using atlases (Glasser's Multi Modal Parcellation, and Gordon's RSFC communities)? [default: 0]
    -m Conduct analysis using user-specified masks? [default: 0]
    -u Estimate univariate statistics? [default: 0]
-   -b Do baseline instead of proactive? [default: 0]
    -r Do runwise proactive instead of proactive? [default: 0]
  ]"
 
