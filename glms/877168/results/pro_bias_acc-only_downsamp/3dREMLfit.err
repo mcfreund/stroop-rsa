@@ -1,0 +1,38 @@
+*+ WARNING: !! in  matrix:
+ * Largest singular value=1.86496
+ * 1 singular value is less than cutoff=1.86496e-07
+ * Implies strong collinearity in the matrix columns! 
+*+ WARNING: -GOFORIT ==> Charging ahead into battle!
+*+ WARNING: -----
+*+ WARNING: QR decomposition of [R]^(-1/2) [X] had 1 collinearity problem
+*+ WARNING: -----
+*+ WARNING: QR decomposition of GLT setup 46x28 matrix had 1 collinearity problem
+*+ WARNING: QR decomposition of GLT setup 46x28 matrix had 2 collinearity problems
+*+ WARNING: QR decomposition of GLT setup 46x28 matrix had 4 collinearity problems
+*+ WARNING: QR decomposition of GLT setup 46x28 matrix had 5 collinearity problems
+*+ WARNING: QR decomposition of GLT setup 46x28 matrix had 6 collinearity problems
+*+ WARNING: Smallest FDR q [2 purpleBLUE#0_Tstat] = 0.999608 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [3 purpleBLUE_Fstat] = 0.999608 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [11 bluePURPLE#0_Tstat] = 0.294953 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [12 bluePURPLE_Fstat] = 0.294953 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [17 whitePURPLE#0_Tstat] = 0.160023 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [18 whitePURPLE_Fstat] = 0.160023 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [20 blueRED#0_Tstat] = 0.99988 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [21 blueRED_Fstat] = 0.99988 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [29 blueWHITE#0_Tstat] = 0.396386 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [30 blueWHITE_Fstat] = 0.396386 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [32 purpleWHITE#0_Tstat] = 0.362198 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [33 purpleWHITE_Fstat] = 0.362197 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [44 redRED#0_Tstat] = 0.341067 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [45 redRED_Fstat] = 0.341067 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [53 pc50_c#0_Tstat] = 0.597225 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [54 pc50_c_Fstat] = 0.597224 ==> few true single voxel detections
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: mri_fdrize: will not process only 0 values (min=20)
+*+ WARNING: Smallest FDR q [68 transient#0_Tstat] = 0.23043 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [72 transient#2_Tstat] = 0.153113 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [74 transient#3_Tstat] = 0.999832 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [76 transient#4_Tstat] = 0.933874 ==> few true single voxel detections
+*+ WARNING: Smallest FDR q [78 transient#5_Tstat] = 0.674986 ==> few true single voxel detections
