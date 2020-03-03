@@ -40,6 +40,8 @@ rois <- c(rois.medial, rois.lateral)
 bounds <- 0.96
 crit <- qnorm(1 - (1 - bounds) / 2)
 n.resamples <- 1E4
+colors.model <- c(incongruency = "#d95f02", target = "#1b9e77", distractor = "#7570b3")
+
 
 ## subset
 
@@ -118,30 +120,32 @@ for (roi.i in seq_along(rois)) {
 
 ## plot ----
 
-# e <- d %>%
-#   group_by(roi, subj) %>%
-#   mutate(beta_jbar = mean(beta)) %>%
-#   ungroup %>%
-#   mutate(beta_bar = mean(beta)) %>%
-#   group_by(roi, param, saggital) %>%
-#   summarize(
-#     beta = mean(beta),
-#     ci = sqrt((var(beta - beta_jbar + beta_bar) * 1/2) / n()) * crit
-#   )
+## means and noise ceilings (barplot)
 
-# grid.arrange(
-#   d %>%
-#     ggplot(aes(roi, beta, color = param)) +
-#     facet_grid(cols = vars(saggital), scales = "free") +
-#     stat_summary(fun.data = "mean_cl_boot", position = position_dodge(width = 1), fun.args = list(B = 1E4)),
-#   e %>%
-#     ggplot(aes(roi, beta, color = param)) +
-#     geom_point(position = position_dodge(width = 1)) +
-#     facet_grid(cols = vars(saggital), scales = "free") +
-#     # stat_summary(fun.data = "mean_cl_boot", position = position_dodge(width = 1), fun.args = list(B = 1E4)) +
-#     # stat_summary(geom = "point", fun.y = "mean", position = position_dodge(width = 1)) +
-#     geom_errorbar(aes(ymin = beta - ci, ymax = beta + ci), position = position_dodge(width = 1))
-# )
+e <- d %>%
+  group_by(roi, subj) %>%
+  mutate(beta_jbar = mean(beta)) %>%
+  ungroup %>%
+  mutate(beta_bar = mean(beta)) %>%
+  group_by(roi, param, saggital) %>%
+  summarize(
+    beta = mean(beta),
+    ci = sqrt((var(beta - beta_jbar + beta_bar) * 1/2) / n()) * crit
+  )
+
+grid.arrange(
+  d %>%
+    ggplot(aes(roi, beta, color = param)) +
+    facet_grid(cols = vars(saggital), scales = "free") +
+    stat_summary(fun.data = "mean_cl_boot", position = position_dodge(width = 1), fun.args = list(B = 1E4)),
+  e %>%
+    ggplot(aes(roi, beta, color = param)) +
+    geom_point(position = position_dodge(width = 1)) +
+    facet_grid(cols = vars(saggital), scales = "free") +
+    # stat_summary(fun.data = "mean_cl_boot", position = position_dodge(width = 1), fun.args = list(B = 1E4)) +
+    # stat_summary(geom = "point", fun.y = "mean", position = position_dodge(width = 1)) +
+    geom_errorbar(aes(ymin = beta - ci, ymax = beta + ci), position = position_dodge(width = 1))
+)
 
 nc4plot <- rbind(cbind(nc, param = "incon"), cbind(nc, param = "targt"))
 nc4plot$saggital <- ifelse(nc4plot$roi %in% rois.lateral, "lateral", "medial")
@@ -191,7 +195,7 @@ p.dissoc <- d %>%
   )
 
 ggsave(
-  here("out", "figs", "ms_v1_2020-03", "group_dissoc", "group_dissoc.pdf"),
+  here("out", "figs", "ms_v1_2020-03", "group_dissoc", "group_dissoc_bar.pdf"),
   plot = p.dissoc,
   units = "cm",
   device = "pdf",
@@ -199,24 +203,45 @@ ggsave(
   width = 11
 )
 
+## cross plot
 
 dbar <- d %>%
   group_by(param, roi, saggital) %>%
   summarize(beta = mean(beta))
 
-p.dissoc.cross <- dbar %>%
-  ggplot(aes(param, beta, color = saggital)) +
+# p.dissoc.cross <- 
+dbar %>%
+  ggplot(aes(saggital, beta, color = param)) +
   geom_point(
     data = dbar %>% group_by(param, saggital) %>% summarize(beta = mean(beta)),
     size = 4
   ) +
   geom_line(
     data = dbar %>% group_by(param, saggital) %>% summarize(beta = mean(beta)),
-    aes(group = saggital)
+    aes(group = param)
   ) +
-  geom_point(alpha = 0.5) +
-  geom_line(aes(group = roi), linetype = "dashed", alpha = 0.5) +
-  scale_color_manual(values = c(medial = "#1b9e77", lateral = "#7570b3")) +
+  geom_point(aes(group = roi), alpha = 0.5, position = position_dodge(width = 0.5)) +
+  # geom_errorbar(
+  #   data = d %>%
+  #     group_by(subj, roi) %>%
+  #     mutate(
+  #       beta_j = mean(beta)
+  #     ) %>%
+  #     group_by(roi) %>%
+  #     mutate(
+  #       beta_adj = beta - beta_j + mean(beta)
+  #     ) %>%
+  #     group_by(param, roi, saggital) %>%
+  #     summarize(
+  #       beta = mean(beta),
+  #       se = sqrt(var(beta_adj) / length(unique(subj)) * 2)
+  #     ),
+  #   aes(ymin = beta - se * 1.96, ymax = beta + se * 1.96, width = 0.1, group = roi),
+  #   position = position_dodge(width = 0.5)
+  # ) +
+  # geom_line(aes(group = param), alpha = 0.5, position = position_dodge(width = 0.5))
+  scale_color_manual(values = colors.model) +
+  # scale_color_manual(values = c(medial = "firebrick", lateral = "black"))
   theme(
     axis.ticks.x = element_blank(),
     panel.background = element_blank(),
@@ -232,7 +257,7 @@ p.dissoc.cross <- dbar %>%
   )
 
 ggsave(
-  here("out", "figs", "ms_v1_2020-03", "group_dissoc", "group_dissoc_cross.pdf"),
+  here("out", "figs", "ms_v1_2020-03", "group", "group_dissoc_cross.pdf"),
   plot = p.dissoc.cross,
   units = "cm",
   device = "pdf",
@@ -255,5 +280,41 @@ ggplot_qqnorm(resid(fit.all), line = "rlm")
 ## summary
 summary(fit.all)
 fit.all.confint <- confint(fit.all, level = 0.96)
+
+
+
+fit.lateral <- lmer(beta ~ param + (1 | subj), d, subset = saggital == "lateral")
+summary(fit.lateral)
+
+fit.medial <- lmer(beta ~ param + (1 | subj), d, subset = saggital == "medial")
+summary(fit.medial)
+
+
+## diagnostics
+
+plot(fit.all, subj ~ resid(., type = "pearson"), main = "pearson's resids by subject")
+plot(fit.all, param ~ resid(., type = "pearson"), main = "pearson's resids by subject")
+plot(fit.all, interaction(roi, param) ~ resid(., type = "pearson"), main = "pearson's resids by subject")
+ggplot_qqnorm(resid(fit.all), line = "rlm")
+
+## summary
+summary(fit.all)
+fit.all.confint <- confint(fit.all, level = 0.96)
+
+# write.csv()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # write.csv()

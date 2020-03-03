@@ -17,23 +17,29 @@ source(here("code", "strings.R"))
 source(here("code", "read_atlases.R"))
 source(here("code", "read_masks.R"))
 
+session <- "bas"
+
 
 ## loop over sets of ROIs ----
 
-sets.of.rois <- c("mmp", "gordon", "masks")
+if (session == "bas") {
+  glmname <- "bas_bias_acc-only_downsamp"
+  sets.of.rois <- "mmp"
+} else if (session == "pro") {
+  glmname <- "pro_bias_acc-only"
+  sets.of.rois <- c("mmp", "gordon", "masks")
+}
+
+
+
 
 for (set.i in sets.of.rois) {
   # set.i = "mmp"
   
   ## reprisimil matrix
   
-  rsarray <- readRDS(
-    here(
-      "out", "rsa", "obsv", paste0("rsarray_pro_bias_acc-only_", set.i, "_pearson.rds")
-    )
-  )
-  
-  run.rsm <- as.matrix(read.csv(here("out", "rsa", "mods", "rsm_bias_run.csv"), row.names = 1))
+  rsarray <- readRDS(here("out", "rsa", "obsv", paste0("rsarray_", glmname, "_", set.i, "_pearson.rds")))
+  run.rsm <- as.matrix(read.csv(here("out", "rsa", "mods", paste0("rsm_", session, "_bias_run.csv")), row.names = 1))
   
   
   ## regress ----
@@ -43,6 +49,11 @@ for (set.i in sets.of.rois) {
   run.rsv <- mat2vec(run.rsm, value.name = "run.model")
   X <- cbind(1, run.rsv$run.model)  ## model: intercept, run regressor
   
+  ## if baseline, remove any subjs with any NA
+  
+  has.all.data <- !apply(rsarray, "subj", function(x) any(is.na(x)))
+  rsarray <- rsarray[, , has.all.data, ]
+  
   ## initialize indices and lists
   
   is.lower.tri <- lower.tri(diag(length(bias.items)))
@@ -50,6 +61,7 @@ for (set.i in sets.of.rois) {
   rois  <- dimnames(rsarray)$roi
   rsarray.resid.rank <- array(NA, dim = dim(rsarray), dimnames = dimnames(rsarray))
   rsarray.resid.line <- rsarray.resid.rank
+  
   
   ## loop
   
@@ -93,7 +105,7 @@ for (set.i in sets.of.rois) {
     rsarray.resid.rank, 
     here(
       "out", "rsa", "obsv", 
-      paste0("rsarray_pro_bias_acc-only_", set.i, "_pearson_residual-rank.rds")
+      paste0("rsarray_", glmname, "_", set.i, "_pearson_residual-rank.rds")
     )
   )
   
@@ -101,7 +113,7 @@ for (set.i in sets.of.rois) {
     rsarray.resid.line, 
     here(
       "out", "rsa", "obsv", 
-      paste0("rsarray_pro_bias_acc-only_", set.i, "_pearson_residual-linear.rds")
+      paste0("rsarray_", glmname, "_", set.i, "_pearson_residual-linear.rds")
     )
   )
   

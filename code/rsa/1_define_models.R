@@ -80,7 +80,9 @@ write.csv(rsm.congruency, here("out", "rsa", "mods", "rsm_bias_congruency.csv"))
 write.csv(rsm.incongruency, here("out", "rsa", "mods", "rsm_bias_incongruency.csv"))
 
 
-## run model ----
+## run models ----
+
+## proactive run model
 
 counts <- data.table::fread(here("data", "summary_event-counts.csv"))
 # View(counts)
@@ -99,7 +101,34 @@ qcor(rsm.run, "run model", tl.cex = 0.5)  ## all looks good with schemes:
 
 ## write
 
-write.csv(rsm.run, here("out", "rsa", "mods", "rsm_bias_run.csv"))
+write.csv(rsm.run, here("out", "rsa", "mods", "rsm_pro_bias_run.csv"))
+
+## baseline run model
+
+counts <- data.table::fread(here("data", "summary_event-counts.csv"))
+# View(counts)
+counts <- counts[counts$stimulus %in% bias.items, c("baseline1", "baseline2", "stimulus")]
+counts[counts$baseline1 == 15, "baseline1"] <- 3  ## downsampled items
+counts[counts$baseline1 == 12, "baseline1"] <- 0
+counts[counts$baseline2 == 15, "baseline2"] <- 3
+counts[counts$baseline2 == 12, "baseline2"] <- 0
+counts$baseline1 <- counts$baseline1 > 0
+counts$baseline2 <- counts$baseline2 > 0
+run1.items <- counts$stimulus[counts$baseline1]
+run2.items <- counts$stimulus[counts$baseline2]
+rsm.run <- matrix(0, ncol = 16, nrow = 16, dimnames = list(bias.items, bias.items))
+rsm.run[run1.items, run1.items] <- 1
+rsm.run[run2.items, run2.items] <- 1
+
+## check
+
+qcor(rsm.run, "run model", tl.cex = 0.5)  ## all looks good with schemes:
+
+
+## write
+
+write.csv(rsm.run, here("out", "rsa", "mods", "rsm_bas_bias_run.csv"))
+
 
 
 ## continuous models ----
