@@ -24,13 +24,14 @@
 
 doc <- 
 "Usage:
-   2_estimate_rsms.R [-a <do_atlases> -m <do_masks> -u <univariate> -b <baseline>]
+   2_estimate_rsms.R [-a <do_atlases> -m <do_masks> -u <univariate> -r <runwisepro>]
 
 Options:
    -a Conduct analysis using atlases (Glasser's Multi Modal Parcellation, and Gordon's RSFC communities)? [default: 0]
    -m Conduct analysis using user-specified masks? [default: 0]
    -u Estimate univariate statistics? [default: 0]
    -b Do baseline instead of proactive? [default: 0]
+   -r Do runwise proactive instead of proactive? [default: 0]
  ]"
 
 opts <- docopt::docopt(doc)
@@ -38,23 +39,23 @@ opts <- docopt::docopt(doc)
 do.atlas <- as.logical(as.integer(opts$a))
 do.masks <- as.logical(as.integer(opts$m))
 do.univa <- as.logical(as.integer(opts$u))
-do.basli <- as.logical(as.integer(opts$b))
+do.rwpro <- as.logical(as.integer(opts$p))
 
 ## defaults for interactive use (e.g., debugging, ...):
 if (interactive()) {
   do.atlas <- FALSE
   do.masks <- FALSE
   do.univa <- FALSE
-  do.basli <- TRUE
+  do.rwpro <- TRUE
 }
 
-if (all(!do.atlas, !do.masks, !do.univa, !do.basli)) stop(paste0("you must do something!"))
+if (all(!do.atlas, !do.masks, !do.univa, !do.rwpro)) stop(paste0("you must do something!"))
 
 ## setup ----
 
 source(here::here("code", "strings.R"))
-if (do.atlas | do.basli | do.univa) source(here::here("code", "read_atlases.R"))
-if (do.basli) {
+if (do.atlas | do.univa) source(here::here("code", "read_atlases.R"))
+if (do.rwpro) {
   atlas$gordon <- NULL
   atlas.key$gordon <- NULL
   do.univa <- FALSE
@@ -65,7 +66,7 @@ if (do.masks) source(here::here("code", "read_masks.R"))
 ## paths, vars
 
 dir.analysis <- here::here("glms")
-glm.name <- ifelse(do.basli, "bas_bias_acc-only_downsamp", "pro_bias_acc-only")
+glm.name <- ifelse(do.rwpro, "pro_bias_acc-only_downsamp", "pro_bias_acc-only")
 files.dir.analysis <- list.files(dir.analysis, pattern = "stats_var", recursive = TRUE)  ## get fit.subjs
 files.dir.analysis <- files.dir.analysis[grep(glm.name, files.dir.analysis)]
 fit.subjs <- unique(gsub("/results/.*", "", files.dir.analysis))
@@ -80,7 +81,7 @@ n.bias.items <- length(bias.items)
 ## this variable defines the outermost loop.
 ## each iteration collates RSMs into a single array, and saves it as a single .rds file.
 sets.of.rois <- character(0)
-if (do.atlas | do.basli) sets.of.rois <- c(sets.of.rois, names(atlas))
+if (do.atlas | do.rwpro) sets.of.rois <- c(sets.of.rois, names(atlas))
 if (do.masks) sets.of.rois <- c(sets.of.rois, "masks")
 
 
