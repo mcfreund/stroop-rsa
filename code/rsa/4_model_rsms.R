@@ -22,7 +22,7 @@ source(here("code", "strings.R"))
 source(here("code", "read_atlases.R"))
 source(here("code", "read_masks.R"))
 
-session <- "bas"
+session <- "pro_downsamp"
 
 if (session == "bas") {
   glmname <- "bas_bias_acc-only_downsamp"
@@ -30,6 +30,9 @@ if (session == "bas") {
 } else if (session == "pro") {
   glmname <- "pro_bias_acc-only"
   sets.of.rois <- c("mmp", "gordon", "masks")
+} else if (session == "pro_downsamp") {
+  glmname <- "pro_bias_acc-only_downsamp"
+  sets.of.rois <- "mmp"
 }
 
 

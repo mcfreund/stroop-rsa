@@ -53,7 +53,7 @@ if (all(!do.atlas, !do.masks, !do.univa, !do.rwpro)) stop(paste0("you must do so
 ## setup ----
 
 source(here::here("code", "strings.R"))
-if (do.atlas | do.univa) source(here::here("code", "read_atlases.R"))
+if (do.atlas | do.univa | do.rwpro) source(here::here("code", "read_atlases.R"))
 if (do.rwpro) {
   atlas$gordon <- NULL
   atlas.key$gordon <- NULL
@@ -261,3 +261,4 @@ for (set.i in sets.of.rois) {
   
 
 }  ## end atlas loop
+

@@ -115,7 +115,7 @@ Thus, the initial set of regressors contains $N_{\text{superparcel}} * N_{\text{
 
 ## (1) bivariate correlations ----
 
-d <- stats.subjs.tdic %>% filter(roi.set %in% c("anatfunc", "md") | superparcel %in% c("vwfa", "smmouth"))
+d <- stats.subjs.tdic %>% filter(roi.set %in% c("anat", "md") | superparcel %in% c("vwfa", "smmouth"))
 
 d %<>%
   group_by(superparcel, param) %>%

@@ -17,7 +17,7 @@ source(here("code", "strings.R"))
 source(here("code", "read_atlases.R"))
 source(here("code", "read_masks.R"))
 
-session <- "bas"
+session <- "pro_downsamp"
 
 
 ## loop over sets of ROIs ----
@@ -28,6 +28,9 @@ if (session == "bas") {
 } else if (session == "pro") {
   glmname <- "pro_bias_acc-only"
   sets.of.rois <- c("mmp", "gordon", "masks")
+} else if (session == "pro_donwsamp") {
+  glmname <- "pro_bias_acc-only_downsamp"
+  sets.of.rois <- "mmp"
 }
 
 
@@ -39,8 +42,12 @@ for (set.i in sets.of.rois) {
   ## reprisimil matrix
   
   rsarray <- readRDS(here("out", "rsa", "obsv", paste0("rsarray_", glmname, "_", set.i, "_pearson.rds")))
-  run.rsm <- as.matrix(read.csv(here("out", "rsa", "mods", paste0("rsm_", session, "_bias_run.csv")), row.names = 1))
   
+  if (session == "pro_downsamp") {
+    run.rsm <- as.matrix(read.csv(here("out", "rsa", "mods", paste0("rsm_bas_bias_run.csv")), row.names = 1))
+  } else {
+    run.rsm <- as.matrix(read.csv(here("out", "rsa", "mods", paste0("rsm_", session, "_bias_run.csv")), row.names = 1))
+  }
   
   ## regress ----
   
