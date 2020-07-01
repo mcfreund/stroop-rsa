@@ -24,7 +24,7 @@
 # masks$vwfa <- oro.nifti::readNIfTI(here::here("out", "masks", "vwfa.nii.gz"), reorient = FALSE)
 # 
 
-fnames <- list.files(here::here("out", "masks", pattern = "\\.nii\\.gz$"))
+fnames <- list.files(here::here("out", "masks"), pattern = "\\.nii\\.gz$")
 
 masks <- lapply(
   fnames, 
