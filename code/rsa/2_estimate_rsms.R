@@ -38,7 +38,7 @@ opts <- docopt::docopt(doc)
 do.atlas <- as.logical(as.integer(opts$a))
 do.masks <- as.logical(as.integer(opts$m))
 do.univa <- as.logical(as.integer(opts$u))
-do.rwpro <- as.logical(as.integer(opts$p))
+do.rwpro <- as.logical(as.integer(opts$r)
 
 ## defaults for interactive use (e.g., debugging, ...):
 if (interactive()) {
