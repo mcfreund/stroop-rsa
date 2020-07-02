@@ -129,6 +129,8 @@ w <- d %>%
 
 w$lfp_R.target <- (w$lppc_R.target + w$dlpfc_R.target) / 2
 
+# write.csv(w, file.path("C:/Users/mcf/Box/global/docs", "papers", "tics_2020", "figs", "fig_box2", "indif_data.csv"))
+
 p.dissoc.scatter <- w %>%
   ggplot(aes(y = stroop)) +
   stat_boot_ci(aes(x = lfp_R.target), alpha = 0.3, n = 1E3, percent = 96, fill = colors.model["target"]) +
@@ -158,6 +160,7 @@ p.dissoc.scatter <- w %>%
     color = "grey40", size = 1
   ) +
   labs(title = "b", x = "RSA model fit")
+
 
 
 

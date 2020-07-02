@@ -9,6 +9,7 @@
 
 library(here)
 library(mikeutils)
+library(magrittr)
 library(dplyr)
 library(data.table)
 library(nlme)
@@ -92,7 +93,7 @@ fit.error1 <- glmer(error ~ trial.type + (trial.type | subj), stroop.pro.er, fam
 anova()
 
 
-behav %<>%
+blups %>%
   full_join(
     data.frame(
       subj = rownames(coef(m.er1)$subj),

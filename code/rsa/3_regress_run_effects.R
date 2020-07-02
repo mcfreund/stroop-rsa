@@ -17,7 +17,7 @@ source(here("code", "strings.R"))
 source(here("code", "read_atlases.R"))
 source(here("code", "read_masks.R"))
 
-session <- "pro_downsamp"
+session <- "pro"
 
 
 ## loop over sets of ROIs ----
@@ -27,7 +27,8 @@ if (session == "bas") {
   sets.of.rois <- "mmp"
 } else if (session == "pro") {
   glmname <- "pro_bias_acc-only"
-  sets.of.rois <- c("mmp", "gordon", "masks")
+  # sets.of.rois <- c("mmp", "gordon", "masks")
+  sets.of.rois <- "masks"
 } else if (session == "pro_donwsamp") {
   glmname <- "pro_bias_acc-only_downsamp"
   sets.of.rois <- "mmp"
