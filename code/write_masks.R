@@ -48,6 +48,7 @@ anatomical <- list(
   ##  a32pr, d32: dACC (Assem 2019)
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
   dlpfc  = c("p9-46v", "i6-8", "8Av", "8C"), ## along middle frontal gyrus
   dpm    = c("6a", "FEF", "6ma"), ## dorsal premotor
   vpm    = c("6v", "6v", "PEF", "6r", "55b", "IFJp"),  ## ventral premotor
@@ -65,6 +66,11 @@ anatomical <- list(
   ## along middle frontal sulcus
   dpm    = c("6a", "FEF", "6ma"), ## dorsal premotor
 >>>>>>> 4de56ea180c2a28fca16b7a04dea418f9609edc0
+=======
+  dlpfc  = c("p9-46v", "i6-8", "8Av", "8C", "46"),
+  ## along middle frontal sulcus
+  dpm    = c("6a", "FEF", "6ma"), ## dorsal premotor
+>>>>>>> 4de56ea180c2a28fca16b7a04dea418f9609edc0
   vpm    = c("6v", "6v", "PEF", "6r", "55b"),  ## ventral premotor
   ifj    = c("IFJp", "IFJa"),
   vvis   = c("FFC", "VVC", "V8", "VMV3"),
@@ -73,6 +79,9 @@ anatomical <- list(
   ofc    = c("47s", "47m", "11l", "13l", "OFC", "10pp", "10v", "10r", "s32", "p32", "a24", "25", "pOFC"),
   fpc    = c("9-46d", "a9-46v", "a10p", "p10p", "a47r", "9a", "9p", "10d")
 <<<<<<< HEAD
+<<<<<<< HEAD
+>>>>>>> 4de56ea180c2a28fca16b7a04dea418f9609edc0
+=======
 >>>>>>> 4de56ea180c2a28fca16b7a04dea418f9609edc0
 =======
 >>>>>>> 4de56ea180c2a28fca16b7a04dea418f9609edc0
