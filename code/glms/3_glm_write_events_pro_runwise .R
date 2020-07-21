@@ -191,8 +191,8 @@ for (dir.i in seq_along(dirs.input)) {
   )
   
   burn.incon <- c(
-    onsets4afni(sort(modeled.out.congr[[1]])),
-    onsets4afni(sort(modeled.out.congr[[2]]))
+    onsets4afni(sort(modeled.out.incon[[1]])),
+    onsets4afni(sort(modeled.out.incon[[2]]))
   )
   
   onsets2file(burn.congr, gsub("(.*_pro_).*$", "\\1congr_modelout_acc-only", fname.i))
@@ -200,5 +200,3 @@ for (dir.i in seq_along(dirs.input)) {
   
 }
 
-
-list files

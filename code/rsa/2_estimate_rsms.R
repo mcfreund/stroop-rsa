@@ -38,14 +38,22 @@ opts <- docopt::docopt(doc)
 do.atlas <- as.logical(as.integer(opts$a))
 do.masks <- as.logical(as.integer(opts$m))
 do.univa <- as.logical(as.integer(opts$u))
-do.rwpro <- as.logical(as.integer(opts$p))
+<<<<<<< HEAD
+<<<<<<< HEAD
+do.rwpro <- as.logical(as.integer(opts$r))
+=======
+do.rwpro <- as.logical(as.integer(opts$r)
+>>>>>>> 4de56ea180c2a28fca16b7a04dea418f9609edc0
+=======
+do.rwpro <- as.logical(as.integer(opts$r)
+>>>>>>> 4de56ea180c2a28fca16b7a04dea418f9609edc0
 
 ## defaults for interactive use (e.g., debugging, ...):
 if (interactive()) {
   do.atlas <- FALSE
-  do.masks <- FALSE
+  do.masks <- TRUE
   do.univa <- FALSE
-  do.rwpro <- TRUE
+  do.rwpro <- FALSE
 }
 
 if (all(!do.atlas, !do.masks, !do.univa, !do.rwpro)) stop(paste0("you must do something!"))
@@ -53,7 +61,7 @@ if (all(!do.atlas, !do.masks, !do.univa, !do.rwpro)) stop(paste0("you must do so
 ## setup ----
 
 source(here::here("code", "strings.R"))
-if (do.atlas | do.univa) source(here::here("code", "read_atlases.R"))
+if (do.atlas | do.univa | do.rwpro) source(here::here("code", "read_atlases.R"))
 if (do.rwpro) {
   atlas$gordon <- NULL
   atlas.key$gordon <- NULL
@@ -261,3 +269,4 @@ for (set.i in sets.of.rois) {
   
 
 }  ## end atlas loop
+

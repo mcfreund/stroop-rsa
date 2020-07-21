@@ -300,21 +300,3 @@ ggplot_qqnorm(resid(fit.all), line = "rlm")
 ## summary
 summary(fit.all)
 fit.all.confint <- confint(fit.all, level = 0.96)
-
-# write.csv()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# write.csv()

@@ -35,11 +35,27 @@ theme_set(theme_bw(base_size = 12))
 ## read data
 
 blups <- read.csv(here("out", "behav", "stroop_blups_rt_group201902.csv"), stringsAsFactors = FALSE)
+blups.validation <- read.csv(
+  here("out", "behav", "stroop_blups_rt_group201902_validation.csv"), stringsAsFactors = FALSE
+  )
 stats.subjs.tdic <- fread(
   here("out", "rsa", "stats", paste0("subjs_pro_bias_acc-only_masks_pearson_residual_glm-tdic.csv"))
 )
 
 ## subset and bind
+
+stats.subjs.tdic.validation <- stats.subjs.tdic[is.analysis.group == FALSE, ]  ## EXCLUDE HELD OUT SUBJECTS!
+stats.subjs.tdic.validation <- stats.subjs.tdic.validation[y == "rank" & param %in% c("target", "distractor", "incongruency"), ]
+stats.subjs.tdic.validation <- stats.subjs.tdic.validation[, c("coef", "y", "model") := NULL]  ## remove useless cols
+stats.subjs.tdic.validation <- full_join(blups.validation, stats.subjs.tdic.validation, by = "subj")
+
+## format cols
+
+stats.subjs.tdic.validation <- cbind(
+  stats.subjs.tdic.validation,
+  reshape2::colsplit(stats.subjs.tdic.validation$roi, "_", c("roi.set", "superparcel"))
+)
+stats.subjs.tdic.validation$superparcel[stats.subjs.tdic.validation$superparcel == ""] <- "vwfa"
 
 stats.subjs.tdic <- stats.subjs.tdic[is.analysis.group == TRUE, ]  ## EXCLUDE HELD OUT SUBJECTS!
 stats.subjs.tdic <- stats.subjs.tdic[y == "rank" & param %in% c("target", "distractor", "incongruency"), ]
@@ -115,7 +131,7 @@ Thus, the initial set of regressors contains $N_{\text{superparcel}} * N_{\text{
 
 ## (1) bivariate correlations ----
 
-d <- stats.subjs.tdic %>% filter(roi.set %in% c("anatfunc", "md") | superparcel %in% c("vwfa", "smmouth"))
+d <- stats.subjs.tdic %>% filter(roi.set %in% c("anat") | superparcel %in% c("vwfa", "smmouth"))
 
 d %<>%
   group_by(superparcel, param) %>%
@@ -124,6 +140,17 @@ d %<>%
     is.out.line = n %in% outpro(partr, stroop)$out.id,
     is.out.rank = n %in% outpro(rank(partr), rank(stroop))$out.id
   )
+
+d.validation <- 
+  stats.subjs.tdic.validation %>% 
+  filter(roi.set %in% c("anat") | superparcel %in% c("vwfa", "smmouth")) %>%
+  group_by(superparcel, param) %>%
+  mutate(
+    n = seq_len(n()),
+    is.out.line = n %in% outpro(partr, stroop)$out.id,
+    is.out.rank = n %in% outpro(rank(partr), rank(stroop))$out.id
+  )
+
 
 topcors <- d %>%
   group_by(superparcel, param) %>%
@@ -136,7 +163,7 @@ topcors <- d %>%
     r.rank.nout = sum(is.out.rank)
   ) %>%
   ungroup %>%
-  filter(rank(-r2.line) < 21 & rank(-r2.rank) < 21) %>%
+  filter(rank(-r2.line) < 26 & rank(-r2.rank) < 26) %>%
   arrange(-r2.line) %>%
   mutate(id = interaction(superparcel, param))
 
@@ -144,9 +171,9 @@ kable(topcors, digits = 2)
 
 ## plot
 
-d %<>%
-  mutate(id = as.character(interaction(superparcel, param))) %>%
-  filter(id %in% topcors$id)
+d %<>% mutate(id = as.character(interaction(superparcel, param)))
+d.validation %<>% mutate(id = as.character(interaction(superparcel, param)))
+  # filter(id %in% topcors$id)
 
 d %>%
   group_by(id) %>%
@@ -183,7 +210,12 @@ This narrows it down to a set of `r nrow(topcors)` regressors.
 
 w <- d %>%
   ungroup %>%
-  select(subj, congr, stroop, beta, id) %>%
+  dplyr::select(subj, congr, stroop, beta, id) %>%
+  tidyr::spread(id, beta)
+
+w.validation <- d.validation %>%
+  ungroup %>%
+  dplyr::select(subj, congr, stroop, beta, id) %>%
   tidyr::spread(id, beta)
 
 ## build model combinations
@@ -315,6 +347,98 @@ par(mfrow = c(2, 2))
 plot(fit.optim)
 
 ```
+
+
+```{r}
+
+
+library(glmnet)
+names(w)
+m <- stats.subjs.tdic %>% 
+  filter(roi.set %in% c("anat") | superparcel %in% c("vwfa", "smmouth")) %>%
+  ungroup %>%
+  mutate(id = paste0(superparcel, "_", param)) %>%
+  select(subj, stroop, beta, id) %>%
+  tidyr::pivot_wider(-subj, names_from = "id", values_from = "beta") %>%
+  as.matrix
+
+set.seed(0)
+elnet05.cv <- cv.glmnet(m[, -grep("stroop", colnames(m))], m[, "stroop"])
+elnet05 <- glmnet(m[, -grep("stroop", colnames(m))], m[, "stroop"], alpha = 1, lambda = elnet05.cv$lambda.min)
+plot(elnet05.cv)
+coef(elnet05)
+plot(elnet05)
+
+
+## validation set error ----
+
+m.validation <- stats.subjs.tdic.validation %>% 
+  filter(roi.set %in% c("anat") | superparcel %in% c("vwfa", "smmouth")) %>%
+  ungroup %>%
+  mutate(id = paste0(superparcel, "_", param)) %>%
+  select(subj, stroop, beta, id) %>%
+  tidyr::pivot_wider(-subj, names_from = "id", values_from = "beta") %>%
+  as.matrix
+
+
+setdiff(colnames(m.validation), colnames(m))
+setdiff(colnames(m), colnames(m.validation))
+
+yhat <- predict(elnet05.cv, s = "lambda.min" , newx = m.validation[, -grep("stroop", colnames(m))])
+sqrt(mean((m.validation[, "stroop"] - yhat)^2))
+cor(m.validation[, "stroop"], yhat)
+plot(m.validation[, "stroop"], yhat)
+
+
+
+## [1] 1.452
+sqrt(mean((fires$lburned[inds.valid] - yhat.fires.valid)^2))
+## [1] 1.34
+
+
+# ----
+
+library(selectiveInference)
+all(svd(m[, -grep("stroop", colnames(m))])$d > 0)
+path <- lar(m[, -grep("stroop", colnames(m))], m[, "stroop"])
+pathinf <- larInf(path)
+pathinf
+
+w <- as.matrix(w[, -1])
+path2 <- lar(w[, -grep("stroop", colnames(w))], w[, "stroop"])
+pathinf2 <- larInf(path2)
+pathinf2
+
+
+colnames(m)[c(46, 7, 72, 51, 5) + 1]
+
+
+## stability selection ----
+install.packages("stabs")
+library("stabs")
+library("lars")
+stab.lasso <- stabsel(
+  x = m[, -grep("stroop", colnames(m))], y = m[, "stroop"], fitfun = glmnet.lasso, 
+  cutoff = 0.6, PFER = 1
+  )
+stab.lasso
+plot(stab.lasso)
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ```{r optim-mse_plot, fig.width = 15}
