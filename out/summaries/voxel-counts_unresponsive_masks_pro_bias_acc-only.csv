@@ -95,7 +95,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,107321,
 mmpcommunities_dmfc_latpar_v_vis_L,107321,
 mmpcommunities_dmfc_latpar_v_vis_R,107321,
 mmpcommunities_dmfc_latpar_V1_L,107321,
-mmpcommunities_dmfc_latpar_V1_R,107321,17
+mmpcommunities_dmfc_latpar_V1_R,107321,
+vwfa,107321,3
 anat_aud,115825,
 anat_dlpfc_L,115825,
 anat_dlpfc_R,115825,
@@ -192,7 +193,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,115825,
 mmpcommunities_dmfc_latpar_v_vis_L,115825,
 mmpcommunities_dmfc_latpar_v_vis_R,115825,
 mmpcommunities_dmfc_latpar_V1_L,115825,
-mmpcommunities_dmfc_latpar_V1_R,115825,23
+mmpcommunities_dmfc_latpar_V1_R,115825,
+vwfa,115825,0
 anat_aud,123117,
 anat_dlpfc_L,123117,
 anat_dlpfc_R,123117,
@@ -289,7 +291,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,123117,
 mmpcommunities_dmfc_latpar_v_vis_L,123117,
 mmpcommunities_dmfc_latpar_v_vis_R,123117,
 mmpcommunities_dmfc_latpar_V1_L,123117,
-mmpcommunities_dmfc_latpar_V1_R,123117,8
+mmpcommunities_dmfc_latpar_V1_R,123117,
+vwfa,123117,1
 anat_aud,130114,
 anat_dlpfc_L,130114,
 anat_dlpfc_R,130114,
@@ -386,7 +389,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,130114,
 mmpcommunities_dmfc_latpar_v_vis_L,130114,
 mmpcommunities_dmfc_latpar_v_vis_R,130114,
 mmpcommunities_dmfc_latpar_V1_L,130114,
-mmpcommunities_dmfc_latpar_V1_R,130114,3
+mmpcommunities_dmfc_latpar_V1_R,130114,
+vwfa,130114,9
 anat_aud,130518,
 anat_dlpfc_L,130518,
 anat_dlpfc_R,130518,
@@ -483,7 +487,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,130518,
 mmpcommunities_dmfc_latpar_v_vis_L,130518,
 mmpcommunities_dmfc_latpar_v_vis_R,130518,
 mmpcommunities_dmfc_latpar_V1_L,130518,
-mmpcommunities_dmfc_latpar_V1_R,130518,10
+mmpcommunities_dmfc_latpar_V1_R,130518,
+vwfa,130518,1
 anat_aud,132017,
 anat_dlpfc_L,132017,
 anat_dlpfc_R,132017,
@@ -580,7 +585,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,132017,
 mmpcommunities_dmfc_latpar_v_vis_L,132017,
 mmpcommunities_dmfc_latpar_v_vis_R,132017,
 mmpcommunities_dmfc_latpar_V1_L,132017,
-mmpcommunities_dmfc_latpar_V1_R,132017,10
+mmpcommunities_dmfc_latpar_V1_R,132017,
+vwfa,132017,0
 anat_aud,138837,
 anat_dlpfc_L,138837,
 anat_dlpfc_R,138837,
@@ -677,7 +683,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,138837,
 mmpcommunities_dmfc_latpar_v_vis_L,138837,
 mmpcommunities_dmfc_latpar_v_vis_R,138837,
 mmpcommunities_dmfc_latpar_V1_L,138837,
-mmpcommunities_dmfc_latpar_V1_R,138837,21
+mmpcommunities_dmfc_latpar_V1_R,138837,
+vwfa,138837,0
 anat_aud,141422,
 anat_dlpfc_L,141422,
 anat_dlpfc_R,141422,
@@ -774,7 +781,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,141422,
 mmpcommunities_dmfc_latpar_v_vis_L,141422,
 mmpcommunities_dmfc_latpar_v_vis_R,141422,
 mmpcommunities_dmfc_latpar_V1_L,141422,
-mmpcommunities_dmfc_latpar_V1_R,141422,18
+mmpcommunities_dmfc_latpar_V1_R,141422,
+vwfa,141422,0
 anat_aud,150423,
 anat_dlpfc_L,150423,
 anat_dlpfc_R,150423,
@@ -871,7 +879,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,150423,
 mmpcommunities_dmfc_latpar_v_vis_L,150423,
 mmpcommunities_dmfc_latpar_v_vis_R,150423,
 mmpcommunities_dmfc_latpar_V1_L,150423,
-mmpcommunities_dmfc_latpar_V1_R,150423,18
+mmpcommunities_dmfc_latpar_V1_R,150423,
+vwfa,150423,0
 anat_aud,158136,
 anat_dlpfc_L,158136,
 anat_dlpfc_R,158136,
@@ -968,7 +977,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,158136,
 mmpcommunities_dmfc_latpar_v_vis_L,158136,
 mmpcommunities_dmfc_latpar_v_vis_R,158136,
 mmpcommunities_dmfc_latpar_V1_L,158136,
-mmpcommunities_dmfc_latpar_V1_R,158136,32
+mmpcommunities_dmfc_latpar_V1_R,158136,
+vwfa,158136,14
 anat_aud,160830,
 anat_dlpfc_L,160830,
 anat_dlpfc_R,160830,
@@ -1065,7 +1075,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,160830,
 mmpcommunities_dmfc_latpar_v_vis_L,160830,
 mmpcommunities_dmfc_latpar_v_vis_R,160830,
 mmpcommunities_dmfc_latpar_V1_L,160830,
-mmpcommunities_dmfc_latpar_V1_R,160830,38
+mmpcommunities_dmfc_latpar_V1_R,160830,
+vwfa,160830,13
 anat_aud,161832,
 anat_dlpfc_L,161832,
 anat_dlpfc_R,161832,
@@ -1162,7 +1173,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,161832,
 mmpcommunities_dmfc_latpar_v_vis_L,161832,
 mmpcommunities_dmfc_latpar_v_vis_R,161832,
 mmpcommunities_dmfc_latpar_V1_L,161832,
-mmpcommunities_dmfc_latpar_V1_R,161832,17
+mmpcommunities_dmfc_latpar_V1_R,161832,
+vwfa,161832,14
 anat_aud,165032,
 anat_dlpfc_L,165032,
 anat_dlpfc_R,165032,
@@ -1259,7 +1271,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,165032,
 mmpcommunities_dmfc_latpar_v_vis_L,165032,
 mmpcommunities_dmfc_latpar_v_vis_R,165032,
 mmpcommunities_dmfc_latpar_V1_L,165032,
-mmpcommunities_dmfc_latpar_V1_R,165032,18
+mmpcommunities_dmfc_latpar_V1_R,165032,
+vwfa,165032,0
 anat_aud,171330,
 anat_dlpfc_L,171330,
 anat_dlpfc_R,171330,
@@ -1356,7 +1369,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,171330,
 mmpcommunities_dmfc_latpar_v_vis_L,171330,
 mmpcommunities_dmfc_latpar_v_vis_R,171330,
 mmpcommunities_dmfc_latpar_V1_L,171330,
-mmpcommunities_dmfc_latpar_V1_R,171330,7
+mmpcommunities_dmfc_latpar_V1_R,171330,
+vwfa,171330,2
 anat_aud,178243,
 anat_dlpfc_L,178243,
 anat_dlpfc_R,178243,
@@ -1453,7 +1467,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,178243,
 mmpcommunities_dmfc_latpar_v_vis_L,178243,
 mmpcommunities_dmfc_latpar_v_vis_R,178243,
 mmpcommunities_dmfc_latpar_V1_L,178243,
-mmpcommunities_dmfc_latpar_V1_R,178243,35
+mmpcommunities_dmfc_latpar_V1_R,178243,
+vwfa,178243,7
 anat_aud,178647,
 anat_dlpfc_L,178647,
 anat_dlpfc_R,178647,
@@ -1550,7 +1565,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,178647,
 mmpcommunities_dmfc_latpar_v_vis_L,178647,
 mmpcommunities_dmfc_latpar_v_vis_R,178647,
 mmpcommunities_dmfc_latpar_V1_L,178647,
-mmpcommunities_dmfc_latpar_V1_R,178647,11
+mmpcommunities_dmfc_latpar_V1_R,178647,
+vwfa,178647,1
 anat_aud,178950,
 anat_dlpfc_L,178950,
 anat_dlpfc_R,178950,
@@ -1647,7 +1663,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,178950,
 mmpcommunities_dmfc_latpar_v_vis_L,178950,
 mmpcommunities_dmfc_latpar_v_vis_R,178950,
 mmpcommunities_dmfc_latpar_V1_L,178950,
-mmpcommunities_dmfc_latpar_V1_R,178950,28
+mmpcommunities_dmfc_latpar_V1_R,178950,
+vwfa,178950,0
 anat_aud,182436,
 anat_dlpfc_L,182436,
 anat_dlpfc_R,182436,
@@ -1744,7 +1761,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,182436,
 mmpcommunities_dmfc_latpar_v_vis_L,182436,
 mmpcommunities_dmfc_latpar_v_vis_R,182436,
 mmpcommunities_dmfc_latpar_V1_L,182436,
-mmpcommunities_dmfc_latpar_V1_R,182436,13
+mmpcommunities_dmfc_latpar_V1_R,182436,
+vwfa,182436,2
 anat_aud,197449,
 anat_dlpfc_L,197449,
 anat_dlpfc_R,197449,
@@ -1841,7 +1859,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,197449,
 mmpcommunities_dmfc_latpar_v_vis_L,197449,
 mmpcommunities_dmfc_latpar_v_vis_R,197449,
 mmpcommunities_dmfc_latpar_V1_L,197449,
-mmpcommunities_dmfc_latpar_V1_R,197449,8
+mmpcommunities_dmfc_latpar_V1_R,197449,
+vwfa,197449,1
 anat_aud,203418,
 anat_dlpfc_L,203418,
 anat_dlpfc_R,203418,
@@ -1938,7 +1957,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,203418,
 mmpcommunities_dmfc_latpar_v_vis_L,203418,
 mmpcommunities_dmfc_latpar_v_vis_R,203418,
 mmpcommunities_dmfc_latpar_V1_L,203418,
-mmpcommunities_dmfc_latpar_V1_R,203418,37
+mmpcommunities_dmfc_latpar_V1_R,203418,
+vwfa,203418,0
 anat_aud,204319,
 anat_dlpfc_L,204319,
 anat_dlpfc_R,204319,
@@ -2035,7 +2055,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,204319,
 mmpcommunities_dmfc_latpar_v_vis_L,204319,
 mmpcommunities_dmfc_latpar_v_vis_R,204319,
 mmpcommunities_dmfc_latpar_V1_L,204319,
-mmpcommunities_dmfc_latpar_V1_R,204319,19
+mmpcommunities_dmfc_latpar_V1_R,204319,
+vwfa,204319,0
 anat_aud,233326,
 anat_dlpfc_L,233326,
 anat_dlpfc_R,233326,
@@ -2132,7 +2153,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,233326,
 mmpcommunities_dmfc_latpar_v_vis_L,233326,
 mmpcommunities_dmfc_latpar_v_vis_R,233326,
 mmpcommunities_dmfc_latpar_V1_L,233326,
-mmpcommunities_dmfc_latpar_V1_R,233326,9
+mmpcommunities_dmfc_latpar_V1_R,233326,
+vwfa,233326,1
 anat_aud,300618,
 anat_dlpfc_L,300618,
 anat_dlpfc_R,300618,
@@ -2229,7 +2251,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,300618,
 mmpcommunities_dmfc_latpar_v_vis_L,300618,
 mmpcommunities_dmfc_latpar_v_vis_R,300618,
 mmpcommunities_dmfc_latpar_V1_L,300618,
-mmpcommunities_dmfc_latpar_V1_R,300618,7
+mmpcommunities_dmfc_latpar_V1_R,300618,
+vwfa,300618,0
 anat_aud,317332,
 anat_dlpfc_L,317332,
 anat_dlpfc_R,317332,
@@ -2326,7 +2349,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,317332,
 mmpcommunities_dmfc_latpar_v_vis_L,317332,
 mmpcommunities_dmfc_latpar_v_vis_R,317332,
 mmpcommunities_dmfc_latpar_V1_L,317332,
-mmpcommunities_dmfc_latpar_V1_R,317332,10
+mmpcommunities_dmfc_latpar_V1_R,317332,
+vwfa,317332,0
 anat_aud,346945,
 anat_dlpfc_L,346945,
 anat_dlpfc_R,346945,
@@ -2423,7 +2447,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,346945,
 mmpcommunities_dmfc_latpar_v_vis_L,346945,
 mmpcommunities_dmfc_latpar_v_vis_R,346945,
 mmpcommunities_dmfc_latpar_V1_L,346945,
-mmpcommunities_dmfc_latpar_V1_R,346945,5
+mmpcommunities_dmfc_latpar_V1_R,346945,
+vwfa,346945,0
 anat_aud,352738,
 anat_dlpfc_L,352738,
 anat_dlpfc_R,352738,
@@ -2520,7 +2545,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,352738,
 mmpcommunities_dmfc_latpar_v_vis_L,352738,
 mmpcommunities_dmfc_latpar_v_vis_R,352738,
 mmpcommunities_dmfc_latpar_V1_L,352738,
-mmpcommunities_dmfc_latpar_V1_R,352738,15
+mmpcommunities_dmfc_latpar_V1_R,352738,
+vwfa,352738,1
 anat_aud,393550,
 anat_dlpfc_L,393550,
 anat_dlpfc_R,393550,
@@ -2617,7 +2643,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,393550,
 mmpcommunities_dmfc_latpar_v_vis_L,393550,
 mmpcommunities_dmfc_latpar_v_vis_R,393550,
 mmpcommunities_dmfc_latpar_V1_L,393550,
-mmpcommunities_dmfc_latpar_V1_R,393550,4
+mmpcommunities_dmfc_latpar_V1_R,393550,
+vwfa,393550,1
 anat_aud,448347,
 anat_dlpfc_L,448347,
 anat_dlpfc_R,448347,
@@ -2714,7 +2741,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,448347,
 mmpcommunities_dmfc_latpar_v_vis_L,448347,
 mmpcommunities_dmfc_latpar_v_vis_R,448347,
 mmpcommunities_dmfc_latpar_V1_L,448347,
-mmpcommunities_dmfc_latpar_V1_R,448347,33
+mmpcommunities_dmfc_latpar_V1_R,448347,
+vwfa,448347,9
 anat_aud,580650,
 anat_dlpfc_L,580650,
 anat_dlpfc_R,580650,
@@ -2811,7 +2839,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,580650,
 mmpcommunities_dmfc_latpar_v_vis_L,580650,
 mmpcommunities_dmfc_latpar_v_vis_R,580650,
 mmpcommunities_dmfc_latpar_V1_L,580650,
-mmpcommunities_dmfc_latpar_V1_R,580650,17
+mmpcommunities_dmfc_latpar_V1_R,580650,
+vwfa,580650,2
 anat_aud,594156,
 anat_dlpfc_L,594156,
 anat_dlpfc_R,594156,
@@ -2908,7 +2937,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,594156,
 mmpcommunities_dmfc_latpar_v_vis_L,594156,
 mmpcommunities_dmfc_latpar_v_vis_R,594156,
 mmpcommunities_dmfc_latpar_V1_L,594156,
-mmpcommunities_dmfc_latpar_V1_R,594156,5
+mmpcommunities_dmfc_latpar_V1_R,594156,
+vwfa,594156,2
 anat_aud,601127,
 anat_dlpfc_L,601127,
 anat_dlpfc_R,601127,
@@ -3005,7 +3035,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,601127,
 mmpcommunities_dmfc_latpar_v_vis_L,601127,
 mmpcommunities_dmfc_latpar_v_vis_R,601127,
 mmpcommunities_dmfc_latpar_V1_L,601127,
-mmpcommunities_dmfc_latpar_V1_R,601127,11
+mmpcommunities_dmfc_latpar_V1_R,601127,
+vwfa,601127,3
 anat_aud,765864,
 anat_dlpfc_L,765864,
 anat_dlpfc_R,765864,
@@ -3102,7 +3133,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,765864,
 mmpcommunities_dmfc_latpar_v_vis_L,765864,
 mmpcommunities_dmfc_latpar_v_vis_R,765864,
 mmpcommunities_dmfc_latpar_V1_L,765864,
-mmpcommunities_dmfc_latpar_V1_R,765864,27
+mmpcommunities_dmfc_latpar_V1_R,765864,
+vwfa,765864,5
 anat_aud,814649,
 anat_dlpfc_L,814649,
 anat_dlpfc_R,814649,
@@ -3199,7 +3231,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,814649,
 mmpcommunities_dmfc_latpar_v_vis_L,814649,
 mmpcommunities_dmfc_latpar_v_vis_R,814649,
 mmpcommunities_dmfc_latpar_V1_L,814649,
-mmpcommunities_dmfc_latpar_V1_R,814649,20
+mmpcommunities_dmfc_latpar_V1_R,814649,
+vwfa,814649,0
 anat_aud,843151,
 anat_dlpfc_L,843151,
 anat_dlpfc_R,843151,
@@ -3296,7 +3329,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,843151,
 mmpcommunities_dmfc_latpar_v_vis_L,843151,
 mmpcommunities_dmfc_latpar_v_vis_R,843151,
 mmpcommunities_dmfc_latpar_V1_L,843151,
-mmpcommunities_dmfc_latpar_V1_R,843151,12
+mmpcommunities_dmfc_latpar_V1_R,843151,
+vwfa,843151,1
 anat_aud,849971,
 anat_dlpfc_L,849971,
 anat_dlpfc_R,849971,
@@ -3393,7 +3427,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,849971,
 mmpcommunities_dmfc_latpar_v_vis_L,849971,
 mmpcommunities_dmfc_latpar_v_vis_R,849971,
 mmpcommunities_dmfc_latpar_V1_L,849971,
-mmpcommunities_dmfc_latpar_V1_R,849971,6
+mmpcommunities_dmfc_latpar_V1_R,849971,
+vwfa,849971,0
 anat_aud,873968,
 anat_dlpfc_L,873968,
 anat_dlpfc_R,873968,
@@ -3490,7 +3525,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,873968,
 mmpcommunities_dmfc_latpar_v_vis_L,873968,
 mmpcommunities_dmfc_latpar_v_vis_R,873968,
 mmpcommunities_dmfc_latpar_V1_L,873968,
-mmpcommunities_dmfc_latpar_V1_R,873968,31
+mmpcommunities_dmfc_latpar_V1_R,873968,
+vwfa,873968,0
 anat_aud,877168,
 anat_dlpfc_L,877168,
 anat_dlpfc_R,877168,
@@ -3587,7 +3623,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,877168,
 mmpcommunities_dmfc_latpar_v_vis_L,877168,
 mmpcommunities_dmfc_latpar_v_vis_R,877168,
 mmpcommunities_dmfc_latpar_V1_L,877168,
-mmpcommunities_dmfc_latpar_V1_R,877168,27
+mmpcommunities_dmfc_latpar_V1_R,877168,
+vwfa,877168,8
 anat_aud,DMCC1328342,
 anat_dlpfc_L,DMCC1328342,
 anat_dlpfc_R,DMCC1328342,
@@ -3684,7 +3721,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,DMCC1328342,
 mmpcommunities_dmfc_latpar_v_vis_L,DMCC1328342,
 mmpcommunities_dmfc_latpar_v_vis_R,DMCC1328342,
 mmpcommunities_dmfc_latpar_V1_L,DMCC1328342,
-mmpcommunities_dmfc_latpar_V1_R,DMCC1328342,16
+mmpcommunities_dmfc_latpar_V1_R,DMCC1328342,
+vwfa,DMCC1328342,0
 anat_aud,DMCC1596165,
 anat_dlpfc_L,DMCC1596165,
 anat_dlpfc_R,DMCC1596165,
@@ -3781,7 +3819,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,DMCC1596165,
 mmpcommunities_dmfc_latpar_v_vis_L,DMCC1596165,
 mmpcommunities_dmfc_latpar_v_vis_R,DMCC1596165,
 mmpcommunities_dmfc_latpar_V1_L,DMCC1596165,
-mmpcommunities_dmfc_latpar_V1_R,DMCC1596165,8
+mmpcommunities_dmfc_latpar_V1_R,DMCC1596165,
+vwfa,DMCC1596165,4
 anat_aud,DMCC1971064,
 anat_dlpfc_L,DMCC1971064,
 anat_dlpfc_R,DMCC1971064,
@@ -3878,7 +3917,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,DMCC1971064,
 mmpcommunities_dmfc_latpar_v_vis_L,DMCC1971064,
 mmpcommunities_dmfc_latpar_v_vis_R,DMCC1971064,
 mmpcommunities_dmfc_latpar_V1_L,DMCC1971064,
-mmpcommunities_dmfc_latpar_V1_R,DMCC1971064,20
+mmpcommunities_dmfc_latpar_V1_R,DMCC1971064,
+vwfa,DMCC1971064,0
 anat_aud,DMCC2442951,
 anat_dlpfc_L,DMCC2442951,
 anat_dlpfc_R,DMCC2442951,
@@ -3975,7 +4015,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,DMCC2442951,
 mmpcommunities_dmfc_latpar_v_vis_L,DMCC2442951,
 mmpcommunities_dmfc_latpar_v_vis_R,DMCC2442951,
 mmpcommunities_dmfc_latpar_V1_L,DMCC2442951,
-mmpcommunities_dmfc_latpar_V1_R,DMCC2442951,21
+mmpcommunities_dmfc_latpar_V1_R,DMCC2442951,
+vwfa,DMCC2442951,0
 anat_aud,DMCC2803654,
 anat_dlpfc_L,DMCC2803654,
 anat_dlpfc_R,DMCC2803654,
@@ -4072,7 +4113,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,DMCC2803654,
 mmpcommunities_dmfc_latpar_v_vis_L,DMCC2803654,
 mmpcommunities_dmfc_latpar_v_vis_R,DMCC2803654,
 mmpcommunities_dmfc_latpar_V1_L,DMCC2803654,
-mmpcommunities_dmfc_latpar_V1_R,DMCC2803654,29
+mmpcommunities_dmfc_latpar_V1_R,DMCC2803654,
+vwfa,DMCC2803654,0
 anat_aud,DMCC2834766,
 anat_dlpfc_L,DMCC2834766,
 anat_dlpfc_R,DMCC2834766,
@@ -4169,7 +4211,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,DMCC2834766,
 mmpcommunities_dmfc_latpar_v_vis_L,DMCC2834766,
 mmpcommunities_dmfc_latpar_v_vis_R,DMCC2834766,
 mmpcommunities_dmfc_latpar_V1_L,DMCC2834766,
-mmpcommunities_dmfc_latpar_V1_R,DMCC2834766,11
+mmpcommunities_dmfc_latpar_V1_R,DMCC2834766,
+vwfa,DMCC2834766,0
 anat_aud,DMCC3062542,
 anat_dlpfc_L,DMCC3062542,
 anat_dlpfc_R,DMCC3062542,
@@ -4266,7 +4309,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,DMCC3062542,
 mmpcommunities_dmfc_latpar_v_vis_L,DMCC3062542,
 mmpcommunities_dmfc_latpar_v_vis_R,DMCC3062542,
 mmpcommunities_dmfc_latpar_V1_L,DMCC3062542,
-mmpcommunities_dmfc_latpar_V1_R,DMCC3062542,17
+mmpcommunities_dmfc_latpar_V1_R,DMCC3062542,
+vwfa,DMCC3062542,0
 anat_aud,DMCC4191255,
 anat_dlpfc_L,DMCC4191255,
 anat_dlpfc_R,DMCC4191255,
@@ -4363,7 +4407,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,DMCC4191255,
 mmpcommunities_dmfc_latpar_v_vis_L,DMCC4191255,
 mmpcommunities_dmfc_latpar_v_vis_R,DMCC4191255,
 mmpcommunities_dmfc_latpar_V1_L,DMCC4191255,
-mmpcommunities_dmfc_latpar_V1_R,DMCC4191255,17
+mmpcommunities_dmfc_latpar_V1_R,DMCC4191255,
+vwfa,DMCC4191255,4
 anat_aud,DMCC4260551,
 anat_dlpfc_L,DMCC4260551,
 anat_dlpfc_R,DMCC4260551,
@@ -4460,7 +4505,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,DMCC4260551,
 mmpcommunities_dmfc_latpar_v_vis_L,DMCC4260551,
 mmpcommunities_dmfc_latpar_v_vis_R,DMCC4260551,
 mmpcommunities_dmfc_latpar_V1_L,DMCC4260551,
-mmpcommunities_dmfc_latpar_V1_R,DMCC4260551,17
+mmpcommunities_dmfc_latpar_V1_R,DMCC4260551,
+vwfa,DMCC4260551,2
 anat_aud,DMCC4854075,
 anat_dlpfc_L,DMCC4854075,
 anat_dlpfc_R,DMCC4854075,
@@ -4557,7 +4603,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,DMCC4854075,
 mmpcommunities_dmfc_latpar_v_vis_L,DMCC4854075,
 mmpcommunities_dmfc_latpar_v_vis_R,DMCC4854075,
 mmpcommunities_dmfc_latpar_V1_L,DMCC4854075,
-mmpcommunities_dmfc_latpar_V1_R,DMCC4854075,17
+mmpcommunities_dmfc_latpar_V1_R,DMCC4854075,
+vwfa,DMCC4854075,1
 anat_aud,DMCC5009144,
 anat_dlpfc_L,DMCC5009144,
 anat_dlpfc_R,DMCC5009144,
@@ -4654,7 +4701,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,DMCC5009144,
 mmpcommunities_dmfc_latpar_v_vis_L,DMCC5009144,
 mmpcommunities_dmfc_latpar_v_vis_R,DMCC5009144,
 mmpcommunities_dmfc_latpar_V1_L,DMCC5009144,
-mmpcommunities_dmfc_latpar_V1_R,DMCC5009144,34
+mmpcommunities_dmfc_latpar_V1_R,DMCC5009144,
+vwfa,DMCC5009144,3
 anat_aud,DMCC5195268,
 anat_dlpfc_L,DMCC5195268,
 anat_dlpfc_R,DMCC5195268,
@@ -4751,7 +4799,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,DMCC5195268,
 mmpcommunities_dmfc_latpar_v_vis_L,DMCC5195268,
 mmpcommunities_dmfc_latpar_v_vis_R,DMCC5195268,
 mmpcommunities_dmfc_latpar_V1_L,DMCC5195268,
-mmpcommunities_dmfc_latpar_V1_R,DMCC5195268,22
+mmpcommunities_dmfc_latpar_V1_R,DMCC5195268,
+vwfa,DMCC5195268,0
 anat_aud,DMCC5775387,
 anat_dlpfc_L,DMCC5775387,
 anat_dlpfc_R,DMCC5775387,
@@ -4848,7 +4897,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,DMCC5775387,
 mmpcommunities_dmfc_latpar_v_vis_L,DMCC5775387,
 mmpcommunities_dmfc_latpar_v_vis_R,DMCC5775387,
 mmpcommunities_dmfc_latpar_V1_L,DMCC5775387,
-mmpcommunities_dmfc_latpar_V1_R,DMCC5775387,21
+mmpcommunities_dmfc_latpar_V1_R,DMCC5775387,
+vwfa,DMCC5775387,12
 anat_aud,DMCC6371570,
 anat_dlpfc_L,DMCC6371570,
 anat_dlpfc_R,DMCC6371570,
@@ -4945,7 +4995,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,DMCC6371570,
 mmpcommunities_dmfc_latpar_v_vis_L,DMCC6371570,
 mmpcommunities_dmfc_latpar_v_vis_R,DMCC6371570,
 mmpcommunities_dmfc_latpar_V1_L,DMCC6371570,
-mmpcommunities_dmfc_latpar_V1_R,DMCC6371570,3
+mmpcommunities_dmfc_latpar_V1_R,DMCC6371570,
+vwfa,DMCC6371570,0
 anat_aud,DMCC6418065,
 anat_dlpfc_L,DMCC6418065,
 anat_dlpfc_R,DMCC6418065,
@@ -5042,7 +5093,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,DMCC6418065,
 mmpcommunities_dmfc_latpar_v_vis_L,DMCC6418065,
 mmpcommunities_dmfc_latpar_v_vis_R,DMCC6418065,
 mmpcommunities_dmfc_latpar_V1_L,DMCC6418065,
-mmpcommunities_dmfc_latpar_V1_R,DMCC6418065,31
+mmpcommunities_dmfc_latpar_V1_R,DMCC6418065,
+vwfa,DMCC6418065,0
 anat_aud,DMCC6484785,
 anat_dlpfc_L,DMCC6484785,
 anat_dlpfc_R,DMCC6484785,
@@ -5139,7 +5191,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,DMCC6484785,
 mmpcommunities_dmfc_latpar_v_vis_L,DMCC6484785,
 mmpcommunities_dmfc_latpar_v_vis_R,DMCC6484785,
 mmpcommunities_dmfc_latpar_V1_L,DMCC6484785,
-mmpcommunities_dmfc_latpar_V1_R,DMCC6484785,13
+mmpcommunities_dmfc_latpar_V1_R,DMCC6484785,
+vwfa,DMCC6484785,0
 anat_aud,DMCC6661074,
 anat_dlpfc_L,DMCC6661074,
 anat_dlpfc_R,DMCC6661074,
@@ -5236,7 +5289,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,DMCC6661074,
 mmpcommunities_dmfc_latpar_v_vis_L,DMCC6661074,
 mmpcommunities_dmfc_latpar_v_vis_R,DMCC6661074,
 mmpcommunities_dmfc_latpar_V1_L,DMCC6661074,
-mmpcommunities_dmfc_latpar_V1_R,DMCC6661074,34
+mmpcommunities_dmfc_latpar_V1_R,DMCC6661074,
+vwfa,DMCC6661074,0
 anat_aud,DMCC6671683,
 anat_dlpfc_L,DMCC6671683,
 anat_dlpfc_R,DMCC6671683,
@@ -5333,7 +5387,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,DMCC6671683,
 mmpcommunities_dmfc_latpar_v_vis_L,DMCC6671683,
 mmpcommunities_dmfc_latpar_v_vis_R,DMCC6671683,
 mmpcommunities_dmfc_latpar_V1_L,DMCC6671683,
-mmpcommunities_dmfc_latpar_V1_R,DMCC6671683,9
+mmpcommunities_dmfc_latpar_V1_R,DMCC6671683,
+vwfa,DMCC6671683,0
 anat_aud,DMCC6705371,
 anat_dlpfc_L,DMCC6705371,
 anat_dlpfc_R,DMCC6705371,
@@ -5430,7 +5485,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,DMCC6705371,
 mmpcommunities_dmfc_latpar_v_vis_L,DMCC6705371,
 mmpcommunities_dmfc_latpar_v_vis_R,DMCC6705371,
 mmpcommunities_dmfc_latpar_V1_L,DMCC6705371,
-mmpcommunities_dmfc_latpar_V1_R,DMCC6705371,27
+mmpcommunities_dmfc_latpar_V1_R,DMCC6705371,
+vwfa,DMCC6705371,0
 anat_aud,DMCC6721369,
 anat_dlpfc_L,DMCC6721369,
 anat_dlpfc_R,DMCC6721369,
@@ -5527,7 +5583,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,DMCC6721369,
 mmpcommunities_dmfc_latpar_v_vis_L,DMCC6721369,
 mmpcommunities_dmfc_latpar_v_vis_R,DMCC6721369,
 mmpcommunities_dmfc_latpar_V1_L,DMCC6721369,
-mmpcommunities_dmfc_latpar_V1_R,DMCC6721369,13
+mmpcommunities_dmfc_latpar_V1_R,DMCC6721369,
+vwfa,DMCC6721369,7
 anat_aud,DMCC6904377,
 anat_dlpfc_L,DMCC6904377,
 anat_dlpfc_R,DMCC6904377,
@@ -5624,7 +5681,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,DMCC6904377,
 mmpcommunities_dmfc_latpar_v_vis_L,DMCC6904377,
 mmpcommunities_dmfc_latpar_v_vis_R,DMCC6904377,
 mmpcommunities_dmfc_latpar_V1_L,DMCC6904377,
-mmpcommunities_dmfc_latpar_V1_R,DMCC6904377,12
+mmpcommunities_dmfc_latpar_V1_R,DMCC6904377,
+vwfa,DMCC6904377,0
 anat_aud,DMCC7297690,
 anat_dlpfc_L,DMCC7297690,
 anat_dlpfc_R,DMCC7297690,
@@ -5721,7 +5779,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,DMCC7297690,
 mmpcommunities_dmfc_latpar_v_vis_L,DMCC7297690,
 mmpcommunities_dmfc_latpar_v_vis_R,DMCC7297690,
 mmpcommunities_dmfc_latpar_V1_L,DMCC7297690,
-mmpcommunities_dmfc_latpar_V1_R,DMCC7297690,10
+mmpcommunities_dmfc_latpar_V1_R,DMCC7297690,
+vwfa,DMCC7297690,0
 anat_aud,DMCC7921988,
 anat_dlpfc_L,DMCC7921988,
 anat_dlpfc_R,DMCC7921988,
@@ -5818,7 +5877,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,DMCC7921988,
 mmpcommunities_dmfc_latpar_v_vis_L,DMCC7921988,
 mmpcommunities_dmfc_latpar_v_vis_R,DMCC7921988,
 mmpcommunities_dmfc_latpar_V1_L,DMCC7921988,
-mmpcommunities_dmfc_latpar_V1_R,DMCC7921988,16
+mmpcommunities_dmfc_latpar_V1_R,DMCC7921988,
+vwfa,DMCC7921988,2
 anat_aud,DMCC8033964,
 anat_dlpfc_L,DMCC8033964,
 anat_dlpfc_R,DMCC8033964,
@@ -5915,7 +5975,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,DMCC8033964,
 mmpcommunities_dmfc_latpar_v_vis_L,DMCC8033964,
 mmpcommunities_dmfc_latpar_v_vis_R,DMCC8033964,
 mmpcommunities_dmfc_latpar_V1_L,DMCC8033964,
-mmpcommunities_dmfc_latpar_V1_R,DMCC8033964,16
+mmpcommunities_dmfc_latpar_V1_R,DMCC8033964,
+vwfa,DMCC8033964,0
 anat_aud,DMCC8050964,
 anat_dlpfc_L,DMCC8050964,
 anat_dlpfc_R,DMCC8050964,
@@ -6012,7 +6073,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,DMCC8050964,
 mmpcommunities_dmfc_latpar_v_vis_L,DMCC8050964,
 mmpcommunities_dmfc_latpar_v_vis_R,DMCC8050964,
 mmpcommunities_dmfc_latpar_V1_L,DMCC8050964,
-mmpcommunities_dmfc_latpar_V1_R,DMCC8050964,31
+mmpcommunities_dmfc_latpar_V1_R,DMCC8050964,
+vwfa,DMCC8050964,4
 anat_aud,DMCC8078683,
 anat_dlpfc_L,DMCC8078683,
 anat_dlpfc_R,DMCC8078683,
@@ -6109,7 +6171,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,DMCC8078683,
 mmpcommunities_dmfc_latpar_v_vis_L,DMCC8078683,
 mmpcommunities_dmfc_latpar_v_vis_R,DMCC8078683,
 mmpcommunities_dmfc_latpar_V1_L,DMCC8078683,
-mmpcommunities_dmfc_latpar_V1_R,DMCC8078683,18
+mmpcommunities_dmfc_latpar_V1_R,DMCC8078683,
+vwfa,DMCC8078683,0
 anat_aud,DMCC9441378,
 anat_dlpfc_L,DMCC9441378,
 anat_dlpfc_R,DMCC9441378,
@@ -6206,7 +6269,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,DMCC9441378,
 mmpcommunities_dmfc_latpar_v_vis_L,DMCC9441378,
 mmpcommunities_dmfc_latpar_v_vis_R,DMCC9441378,
 mmpcommunities_dmfc_latpar_V1_L,DMCC9441378,
-mmpcommunities_dmfc_latpar_V1_R,DMCC9441378,3
+mmpcommunities_dmfc_latpar_V1_R,DMCC9441378,
+vwfa,DMCC9441378,0
 anat_aud,DMCC9478705,
 anat_dlpfc_L,DMCC9478705,
 anat_dlpfc_R,DMCC9478705,
@@ -6303,7 +6367,8 @@ mmpcommunities_dmfc_latpar_TPOJ_R,DMCC9478705,
 mmpcommunities_dmfc_latpar_v_vis_L,DMCC9478705,
 mmpcommunities_dmfc_latpar_v_vis_R,DMCC9478705,
 mmpcommunities_dmfc_latpar_V1_L,DMCC9478705,
-mmpcommunities_dmfc_latpar_V1_R,DMCC9478705,21
+mmpcommunities_dmfc_latpar_V1_R,DMCC9478705,
+vwfa,DMCC9478705,1
 anat_aud,DMCC9953810,
 anat_dlpfc_L,DMCC9953810,
 anat_dlpfc_R,DMCC9953810,
@@ -6400,4 +6465,5 @@ mmpcommunities_dmfc_latpar_TPOJ_R,DMCC9953810,
 mmpcommunities_dmfc_latpar_v_vis_L,DMCC9953810,
 mmpcommunities_dmfc_latpar_v_vis_R,DMCC9953810,
 mmpcommunities_dmfc_latpar_V1_L,DMCC9953810,
-mmpcommunities_dmfc_latpar_V1_R,DMCC9953810,10
+mmpcommunities_dmfc_latpar_V1_R,DMCC9953810,
+vwfa,DMCC9953810,2
