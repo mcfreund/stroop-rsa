@@ -9,8 +9,6 @@ anat_fpc_L,0
 anat_fpc_R,0
 anat_ifc_L,0
 anat_ifc_R,0
-anat_ifj_L,0
-anat_ifj_R,0
 anat_ins_L,0
 anat_ins_R,0
 anat_lppc_L,0
@@ -34,8 +32,6 @@ anatfunc_fpc_L,0
 anatfunc_fpc_R,0
 anatfunc_ifc_L,0
 anatfunc_ifc_R,0
-anatfunc_ifj_L,0
-anatfunc_ifj_R,0
 anatfunc_ins_L,0
 anatfunc_ins_R,0
 anatfunc_lppc_L,0
