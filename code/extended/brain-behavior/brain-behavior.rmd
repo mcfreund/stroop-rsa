@@ -1,0 +1,406 @@
+---
+title: "modeling stroop effects (RTs) with RSA coding schemes"
+author: "michael freund"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 3
+---
+
+## about
+
+```{r setup, include = FALSE}
+
+library(mikeutils)
+library(magrittr)
+library(here)
+library(knitr)
+library(data.table)
+library(ggplot2)
+library(grid)
+library(gridExtra)
+library(colorspace)
+library(viridis)
+library(nlme)
+library(caret)
+library(gtools)
+library(vegan)
+library(glmnet)
+library(selectiveInference)
+library(stabs)
+library(lars)
+library(dplyr)
+library(tidyr)
+library(foreach)
+library(doParallel)
+
+source(here("code", "strings.R"))
+
+theme_set(theme_bw(base_size = 12))
+
+## functions
+
+split.str.item <- function(col.j, prefix = "") {
+  ## takes a single "item" vector, e.g. "blueBLUE", and decomposes
+  ## it into color ("blue") word ("BLUE"), congruency ("C"), and label 
+  ## ("C.BLUE", for plotting). 
+  # prefix <- paste0(col.j, ".")
+  col.j      <- as.character(col.j)
+  color      <- gsub("[A-Z]", "", col.j)
+  word       <- gsub("[a-z]", "", col.j)
+  congruency <- ifelse(color == tolower(word), "C", "I")
+  label      <- paste0(congruency, ".", word)
+  cols       <- as.data.frame(cbind(color, word, congruency, label))
+  colnames(cols) <- paste0(prefix, c("color", "word", "congruency", "label"))
+  return(cols)
+}
+
+mds.to.df <- function(mat) {
+  mat %>%
+    as.data.frame %>%
+    tibble::rownames_to_column("stim") %>%
+    bind_cols(., split.str.item(.$stim))
+}
+
+plot.mds <- function(df) {
+  df %>%
+    ggplot(aes(MDS1, MDS2)) +
+    geom_label(aes(label = word, color = color), fill = "grey60", fontface = "bold", label.size = 0) +
+    scale_color_manual(values = setNames(bias.colors, bias.colors)) +
+    theme(
+      panel.background = element_blank(), 
+      axis.text = element_blank(), 
+      legend.position = "none", 
+      axis.ticks = element_blank()
+    )
+}
+
+bic <- function(eps, k, n = length(eps), w = rep(1, n)) {
+  ## https://stackoverflow.com/questions/35131450/calculating-bic-manually-for-lm-object
+  ll <- 0.5 * ( sum(log(w)) - n * (log(2 * pi) + 1 - log(n) + log(sum(w * eps^2))) )
+  -2 * ll + log(n) * (k + 1)
+}
+
+aic <- function(eps, k, n = length(eps), w = rep(1, n)) {
+  ## https://stackoverflow.com/questions/35131450/calculating-bic-manually-for-lm-object
+  ll <- 0.5 * ( sum(log(w)) - n * (log(2 * pi) + 1 - log(n) + log(sum(w * eps^2))) )
+  -2 * ll + 2 * (k + 1)
+}
+
+
+## strings
+
+colors.model <- c(incongruency = "#d95f02", target = "#1b9e77", distractor = "#7570b3")
+
+
+## read data
+
+blups <- 
+  bind_rows(
+    read.csv(here("out", "behav", "stroop_blups_rt_group201902.csv"), stringsAsFactors = FALSE),
+    read.csv(here("out", "behav", "stroop_blups_rt_group201902_validation.csv"), stringsAsFactors = FALSE) 
+  )
+
+stats.subjs.tdic <- bind_rows(
+  
+  mmp =
+    fread(
+      here("out", "rsa", "stats", paste0("subjs_pro_bias_acc-only_mmp_pearson_residual_glm-tdic.csv"))
+      ),
+  
+  superparcel = 
+    fread(
+      here("out", "rsa", "stats", paste0("subjs_pro_bias_acc-only_masks_pearson_residual_glm-tdic.csv"))
+      ) %>% 
+    filter(grepl("^anat_|vwfa", .$roi)) %>%
+    mutate(roi = gsub("anat_", "", .$roi)),
+  
+  .id = "scheme"
+  
+)
+
+## subset and bind
+
+stats.subjs.tdic <- stats.subjs.tdic[y == "rank" & param %in% c("target", "distractor", "incongruency"), ]
+stats.subjs.tdic <- stats.subjs.tdic[, c("coef", "y", "model") := NULL]  ## remove useless cols
+stats.subjs.tdic <- full_join(blups, stats.subjs.tdic, by = "subj")
+
+# stats.subjs.tdic <- stats.subjs.tdic[is.analysis.group == TRUE, ]  ## EXCLUDE HELD OUT SUBJECTS!
+
+md <- list(
+  core       = c("p9-46v", "a9-46v", "i6-8", "AVi", "8C", "IFJp", "IP2", "IP1", "PFm", "8BM", "SCEF"),
+  extended   = c(
+    "p9-46v", "a9-46v", "i6-8", "AVi", "8C", "IFJp", "IP2", "IP1", "PFm", "8BM",
+    "TE1m", "TE1p", "PGs", "PFm", "AIP", "MIP", "LIPd", "IP1", "IP2", "s6-8", 
+    "i6-8", "a9-46v", "FOP5", "AVI", "11l", "a10p", "p10p", "a47r", "p47r"
+  )
+)
+
+
+stats.subjs.tdic %<>% ungroup %>% mutate(id = paste0(roi, "_", param))
+
+## define data.frames (long form)
+
+d.mmp <- stats.subjs.tdic %>% filter(scheme == "mmp")
+d.super <- stats.subjs.tdic %>% filter(scheme == "superparcel")
+
+## define matrices for model selection
+## w indicates wide format
+
+
+
+w.mmp <- stats.subjs.tdic %>% 
+  
+  filter(scheme == "mmp") %>%
+  
+  select(subj, is.analysis.group, congr, stroop, beta, id) %>%
+  pivot_wider(names_from = "id", values_from = "beta")
+
+
+w.super <- stats.subjs.tdic %>% 
+  
+  filter(scheme == "superparcel") %>%
+  
+  select(subj, is.analysis.group, congr, stroop, beta, id) %>%
+  pivot_wider(names_from = "id", values_from = "beta")
+
+## convert to numeric matrix, extract matrix of ID info
+
+are.identical <- identical(w.mmp[c("subj", "is.analysis.group")], w.super[c("subj", "is.analysis.group")])
+if (!are.identical) {
+  stop("something wrong")
+} else {
+  
+  ids <- w.mmp[c("subj", "is.analysis.group")]
+  w.mmp %<>% select(-subj, -is.analysis.group) %>% as.matrix
+  w.super %<>% select(-subj, -is.analysis.group) %>% as.matrix
+  
+}
+
+
+```
+
+
+
+## superparcels: hypothesis-driven analysis
+
+
+
+## superparcels: data-driven analysis
+
+
+### preliminary feature selection
+
+* compute bivariate correlations between each regressor and Stroop effect
+  * use both spearman and pearson
+  * check for multivariate outliers via stahel-donoho projection techique (from WRS2 package, code lifted from [here]( https://github.com/cran/WRS2/blob/master/R/outpro.R)
+  * select regressors that have $R^2$ in top 20 within both pearson's and spearman's
+    * <= 20 regressors will keep the model comparison procedure (below) tractable
+
+```{r superparcels-feature-selection, fig.width = 20, fig.height = 10, cache = TRUE}
+
+## (1) bivariate correlations ----
+
+threshold <- 26
+
+d.super %<>%
+  
+  group_by(id) %>%
+  mutate(
+    n = seq_len(n()),
+    is.out.line = n %in% outpro(partr, stroop)$out.id,
+    is.out.rank = n %in% outpro(rank(partr), rank(stroop))$out.id
+  )
+
+topcors <- d.super %>%
+  
+  summarize(
+    r.line = cor(beta, stroop),
+    r.rank = cor(beta, stroop, method = "spearman"),
+    r2.line = r.line^2,
+    r2.rank = r.rank^2,
+    r.line.nout = sum(is.out.line),
+    r.rank.nout = sum(is.out.rank)
+  ) %>%
+  
+  ungroup %>%
+  filter(rank(-r2.line) < threshold & rank(-r2.rank) < threshold) %>%
+  arrange(-r2.line)
+
+View(topcors)
+
+kable(topcors, digits = 2)
+
+## plot
+
+d.super %>%
+  
+  filter(id %in% topcors$id) %>%
+  
+  mutate(
+    beta.z = scale(beta),
+    stroop.z = scale(stroop),
+    r = cor(beta, stroop)
+  ) %>%
+  
+  ggplot(aes(beta.z, stroop.z, fill = param)) +
+  facet_grid(vars(param), vars(roi)) +
+  
+  geom_smooth(method = "lm", se = FALSE, color = "black") +
+  stat_boot_ci(n = 1E4, fill = "grey50", alpha = 0.5) +
+  geom_point(shape = 21, color = "white", size = 2, aes(fill = param)) +
+  
+  scale_fill_manual(values = colors.model) +
+  theme(legend.position = "none")
+
+# w.topcors <- w.super[, c("congr", "stroop", topcors$id)]
+
+```
+
+This narrows it down to a set of `r nrow(topcors)` regressors.
+
+
+
+### model selection: best subset selection
+
+* multple regression via OLS
+* all possible combinations of selected regressors (above) will be fit
+* expected test error estimated via MSE from 10-fold cross-validation
+* this procedure will be repeated 5 times and MSEs averaged across repetitions 
+* two types of models will be noted:
+  * __minimum MSE__: the model that yields minimum MSE
+  * __optimal MSE__: the model(s) with fewest parameters that yield within 1 SE of __minimum MSE__ model
+* AIC and BIC will also be computed
+
+### code
+
+```{r superparcels-model-comparison-prep, cache = TRUE}
+
+## build model combinations, model components
+
+varnames <- as.character(topcors$id)
+nvars <- length(varnames)
+combs <- lapply(1:nvars, function(x) gtools::combinations(n = nvars, r = x))  ## row indicates columns of design matrix
+nmods <- sum(sapply(combs, nrow))
+X <- as.matrix(w.super[, varnames])
+strooprt <- w.super[, "stroop"]
+k <- 10
+n <- nrow(X)
+
+## build cross-validation folds
+
+set.seed(0)
+folds <- lapply(
+  1:5, 
+  function(.) createFolds(strooprt, k = k, list = TRUE, returnTrain = FALSE)
+)
+mse.rep.i <- matrix(NA, ncol = k, nrow = length(folds))  ## for storing MSEs hot off press
+
+```
+
+
+```{r superparcels-model-comparison, cache = TRUE}
+
+## estimate test error, BIC, AIC
+
+res <- vector("list", length(combs))  ## results
+print(cbind(sapply(combs, nrow)))  ## number of models (inner loop) per combination (outer loop)
+
+n_cores <- detectCores()
+
+starttime <- Sys.time()
+for (comb.i in seq_along(combs)) {
+  # comb.i = 2
+
+  comb <- combs[[comb.i]]
+  
+  cl <- makeCluster(n_cores - 1)
+  registerDoParallel(cl)
+  
+  res[[comb.i]] <- foreach(model.i = seq_len(nrow(comb)), .inorder = FALSE, .combine = "rbind") %do% {
+    # model.i = 2
+
+    ## build model
+
+    regs.i <- comb[model.i, ]  ## indices for regressors
+    Xi <- cbind(b0 = 1, X[, regs.i])
+    colnames(Xi)[-1] <- varnames[regs.i]
+
+    ## get response (folds)
+
+    for (rep.i in seq_along(folds)) {
+      # rep.i = 1
+
+      unlist.me <- lapply(
+
+        folds[[rep.i]],
+
+        function(., x, y) {
+
+          xtrn <- x[-., ]
+          xtst <- x[., ]
+          ytrn <- y[-.]
+          ytst <- y[.]
+          fit  <- .lm.fit(xtrn, ytrn)
+          yhat <- xtst %*% fit$coefficients
+
+          mean((ytst - yhat)^2)
+
+        },
+        x = Xi,
+        y = strooprt
+      )
+
+      mse.rep.i[rep.i, ] <- unlist(unlist.me, use.names = FALSE)
+
+    }
+    mse.i <- c(mse.rep.i)
+
+    .mse.mean <- mean(mse.i)
+    .mse.se <- sd(mse.i) / sqrt(n)
+
+    ## AIC and BIC
+
+    fit <- .lm.fit(Xi, strooprt)
+    eps <- resid(fit)
+    p <- length(coef(fit))
+    .bic <- bic(eps, p)
+    .aic <- aic(eps, p)
+
+    .varnames <- list(varnames[regs.i])
+
+    out <- data.frame(mse.mean = .mse.mean, mse.se = .mse.se, bic = .bic, aic = .aic)
+    out$varnames <- .varnames
+
+    out
+    
+  }
+  stopCluster(cl)
+
+  res[[comb.i]] <- bind_rows(res[[comb.i]], .id = "rownum")  ## to dataframe
+  
+  print(comb.i)
+  
+}
+(endtime <- Sys.time() - starttime)
+
+res <- bind_rows(res)
+
+fwrite(res, here::here("out", "indif", "model-comp_superparcel.csv"))
+
+```
+
+
+
+```{r}
+
+res[which.min(res$mse.mean), ]  ## minimum MSE model
+res[which.min(res$bic), ]  ## minimum BIC
+res[which.min(res$aic), ]  ## minimum AIC
+res %>% 
+  filter(mse.mean >= res[which.min(res$mse.mean), "mse.se"] + res[which.min(res$mse.mean), "mse.mean"]) %>%
+  filter(mse.mean == min(mse.mean))  ## minimum MSE model + 1SE
+
+```
+
