@@ -45,7 +45,8 @@ anatomical <- list(
   ##  SCEF, 8BM: SMA/pre-sma (Assem 2019)
   ##  p32pr: incongruency coding (right)
   ##  a32pr, d32: dACC (Assem 2019)
-  mfc    = c("SCEF", "8BM",  "p32pr", "a32pr", "d32"),
+  # mfc    = c("SCEF", "8BM",  "p32pr", "a32pr", "d32"),
+  mfc    = c("SCEF", "8BM",  "p32pr", "a32pr"),
   dlpfc  = c("p9-46v", "i6-8", "8Av", "8C"), ## along middle frontal gyrus
   dpm    = c("6a", "FEF", "6ma"), ## dorsal premotor
   vpm    = c("6v", "6v", "PEF", "6r", "55b", "IFJp"),  ## ventral premotor

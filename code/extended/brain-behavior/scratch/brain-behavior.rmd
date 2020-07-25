@@ -1,0 +1,1068 @@
+---
+title: "modeling stroop effects (RTs) with RSA coding schemes"
+author: "michael freund"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 3
+---
+
+## about
+
+```{r setup, include = FALSE}
+
+library(mikeutils)
+library(magrittr)
+library(here)
+library(knitr)
+library(data.table)
+library(ggplot2)
+library(grid)
+library(gridExtra)
+library(colorspace)
+library(viridis)
+library(nlme)
+library(caret)
+library(gtools)
+library(vegan)
+library(glmnet)
+library(selectiveInference)
+library(stabs)
+library(lars)
+library(dplyr)
+library(tidyr)
+library(foreach)
+library(doParallel)
+# devtools::install_github("cran/WRS2")
+library(WRS2)
+library(boot)
+library(multcomp)
+library(lme4)
+library(nlme)
+source(here("code", "strings.R"))
+
+theme_set(theme_bw(base_size = 12))
+
+## functions
+
+split.str.item <- function(col.j, prefix = "") {
+  ## takes a single "item" vector, e.g. "blueBLUE", and decomposes
+  ## it into color ("blue") word ("BLUE"), congruency ("C"), and label 
+  ## ("C.BLUE", for plotting). 
+  # prefix <- paste0(col.j, ".")
+  col.j      <- as.character(col.j)
+  color      <- gsub("[A-Z]", "", col.j)
+  word       <- gsub("[a-z]", "", col.j)
+  congruency <- ifelse(color == tolower(word), "C", "I")
+  label      <- paste0(congruency, ".", word)
+  cols       <- as.data.frame(cbind(color, word, congruency, label))
+  colnames(cols) <- paste0(prefix, c("color", "word", "congruency", "label"))
+  return(cols)
+}
+
+mds.to.df <- function(mat) {
+  mat %>%
+    as.data.frame %>%
+    tibble::rownames_to_column("stim") %>%
+    bind_cols(., split.str.item(.$stim))
+}
+
+plot.mds <- function(df) {
+  df %>%
+    ggplot(aes(MDS1, MDS2)) +
+    geom_label(aes(label = word, color = color), fill = "grey60", fontface = "bold", label.size = 0) +
+    scale_color_manual(values = setNames(bias.colors, bias.colors)) +
+    theme(
+      panel.background = element_blank(), 
+      axis.text = element_blank(), 
+      legend.position = "none", 
+      axis.ticks = element_blank()
+    )
+}
+panel.cor <- function(x, y, digits = 2, prefix = "", cex.cor, ...)
+{
+    usr <- par("usr"); on.exit(par(usr))
+    par(usr = c(0, 1, 0, 1))
+    r <- abs(cor(x, y))
+    txt <- format(c(r, 0.123456789), digits = digits)[1]
+    txt <- paste0(prefix, txt)
+    if(missing(cex.cor)) cex.cor <- 0.8/strwidth(txt)
+    text(0.5, 0.5, txt, cex = cex.cor * r)
+}
+
+bic <- function(eps, k, n = length(eps), w = rep(1, n)) {
+  ## https://stackoverflow.com/questions/35131450/calculating-bic-manually-for-lm-object
+  ll <- 0.5 * ( sum(log(w)) - n * (log(2 * pi) + 1 - log(n) + log(sum(w * eps^2))) )
+  -2 * ll + log(n) * (k + 1)
+}
+
+aic <- function(eps, k, n = length(eps), w = rep(1, n)) {
+  ## https://stackoverflow.com/questions/35131450/calculating-bic-manually-for-lm-object
+  ll <- 0.5 * ( sum(log(w)) - n * (log(2 * pi) + 1 - log(n) + log(sum(w * eps^2))) )
+  -2 * ll + 2 * (k + 1)
+}
+
+bootcor <- function(d, ii) cor(d[ii, 1], d[ii, 2])
+cor_ci <- function(d, R = 1000, type = "bca", ...) {
+  
+  if (ncol(d) != 2) stop("ncol(d) != 2")
+  
+  out <- boot(d, bootcor, R = R)
+  ci <- boot.ci(out, type = type, ...)[[type]][4:5]
+  
+  data.frame(lower = ci[1], upper = ci[2])
+  
+}
+
+
+## strings
+
+colors.model <- c(incongruency = "#d95f02", target = "#1b9e77", distractor = "#7570b3")
+
+
+## read data
+
+blups <- 
+  bind_rows(
+    read.csv(here("out", "behav", "stroop_blups_rt_group201902.csv"), stringsAsFactors = FALSE),
+    read.csv(here("out", "behav", "stroop_blups_rt_group201902_validation.csv"), stringsAsFactors = FALSE) 
+  )
+
+stats.subjs.tdic <- bind_rows(
+  
+  mmp =
+    fread(
+      here("out", "rsa", "stats", paste0("subjs_pro_bias_acc-only_mmp_pearson_residual_glm-tdic.csv"))
+      ),
+  
+  superparcel = 
+    fread(
+      here("out", "rsa", "stats", paste0("subjs_pro_bias_acc-only_masks_pearson_residual_glm-tdic.csv"))
+      ) %>% 
+    filter(grepl("^anat_|vwfa", .$roi)) %>%
+    mutate(roi = gsub("anat_", "", .$roi)),
+  
+  .id = "scheme"
+  
+)
+
+## subset and bind
+
+stats.subjs.tdic <- stats.subjs.tdic[y == "rank" & param %in% c("target", "distractor", "incongruency"), ]
+stats.subjs.tdic <- stats.subjs.tdic[, c("coef", "y", "model") := NULL]  ## remove useless cols
+stats.subjs.tdic <- full_join(blups, stats.subjs.tdic, by = "subj")
+
+# stats.subjs.tdic <- stats.subjs.tdic[is.analysis.group == TRUE, ]  ## EXCLUDE HELD OUT SUBJECTS!
+
+md <- list(
+  core       = c("p9-46v", "a9-46v", "i6-8", "AVI", "8C", "IFJp", "IP2", "IP1", "PFm", "8BM", "SCEF"),
+  extended   = c(
+    "p9-46v", "a9-46v", "i6-8", "AVi", "8C", "IFJp", "IP2", "IP1", "PFm", "8BM",
+    "TE1m", "TE1p", "PGs", "PFm", "AIP", "MIP", "LIPd", "IP1", "IP2", "s6-8", 
+    "i6-8", "a9-46v", "FOP5", "AVI", "11l", "a10p", "p10p", "a47r", "p47r"
+  )
+)
+
+
+stats.subjs.tdic %<>% ungroup %>% mutate(id = paste0(roi, "_", param))
+
+## define data.frames (long form)
+
+d.mmp <- stats.subjs.tdic %>% filter(scheme == "mmp")
+d.super <- stats.subjs.tdic %>% filter(scheme == "superparcel")
+# d.super %<>% mutate(hemi = gsub("^.*_", "", roi) %>% ifelse(. %in% c("R", "L"), ., "B"))
+
+
+## define matrices for model selection
+## "w" indicates wide format
+
+w.mmp <- stats.subjs.tdic %>% 
+  
+  filter(scheme == "mmp") %>%
+  
+  select(subj, is.analysis.group, congr, stroop, beta, id) %>%
+  pivot_wider(names_from = "id", values_from = "beta")
+
+
+w.super <- stats.subjs.tdic %>% 
+  
+  filter(scheme == "superparcel") %>%
+  
+  select(subj, is.analysis.group, congr, stroop, beta, id) %>%
+  pivot_wider(names_from = "id", values_from = "beta")
+
+w.super.b <- stats.subjs.tdic %>%
+
+  filter(scheme == "superparcel") %>%
+
+  mutate(id = paste0(gsub("R|L|_", "", roi), "_", param)) %>%
+  group_by(subj, is.analysis.group, id) %>%
+  summarize(beta = mean(beta), congr = mean(congr), stroop = mean(stroop)) %>%
+
+  ungroup %>%
+  select(subj, is.analysis.group, congr, stroop, beta, id) %>%
+  pivot_wider(names_from = "id", values_from = "beta")
+
+## convert to numeric matrix, extract matrix of ID info
+
+are.identical <- identical(w.mmp[c("subj", "is.analysis.group")], w.super[c("subj", "is.analysis.group")])
+if (!are.identical) {
+  stop("something wrong")
+} else {
+  
+  ids <- w.mmp[c("subj", "is.analysis.group")]
+  w.mmp %<>% select(-subj, -is.analysis.group) %>% as.matrix
+  w.super %<>% select(-subj, -is.analysis.group) %>% as.matrix
+  
+}
+
+
+```
+
+
+## superparcels: hypothesis-driven analysis
+* bivariate correlations, select regressors
+* linear models: test dissociation
+    * OLS
+    * HLM
+* validation set: (OLS and ridge)
+
+```{r superparcels-hypothesis-driven}
+
+# ## bilateral ----
+# 
+# rois.b <- c("dlpfc", "mfc", "lppc")
+# hyps.b <- c("dlpfc_target", "lppc_target", "mfc_incongruency")
+# cont.b <- c("dlpfc_incongruency", "lppc_incongruency", "mfc_target")  ## "negative control region*schemes
+# 
+# ## bivariate correlations
+# 
+# pairs(w.super.b[, c("stroop", "congr", sort(c(cont.b, hyps.b)))], pch = 16, upper.panel = panel.cor)
+# 
+# w.super.b$lfc_target <- (w.super.b$dlpfc_target + w.super.b$lppc_target) / 2
+# w.super.b$lfc_incongruency <- (w.super.b$dlpfc_incongruency + w.super.b$lppc_incongruency) / 2
+# 
+## ols
+# 
+# ols.dissoc <- lm(
+#   stroop ~
+#     mfc_target + mfc_incongruency +
+#     lfc_target + lfc_incongruency,
+#   w.super.b %>% filter(is.analysis.group)
+#   )
+# summary(ols.dissoc)  ## note mfc_L_
+
+
+rois <- c("dlpfc_R", "dlpfc_L", "lppc_R", "lppc_L", "mfc_R", "mfc_L")
+hyps <- c("dlpfc_L_target", "dlpfc_R_target", "lppc_L_target", "lppc_R_target", "mfc_L_incongruency", "mfc_R_incongruency")
+cont <- c(
+  "dlpfc_L_incongruency", "dlpfc_R_incongruency", "lppc_L_incongruency", "lppc_R_incongruency", "mfc_L_target", "mfc_R_target"
+  )  ## "negative control region*schemes
+
+## bivariate correlations ----
+
+## with stroop
+
+# pairs(w.super[, c("stroop", "congr", hyps)], pch = 16, upper.panel = panel.cor)
+# pairs(w.super[, c("stroop", "congr", cont)], pch = 16, upper.panel = panel.cor)
+pairs(w.super[, c("stroop", "congr", sort(c(cont, hyps)))], pch = 16, upper.panel = panel.cor)
+
+## average together dlpfc_R and lppc R:
+
+d.lfp_R <- full_join(
+
+  d.super %>% filter(id == "dlpfc_R_target") %>% select(subj:is.analysis.group),
+
+  d.super %>%
+
+    filter(roi %in% c("dlpfc_R", "lppc_R")) %>%
+    group_by(subj, param) %>%
+
+    summarize(beta = mean(beta)) %>% mutate(roi = "lfp_R", id = paste0(roi, "_", param))
+)
+
+d.super <- bind_rows(d.super, d.lfp_R)
+
+# d.super %>%
+#
+#   filter(roi %in% c("dlpfc_R", "lppc_R")) %>%
+#   group_by(subj, param) %>%
+#
+#   summarize(beta = mean(beta)) %>% mutate(roi = "lfp_R", id = paste0(roi, "_", param)) %>%
+#
+#   pivot_wider(c(-param, -roi), names_from = id, values)
+
+
+## get cors:
+
+cors.super <- d.super %>%
+
+  filter(id %in% c(hyps, "lfp_R_target"), is.analysis.group) %>%
+  
+  group_by(id) %>%
+  summarize(
+    r.line = cor(beta, stroop),
+    r.rank = cor(beta, stroop, method = "spearman"),
+    ci.line = cor_ci(cbind(beta, stroop), R = 1E4, conf = 0.96) %>% list,
+    ci.rank = cor_ci(cbind(rank(beta), rank(stroop)), R = 1E4, conf = 0.96) %>% list
+  ) %>%
+  
+  unnest(c(ci.line, ci.rank), names_sep = ".")
+
+cors.super
+
+
+## linear models ----
+
+### OLS
+
+d.dissoc <- d.super %>% 
+  filter(roi %in% c("mfc_R", "lfp_R", "mfc_L", "dlpfc_R", "lppc_R"), param %in% c("incongruency", "target")) %>%
+  pivot_wider(c(-roi, -param, -partr), names_from = id, values_from = beta)
+
+
+ols.dissoc <- lm(
+  stroop ~ 
+    mfc_R_target + mfc_R_incongruency + 
+    lfp_R_target + lfp_R_incongruency, 
+  d.dissoc %>% filter(is.analysis.group)
+  )
+summary(ols.dissoc)
+
+
+## lfp and mfc
+
+ols.dissoc <- lm(
+  stroop ~ 
+    mfc_L_target + mfc_L_incongruency + 
+    lfp_R_target + lfp_R_incongruency, 
+  d.dissoc %>% filter(is.analysis.group)
+  )
+summary(ols.dissoc)  ## note mfc_L
+
+## a case of suppression:
+
+fits.bivar <- list(
+  mfc_L_target       = lm(stroop ~ mfc_L_target, d.dissoc %>% filter(is.analysis.group)),
+  mfc_L_incongruency = lm(stroop ~ mfc_L_incongruency, d.dissoc %>% filter(is.analysis.group)),
+  lfp_R_target       = lm(stroop ~ lfp_R_target, d.dissoc %>% filter(is.analysis.group)),
+  lfp_R_incongruency = lm(stroop ~ lfp_R_incongruency, d.dissoc %>% filter(is.analysis.group))
+)
+r2.bivar <- purrr::map(fits.bivar, summary) %>% purrr::map_dbl("r.squared")
+
+r2.plus <- 
+  
+  fits.bivar[-grep("mfc_L_target", names(fits.bivar))] %>% 
+  
+  purrr::map(function(x) update(x, . ~ . + mfc_L_target)) %>%
+  purrr::map(summary) %>% 
+  purrr::map_dbl("r.squared")
+
+r2.delta <- r2.plus - r2.bivar[names(r2.plus)]
+
+r2.delta / r2.bivar["mfc_L_target"]  ## 22-fold increase in variance explained....
+
+## OLS contrasts:
+
+W <- rbind(
+  mfc_target_vs_incongruency = c(0, 1, -1, 0, 0), 
+  lfp_target_vs_incongruency = c(0, 0, 0, 1, -1)
+  )
+
+(dissoc.test <- summary(glht(ols.dissoc, W), test = adjusted("none")))
+
+## lppc and mfc
+
+ols.dissoc.lppc <- lm(
+  stroop ~ 
+    mfc_L_target + mfc_L_incongruency + 
+    lppc_R_target + lppc_R_incongruency, 
+  d.dissoc %>% filter(is.analysis.group)
+  )
+summary(ols.dissoc.lppc)
+
+(dissoc.test.lppc <- summary(glht(ols.dissoc.lppc, W), test = adjusted("none")))
+
+
+## dlpfc, and mfc
+
+ols.dissoc.dlpfc <- lm(
+  stroop ~ 
+    mfc_L_target + mfc_L_incongruency + 
+    dlpfc_R_target + dlpfc_R_incongruency, 
+  d.dissoc %>% filter(is.analysis.group)
+  )
+summary(ols.dissoc.dlpfc)
+
+(dissoc.test.dlpfc <- summary(glht(ols.dissoc.dlpfc, W), test = adjusted("none")))
+
+## dlpfc, and mfc
+
+ols.dissoc.all <- lm(
+  
+  stroop ~ 
+    mfc_L_target + mfc_L_incongruency + 
+    dlpfc_R_target + dlpfc_R_incongruency + 
+    lppc_R_target + lppc_R_incongruency, 
+  
+  d.dissoc %>% filter(is.analysis.group)
+  
+  )
+
+summary(ols.dissoc.all)
+
+W.all <- rbind(
+  mfc_target_vs_incongruency = c(0, 1, -1, 0, 0, 0, 0), 
+  dlpfc_target_vs_incongruency = c(0, 0, 0, -1, 1, 0, 0), 
+  lppc_target_vs_incongruency = c(0, 0, 0, 0, 0, 1, -1)
+  )
+
+(dissoc.test.all <- summary(glht(ols.dissoc.all, W.all), test = adjusted("none")))
+
+
+### HLM
+
+d.dissoc.hlm <- full_join(
+  fit1.het.trim$data, 
+  w.super.b %>% filter(is.analysis.group) %>% select(subj, lfc_target, lfc_incongruency, mfc_target, mfc_incongruency),
+  by = "subj"
+)
+# head(d.dissoc.hlm)
+# update(fit1.het.trim)
+
+hlm.dissoc <- lmer(
+  
+  rt ~ 
+    trial.type*mfc_target + trial.type*mfc_incongruency + 
+    trial.type*lfc_target + trial.type*lfc_incongruency + 
+    (trial.type | subj) + (trial.type | color),
+  
+  d.dissoc.hlm,
+  
+  control = lmerControl(optimizer = "Nelder_Mead", optCtrl = list(maxfun = 1E9))
+  
+  )
+
+summary(hlm.dissoc)
+
+W.hlm <- rbind(
+  mfc_target_vs_incongruency = c(0, 0, 0, 0, 0, 0, 1, -1, 0, 0), 
+  lfp_target_vs_incongruency = c(0, 0, 0, 0, 0, 0, 0, 0, 1, -1)
+  )
+
+(dissoc.test.hlm <- summary(glht(hlm.dissoc, W.hlm), test = adjusted("none")))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+fit1.het.trim <- readRDS(here("out", "behav", "fit1-het-trim_group201902.RDS"))
+
+d.dissoc.hlm <- full_join(
+  fit1.het.trim$data, 
+  d.dissoc %>% select(subj, dlpfc_R_target:lfp_R_target),
+  by = "subj"
+)
+# head(d.dissoc.hlm)
+# update(fit1.het.trim)
+
+hlm.dissoc <- lmer(
+  
+  rt ~ 
+    trial.type*mfc_L_target + trial.type*mfc_L_incongruency + 
+    trial.type*lfp_R_target + trial.type*lfp_R_incongruency + 
+    (trial.type | subj) + (trial.type | color),
+  
+  d.dissoc.hlm,
+  
+  control = lmerControl(optimizer = "Nelder_Mead", optCtrl = list(maxfun = 1E9))
+  
+  )
+
+summary(hlm.dissoc)
+
+W.hlm <- rbind(
+  mfc_target_vs_incongruency = c(0, 0, 0, 0, 0, 0, 1, -1, 0, 0), 
+  lfp_target_vs_incongruency = c(0, 0, 0, 0, 0, 0, 0, 0, 1, -1)
+  )
+
+(dissoc.test.hlm <- summary(glht(hlm.dissoc, W.hlm), test = adjusted("none")))
+
+
+## validation set: ridge ----
+
+w.super <- cbind(w.super, lfc_R_target = (w.super[, "dlpfc_R_target"] + w.super[, "lppc_R_target"]) / 2)
+w.super <- cbind(w.super, lfc_R_incongruency = (w.super[, "dlpfc_R_incongruency"] + w.super[, "lppc_R_incongruency"]) / 2)
+
+# X.super      <- w.super[ids$is.analysis.group, cols]
+# y.super      <- w.super[ids$is.analysis.group, "stroop"]
+# Xprime.super <- w.super[!ids$is.analysis.group, cols]
+# yprime.super <- w.super[!ids$is.analysis.group, "stroop"]
+
+### bootstrap comparison
+
+d <- w.super[ids$is.analysis.group, c("mfc_L_incongruency", "mfc_L_target", "lfc_R_target", "stroop")]
+valid <- w.super[!ids$is.analysis.group, c("mfc_L_incongruency", "mfc_L_target", "lfc_R_target", "stroop")]
+
+modcomp <- function(d, valid, lambdas, ii) {
+  
+  dstar <- d[ii, ]
+  
+  fit.targ <- glmnet(
+    x = dstar[, c("lfc_R_target", "mfc_L_target")], dstar[, "stroop"], alpha = 0, lambda = lambdas["targ"]
+    )
+  fit.incon <- glmnet(
+    x = dstar[, c("lfc_R_target", "mfc_L_incongruency")], dstar[, "stroop"], alpha = 0, lambda = lambdas["incon"]
+    )
+  
+  yhat.targ <- predict(fit.targ, newx = valid[, c("lfc_R_target", "mfc_L_target")])
+  yhat.incon <- predict(fit.incon, newx = valid[, c("lfc_R_target", "mfc_L_incongruency")])
+  
+  mse.targ <- mean((valid[, "stroop"] - yhat.targ)^2)
+  mse.incon <- mean((valid[, "stroop"] - yhat.incon)^2)
+  
+  mse.targ - mse.incon
+  
+}
+
+## find lambda and fit
+
+set.seed(0)
+nreps <- 1E3
+
+n_cores <- detectCores()
+cl <- makeCluster(n_cores - 1)
+registerDoParallel(cl)
+lambdas.mfc <- foreach(ii = seq_len(nreps), .inorder = FALSE, .combine = "rbind", .packages = "glmnet") %dopar% {
+  
+  fit.targ.ii <- cv.glmnet(
+    x = d[, c("lfc_R_target", "mfc_L_target")], d[, "stroop"], alpha = 0
+    )
+  
+  fit.incon.ii <- cv.glmnet(
+    x = d[, c("lfc_R_target", "mfc_L_incongruency")], d[, "stroop"], alpha = 0
+    )
+  
+  cbind(targ = fit.targ.ii$lambda.min, incon = fit.incon.ii$lambda.min)
+  
+}
+stopCluster(cl)
+lambdas <- apply(lambdas.mfc, 2, Mode)
+
+results <- boot(d, modcomp, R = 1E4, lambdas = lambdas, valid = valid)
+boot.ci(results, type = "bca")[["bca"]][4:5]  ## negative if mfc_target model better
+
+sum(0 >= results$t) / length(results$t)  ## p-value
+
+
+
+cols <- c("mfc_L_incongruency", "dlpfc_R_target", "lppc_R_target")
+# cols <- c("mfc_L_incongruency", "lppc_R_target")
+# cols <- c("mfc_L_target", "lfc_R_target")
+# cols <- c("mfc_L_incongruency", "lfc_R_target")
+
+X.super      <- w.super[ids$is.analysis.group, cols]
+y.super      <- w.super[ids$is.analysis.group, "stroop"]
+Xprime.super <- w.super[!ids$is.analysis.group, cols]
+yprime.super <- w.super[!ids$is.analysis.group, "stroop"]
+
+## find lambda and fit
+
+set.seed(0)
+nreps <- 1E3
+lambdas <- numeric(nreps)
+
+n_cores <- detectCores()
+cl <- makeCluster(n_cores - 1)
+registerDoParallel(cl)
+lambdas <- foreach(ii = seq_len(nreps), .inorder = FALSE, .combine = "c", .packages = "glmnet") %dopar% {
+  
+  fit.ii <- cv.glmnet(x = X.super, y.super, alpha = 0)
+  fit.ii$lambda.min
+  
+}
+stopCluster(cl)
+hist(lambdas)
+lambda.best <- Mode(lambdas)
+
+fit.super <- glmnet(x = X.super, y = y.super, alpha = 0, lambda = lambda.best)
+coef(fit.super)
+
+## observed validation error
+
+preds.super <- cbind(
+  y = yprime.super, 
+  yhat = c(predict(fit.super, newx = Xprime.super))
+  )
+
+(valid.corr.obs <- cor(preds.super)["y", "yhat"])
+(valid.error.obs <- mean((preds.super[, "y"] - preds.super[, "yhat"])^2))
+
+preds.super %>%
+  
+  as.data.frame %>%
+  ggplot(aes(y, yhat)) +
+  stat_boot_ci(n = 1e4, alpha = 0.5, color = "grey50") +
+  geom_point()
+
+## permuted validation error
+
+cl <- makeCluster(n_cores - 1)
+registerDoParallel(cl)
+nresamps <- 1E3
+valid.error.perm <- foreach(ii = seq_len(nresamps), .inorder = FALSE, .combine = "c", .packages = "glmnet") %dopar% {
+  
+  yperm <- y.super[sample.int(length(y.super))]
+  fit.ii <- glmnet(x = X.super, y = yperm, alpha = 0, lambda = lambda.best)
+  
+  mean(((yprime.super - predict(fit.ii, newx = Xprime.super))^2))
+  
+}
+stopCluster(cl)
+
+(p.valid.core <- sum(valid.error.perm < valid.error.obs) / nreps)
+
+
+```
+
+
+
+
+
+
+
+## superparcels: data-driven analysis
+
+
+### preliminary feature selection
+
+* compute bivariate correlations between each regressor and Stroop effect
+  * use both spearman and pearson
+  * check for multivariate outliers via stahel-donoho projection techique (from WRS2 package, code lifted from [here]( https://github.com/cran/WRS2/blob/master/R/outpro.R)
+  * select regressors that have $R^2$ in top 20 within both pearson's and spearman's
+    * <= 20 regressors will keep the model comparison procedure (below) tractable
+
+```{r superparcels-feature-selection, fig.width = 20, fig.height = 10, cache = TRUE}
+
+## (1) bivariate correlations ----
+
+threshold <- 26
+
+d.super %<>%
+  
+  group_by(id) %>%
+  mutate(
+    n = seq_len(n()),
+    is.out.line = n %in% outpro(partr, stroop)$out.id,
+    is.out.rank = n %in% outpro(rank(partr), rank(stroop))$out.id
+  )
+
+topcors <- d.super %>%
+  
+  summarize(
+    r.line = cor(beta, stroop),
+    r.rank = cor(beta, stroop, method = "spearman"),
+    r2.line = r.line^2,
+    r2.rank = r.rank^2,
+    r.line.nout = sum(is.out.line),
+    r.rank.nout = sum(is.out.rank)
+  ) %>%
+  
+  ungroup %>%
+  filter(rank(-r2.line) < threshold & rank(-r2.rank) < threshold) %>%
+  arrange(-r2.line)
+
+View(topcors)
+
+kable(topcors, digits = 2)
+
+## plot
+
+d.super %>%
+  
+  filter(id %in% topcors$id) %>%
+  
+  mutate(
+    beta.z = scale(beta),
+    stroop.z = scale(stroop),
+    r = cor(beta, stroop)
+  ) %>%
+  
+  ggplot(aes(beta.z, stroop.z, fill = param)) +
+  facet_grid(vars(param), vars(roi)) +
+  
+  geom_smooth(method = "lm", se = FALSE, color = "black") +
+  stat_boot_ci(n = 1E4, fill = "grey50", alpha = 0.5) +
+  geom_point(shape = 21, color = "white", size = 2, aes(fill = param)) +
+  
+  scale_fill_manual(values = colors.model) +
+  theme(legend.position = "none")
+
+```
+
+This narrows it down to a set of `r nrow(topcors)` regressors.
+
+
+
+### model selection: best subset selection
+
+* multple regression via OLS
+* all possible combinations of selected regressors (above) will be fit
+* expected test error estimated via MSE from 10-fold cross-validation
+* this procedure will be repeated 5 times and MSEs averaged across repetitions 
+* two types of models will be noted:
+  * __minimum MSE__: the model that yields minimum MSE
+  * __optimal MSE__: the model(s) with fewest parameters that yield within 1 SE of __minimum MSE__ model
+* AIC and BIC will also be computed
+
+#### code
+
+```{r superparcels-model-comparison-prep, cache = TRUE}
+
+## build model combinations, model components
+
+# varnames <- as.character(topcors$id)
+varnames <- c(as.character(topcors$id), "mfc_L_target", "mfc_R_target")
+nvars <- length(varnames)
+combs <- lapply(1:nvars, function(x) gtools::combinations(n = nvars, r = x))  ## row indicates columns of design matrix
+nmods <- sum(sapply(combs, nrow))
+X <- as.matrix(w.super[, varnames])
+strooprt <- w.super[, "stroop"]
+k <- 10
+n <- nrow(X)
+
+## build cross-validation folds
+
+set.seed(0)
+folds <- lapply(
+  1:5, 
+  function(.) createFolds(strooprt, k = k, list = TRUE, returnTrain = FALSE)
+)
+mse.rep.i <- matrix(NA, ncol = k, nrow = length(folds))  ## for storing MSEs hot off press
+
+```
+
+
+```{r superparcels-model-comparison, cache = TRUE}
+
+## estimate test error, BIC, AIC
+
+res <- vector("list", length(combs))  ## results
+print(cbind(sapply(combs, nrow)))  ## number of models (inner loop) per combination (outer loop)
+
+n_cores <- detectCores()
+
+starttime <- Sys.time()
+for (comb.i in seq_along(combs)[1:5]) {
+  # comb.i = 2
+
+  comb <- combs[[comb.i]]
+  
+  cl <- makeCluster(n_cores - 1)
+  registerDoParallel(cl)
+  
+  res[[comb.i]] <- foreach(model.i = seq_len(nrow(comb)), .inorder = FALSE, .combine = "rbind") %dopar% {
+    # model.i = 2
+
+    ## build model
+
+    regs.i <- comb[model.i, ]  ## indices for regressors
+    Xi <- cbind(b0 = 1, X[, regs.i])
+    colnames(Xi)[-1] <- varnames[regs.i]
+
+    ## get response (folds)
+
+    for (rep.i in seq_along(folds)) {
+      # rep.i = 1
+
+      unlist.me <- lapply(
+
+        folds[[rep.i]],
+
+        function(., x, y) {
+
+          xtrn <- x[-., ]
+          xtst <- x[., ]
+          ytrn <- y[-.]
+          ytst <- y[.]
+          fit  <- .lm.fit(xtrn, ytrn)
+          yhat <- xtst %*% fit$coefficients
+
+          mean((ytst - yhat)^2)
+
+        },
+        x = Xi,
+        y = strooprt
+      )
+
+      mse.rep.i[rep.i, ] <- unlist(unlist.me, use.names = FALSE)
+
+    }
+    mse.i <- c(mse.rep.i)
+
+    .mse.mean <- mean(mse.i)
+    .mse.se <- sd(mse.i) / sqrt(n)
+
+    ## AIC and BIC
+
+    fit <- .lm.fit(Xi, strooprt)
+    eps <- resid(fit)
+    p <- length(coef(fit))
+    .bic <- bic(eps, p)
+    .aic <- aic(eps, p)
+
+    .varnames <- list(varnames[regs.i])
+
+    out <- data.frame(mse.mean = .mse.mean, mse.se = .mse.se, bic = .bic, aic = .aic)
+    out$varnames <- .varnames
+
+    out
+    
+  }
+  stopCluster(cl)
+
+  res[[comb.i]] <- bind_rows(res[[comb.i]], .id = "rownum")  ## to dataframe
+  
+  print(comb.i)
+  
+}
+(endtime <- Sys.time() - starttime)
+
+res <- bind_rows(res)
+
+fwrite(res, here::here("out", "indif", "model-comp_superparcel.csv"))
+
+```
+
+#### results
+
+```{r}
+
+res[which.min(res$mse.mean), ]  ## minimum MSE model
+res[which.min(res$bic), ]  ## minimum BIC
+res[which.min(res$aic), ]  ## minimum AIC
+res %>% 
+  filter(mse.mean >= res[which.min(res$mse.mean), "mse.se"] + res[which.min(res$mse.mean), "mse.mean"]) %>%
+  filter(mse.mean == min(mse.mean))  ## minimum MSE model + 1SE
+
+```
+
+
+
+```{r}
+
+## lasso
+
+X.super <- w.super[ids$is.analysis.group, -2:-1]
+y.super <- w.super[ids$is.analysis.group, "stroop"]
+Xprime.super <- w.super[!ids$is.analysis.group, -2:-1]
+yprime.super <- w.super[!ids$is.analysis.group, "stroop"]
+
+## find lambda and fit ----
+
+set.seed(0)
+nreps <- 1E3
+lambdas <- numeric(nreps)
+
+cl <- makeCluster(n_cores - 1)
+registerDoParallel(cl)
+lambdas <- foreach(ii = seq_len(nreps), .inorder = FALSE, .combine = "c", .packages = "glmnet") %dopar% {
+  
+  fit.ii <- cv.glmnet(x = X.super, y.super)
+  fit.ii$lambda.min
+  
+}
+stopCluster(cl)
+hist(lambdas)
+log(lambda.best <- Mode(lambdas))
+
+fit.super <- glmnet(x = X.super, y = y.super, lambda = lambda.best)
+coef(fit.super)
+
+
+## validation set ----
+
+## observed validation error
+
+preds.super <- cbind(
+  y = yprime.super, 
+  yhat = c(predict(fit.super, newx = Xprime.super))
+  )
+
+(valid.corr.obs <- cor(preds.super)["y", "yhat"])
+(valid.error.obs <- mean((preds.super[, "y"] - preds.super[, "yhat"])^2))
+
+preds.super %>%
+  
+  as.data.frame %>%
+  ggplot(aes(y, yhat)) +
+  stat_boot_ci(n = 1e4, alpha = 0.5, color = "grey50") +
+  geom_point()
+
+## permuted validation error
+
+cl <- makeCluster(n_cores - 1)
+registerDoParallel(cl)
+valid.error.perm <- foreach(ii = seq_len(nreps), .inorder = FALSE, .combine = "c", .packages = "glmnet") %dopar% {
+  
+  yperm <- y.super[sample.int(length(y.super))]
+  fit.ii <- glmnet(x = X.super, y = yperm, lambda = lambda.best)
+  
+  mean(((yprime.super - predict(fit.ii, newx = Xprime.super))^2))
+
+}
+stopCluster(cl)
+
+p.valid.super <- sum(valid.error.perm < valid.error.obs) / nreps
+
+
+```
+
+
+
+
+## MD MMP parcels: data-driven analysis
+
+### preliminary feature selection
+
+* from set of 360 MMP parcels (180/hemisphere), 11 parcels (per hemisphere) were independently defined as commonly involved in multiple different cognitive tasks within HCP dataset (Assem, 2019)
+  * strong correspondence to "multiple demand" network discussed in previous research (e.g., Duncan, Fedorenko, and colleagues).
+* 11 parcels * 2 hemispheres * 3 RSA models = 66 features
+
+### model selection: lasso
+
+* 10-fold cross-validation with grid of $\lambda$
+* select $\lambda$ that minimizes estimate of test error
+* repeat 1E4 times
+* select $\lambda$ chosen most frequently
+* refit model with selected $\lambda$
+* evaluate model with validation set
+
+```{r md-core}
+
+names.md.core <- colnames(w.mmp)[grep(paste0(md$core, collapse = "|"), colnames(w.mmp))]
+if (length(names.md.core) != 66) stop("something wrong")
+
+X.md.core <- w.mmp[ids$is.analysis.group, names.md.core]
+y.md.core <- w.mmp[ids$is.analysis.group, "stroop"]
+Xprime.md.core <- w.mmp[!ids$is.analysis.group, names.md.core]
+yprime.md.core <- w.mmp[!ids$is.analysis.group, "stroop"]
+
+
+## find lambda and fit ----
+
+set.seed(0)
+nreps <- 1E4
+lambdas <- numeric(nreps)
+
+n_cores <- detectCores()
+cl <- makeCluster(n_cores - 1)
+registerDoParallel(cl)
+lambdas <- foreach(ii = seq_len(nreps), .inorder = FALSE, .combine = "c", .packages = "glmnet") %dopar% {
+  
+  fit.ii <- cv.glmnet(x = X.md.core, y.md.core)
+  fit.ii$lambda.min
+  
+}
+stopCluster(cl)
+hist(lambdas)
+log(lambda.best <- Mode(lambdas))
+
+fit.md.core <- glmnet(x = X.md.core, y = y.md.core, lambda = lambda.best)
+coef(fit.md.core)
+
+
+## validation set ----
+
+## observed validation error
+
+preds.md.core <- cbind(
+  y = yprime.md.core, 
+  yhat = c(predict(fit.md.core, newx = Xprime.md.core))
+  )
+
+(valid.error.obs <- cor(preds.md.core)[1, 2])
+
+preds.md.core %>%
+  
+  as.data.frame %>%
+  ggplot(aes(y, yhat)) +
+  stat_boot_ci(n = 1e4, alpha = 0.5, color = "grey50") +
+  geom_point()
+
+## permuted validation error
+
+cl <- makeCluster(n_cores - 1)
+registerDoParallel(cl)
+valid.error.perm <- foreach(ii = seq_len(nreps), .inorder = FALSE, .combine = "c", .packages = "glmnet") %dopar% {
+  
+  yperm <- y.md.core[sample.int(length(y.md.core))]
+  fit.ii <- glmnet(x = X.md.core, y = yperm, lambda = lambda.best)
+  
+  cor(yprime.md.core, predict(fit.ii, newx = Xprime.md.core))
+
+}
+stopCluster(cl)
+
+p.valid.core <- sum(valid.error.perm > valid.error.obs) / nreps
+
+```
+
+
+
+```{r md-extended}
+
+names.md.extended <- colnames(w.mmp)[grep(paste0(md$extended, collapse = "|"), colnames(w.mmp))]
+# if (length(names.md.extended) != 66) stop("something wrong")
+
+X.md.extended <- w.mmp[ids$is.analysis.group, names.md.extended]
+y.md.extended <- w.mmp[ids$is.analysis.group, "stroop"]
+Xprime.md.extended <- w.mmp[!ids$is.analysis.group, names.md.extended]
+yprime.md.extended <- w.mmp[!ids$is.analysis.group, "stroop"]
+
+## find lambda and fit ----
+
+set.seed(0)
+lambdas <- numeric(nreps)
+
+n_cores <- detectCores()
+cl <- makeCluster(n_cores - 1)
+registerDoParallel(cl)
+lambdas <- foreach(ii = seq_len(nreps), .inorder = FALSE, .combine = "c", .packages = "glmnet") %dopar% {
+  
+  fit.ii <- cv.glmnet(x = X.md.extended, y.md.extended)
+  (fit.ii$lambda.min + fit.ii$lambda.1se) / 2
+  
+}
+stopCluster(cl)
+hist(lambdas)
+log(lambda.best <- Mode(lambdas))
+
+fit.md.extended <- glmnet(x = X.md.extended, y = y.md.extended, lambda = lambda.best)
+coef(fit.md.extended)
+
+```
+
+
+
+
+
