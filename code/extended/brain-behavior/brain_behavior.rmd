@@ -285,6 +285,11 @@ if (!are.identical) {
   
 }
 
+## response variables
+
+strooprt <- as.matrix(w.super[ids$is.analysis.group, "stroop"])
+strooprt_p <- m.super[!ids$is.analysis.group, "stroop"]
+
 ```
 
 
@@ -821,7 +826,6 @@ nvars <- length(varnames)  ## number of predictors in full model
 combs <- lapply(1:nvars, function(x) gtools::combinations(n = nvars, r = x))  ## row indicates columns of design matrix
 nmods <- sum(sapply(combs, nrow))  ## number of models fit
 X <- as.matrix(w.super[ids$is.analysis.group, varnames])
-strooprt <- as.matrix(w.super[ids$is.analysis.group, "stroop"])
 k <- 10  ## k folds
 n <- nrow(X)  # n obs
 
@@ -949,8 +953,6 @@ names.bestsub <- res[[which.min(res$bic), "varnames"]]
 X.bestsub   <- m.super[ids$is.analysis.group, names.bestsub]
 X.bestsub_p <- m.super[!ids$is.analysis.group, names.bestsub]
 
-strooprt_p <- m.super[!ids$is.analysis.group, "stroop"]
-
 # w.bestsub <- w.super %>% 
 #   filter(is.analysis.group) %>% 
 #   ungroup %>%
@@ -968,7 +970,7 @@ strooprt_p <- m.super[!ids$is.analysis.group, "stroop"]
 # coef(ols.bestsub)
 
 lambdas.bestsub <- tune_lambda(X.bestsub, strooprt, alpha = 0, selection_crit = function(fit) fit$lambda.1se)
-hist(lambdas.bestsub)
+hist(lambdas.bestsub, breaks = 50, col = "grey50")
 lambda.best.bestsub <- Mode(lambdas.bestsub)
 ridge.bestsub <- glmnet(x = X.bestsub, y = strooprt, lambda = lambda.best.bestsub, alpha = 0)
 coef(ridge.bestsub)
@@ -976,7 +978,7 @@ coef(ridge.bestsub)
 ## observed error
 
 ys.bestsub <- cbind(
-  y = w.bestsub_p$stroop,
+  y = c(strooprt),
   # yhat = c(predict(ols.bestsub, newdata = w.bestsub_p))
   yhat = c(predict(ridge.bestsub, newx = X.bestsub_p))
   )
@@ -998,7 +1000,7 @@ cor.perm.bestsub <- foreach(ii = seq_len(nresamps), .inorder = FALSE, .combine =
   yperm <- strooprt[sample.int(length(strooprt))]
   fit.ii <- glmnet(x = X.bestsub, y = yperm, lambda = lambda.best.bestsub, alpha = 0)
   
-  cor(strooprt_p, predict(fit.ii, newx = X.super_p))
+  cor(strooprt_p, predict(fit.ii, newx = X.bestsub_p))
   
   # fit.ii <- .lm.fit(X.bestsub, yperm)
   # c(cor(strooprt_p, X.bestsub_p %*% coef(fit.ii)))
@@ -1028,21 +1030,23 @@ sum(is.na(cor.perm.bestsub))  ## num models with no predictors
 
 ## estimate model ----
 
-X.super <- m.super[ids$is.analysis.group, -(1:2)]
+X.super <- m.super[ids$is.analysis.group, -(1:2)]  ## analysis set
 
-## find lambda and fit
+lambdas.super <- tune_lambda(
+  X.super, strooprt, alpha = 0.5, 
+  selection_crit = function(fit) fit$lambda.1se, 
+  n_reps = 1E3
+  )
+hist(lambdas.super, breaks = 50, col = "grey50")
+lambda.best.super <- min(Mode(lambdas.super))
 
-lambdas.super <- tune_lambda(X.super, strooprt, alpha = 0.5, selection_crit = function(fit) fit$lambda.1se)
-hist(lambdas.super)
-lambda.best.super <- Mode(lambdas.super)
-
-net.super <- glmnet(x = X, y = strooprt, lambda = lambda.best.super, alpha = 0.5)
+net.super <- glmnet(x = X.super, y = strooprt, lambda = lambda.best.super, alpha = 0.5)
 coef(net.super)
+
 
 ## estimate test error ----
 
 X.super_p <- m.super[!ids$is.analysis.group, -(1:2)]  ## 'held out' / validation set
-
 
 ## observed error
 
@@ -1115,8 +1119,8 @@ X.md <- m.mmp[ids$is.analysis.group, names.md]
 ## find lambda and fit
 
 lambdas.md <- tune_lambda(X.md, strooprt, alpha = 0.5, selection_crit = function(fit) fit$lambda.min)
-hist(lambdas.md)
-lambda.best.md <- Mode(lambdas.md)
+hist(lambdas.md, breaks = 50, col = "grey50")
+lambda.best.md <- min(Mode(lambdas.md))
 
 net.md <- glmnet(x = X.md, y = strooprt, lambda = lambda.best.md, alpha = 0.5)
 coef(net.md)
