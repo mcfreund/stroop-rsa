@@ -290,15 +290,28 @@ atlas.key$mmp[atlas.key$mmp$community.short %in% c("dlPFC", "PM", "aCC and mPFC"
 
 subjs <- unique(stats.subjs.tdic$subj)
 
-rois.lateral <- atlas.key$mmp[
-  atlas.key$mmp$community.short %in% c("dlPFC", "PM") & atlas.key$mmp$roi %in% rois.coding$taskr, 
-  "roi"
-  ]
-rois.medial <- atlas.key$mmp[
-  atlas.key$mmp$community.short %in% c("aCC and mPFC") & atlas.key$mmp$roi %in% c(rois.coding$incon, rois.coding$targt.incon), 
-  "roi"
-  ]
+# rois.lateral <- atlas.key$mmp[
+#   atlas.key$mmp$community.short %in% c("dlPFC", "PM") & atlas.key$mmp$roi %in% c(rois.pref.targt.vs.distr, rois.distr, rois.incon), 
+#   "roi"
+#   ]
+# rois.medial <- atlas.key$mmp[
+#   atlas.key$mmp$community.short %in% c("aCC and mPFC") & atlas.key$mmp$roi %in% c(rois.pref.targt.vs.distr, rois.distr, rois.incon), 
+#   "roi"
+#   ]
+
+# rois.lateral <- atlas.key$mmp[
+#   atlas.key$mmp$community.short %in% c("dlPFC", "PM") & atlas.key$mmp$roi %in% rois.coding$taskr, 
+#   "roi"
+#   ]
+# rois.medial <- atlas.key$mmp[
+#   atlas.key$mmp$community.short %in% c("aCC and mPFC") & atlas.key$mmp$roi %in% c(rois.coding$incon, rois.coding$targt.incon), 
+#   "roi"
+#   ]
 rois.coding$dist
+
+rois.medial <- combo_paste(c("8BM", "SCEF", "p32pr", "a32pr"), c("L", "R"))
+rois.lateral <- combo_paste(c("i6-8", "p9-46v", "8Av", "8C"), c("L", "R"))
+
 
 # rois.medial <- c("8BM_R", "p32pr_R")
 # rois.lateral <- c("p9-46v_R", "FEF_R")
@@ -582,6 +595,15 @@ fit.lm.t <- lmer(
     summarize(beta = mean(beta))
 )
 summary(fit.lm.t)
+
+
+## within region test:
+fit.mfc <- lmer(beta ~ param + (1 | subj), e %>% filter(roi %in% rois.medial, param %in% c("target", "incongruency")))
+summary(fit.mfc)
+
+
+
+
 
 fit.sm.d <- lmer(beta ~ region + (1 | subj), e, subset = roi %in% c(rois.sommot, rois.visual) & param == "distractor")
 summary(fit.sm.d)

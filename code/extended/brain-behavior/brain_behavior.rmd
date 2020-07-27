@@ -2,10 +2,13 @@
 title: "modeling stroop effects (RTs) with RSA coding schemes"
 author: "michael freund"
 date: "`r Sys.Date()`"
-output: 
+output:
   html_document:
     toc: true
     toc_depth: 3
+    number_sections: true
+    theme: spacelab
+    highlight: zenburn
 ---
 
 ```{r setup, include = FALSE}
@@ -293,7 +296,7 @@ strooprt_p <- m.super[!ids$is.analysis.group, "stroop"]
 ```
 
 
-## 0. an initial look (diagnostics, outliers, etc...)
+# an initial look (diagnostics, outliers, etc...)
 
 ```{r superparcels_pairs, fig.height = 12, fig.width = 12}
 
@@ -366,7 +369,7 @@ grid.arrange(
 ```
 
 
-## 1. Are target and incongruency coding schemes dissociated across MFC and DLPFC/LPPC?
+# Are target and incongruency coding schemes dissociated across MFC and DLPFC/LPPC?
 
 * "superparcel"-based analysis
     * anatomically defined collections of contiguous Glasser-atlas parcels
@@ -385,7 +388,7 @@ grid.arrange(
 
 
 
-### 1a: identify significant brain--behavior correlations among hypothesized region\*schemes
+## identify significant brain--behavior correlations among hypothesized region\*schemes
 
 * test each hypothesized association separately in each hemisphere
   * DLPFC_target \* (R, L)
@@ -546,7 +549,7 @@ d.super %<>%
 ```
 
 
-#### results
+### results
 
 * **moderate relationship**: stroop effect ~ (-) dlpfc_R_target and lpp_R_target
     * each association survives multiple comparison correction
@@ -554,12 +557,12 @@ d.super %<>%
     * association does not survive multiple comparison correction
 
 
-### 1b. Test for single dissociations
+## Test for single dissociations
     * within regions identified, test whether brain--behavior slopes differ across coding schemes.
       * dlpfc_R, lppc_R, : targ < incon
       * mfc_L: incon > targ
 
-```{r superparcels_1b, cache = TRUE}
+```{r superparcels_1b, fig.width = 12, fig.height = 5, cache = TRUE}
 
 ## models ----
 
@@ -591,18 +594,22 @@ d.super %>%
   stat_boot_ci(n = 1E4, alpha = 0.3) + 
   geom_point(color = "white", shape = 21, size = 4) +
   facet_grid(cols = vars(roi)) +
-  scale_fill_manual(values = colors.model)
+  scale_fill_manual(values = colors.model) +
+  
+  theme(legend.position = "none")
 
 
 ```
 
-#### results
-    * **significant dissociation** between target and incongruency within dlpfc_R and lppc_R
-    * **no significant dissociation** observed in mfc_L
-        * but direction of effect was predicted
+### results
 
-### 1c. Jointly test for double dissociation
-    * all regressors in single model
+* **significant dissociation** between target and incongruency within dlpfc_R and lppc_R
+* **no significant dissociation** observed in mfc_L
+    * but direction of effect was predicted
+
+## Jointly test for double dissociation
+
+all regressors in single model
 
 ```{r superparcels_1c, cache = TRUE}
 
@@ -705,7 +712,7 @@ r2.delta.pev <- r2.delta / r2.bivar["mfc_L_target"]  ## ~20-fold increase in var
 ```
 
 
-#### results
+### results
 
 the full double-dissociation model indicated the behavioral relevance of coding schemes differed depending on region
 
@@ -728,26 +735,26 @@ The other component is reflected in MFC target coding: indivs that load strongly
 However, MFC target coding also reflects, relatively weakly, this (-) component.
 Thus, the (+) component is observable only when the predominant, negative component has been accounted for.
 
-## 2. Superparcel model selection and evaluation
+# Superparcel model selection and evaluation
 
 What subset of superparcel and coding scheme combinations `best' explain Stroop effect?
 
-### 2a. best-subset selection (of selected subset)
+## best-subset selection (of selected subset)
 
 Fit a "full" model, containing all predictors, then fit models with all possible combinations of predictors.
 Select best model.
 
-#### preliminary feature selection
+### preliminary feature selection
 
 * select subset of regressors to include in best-subset selection procedure (including all is not tractable)
 * compute bivariate correlations between each regressor and Stroop effect
   * use both spearman and pearson
   * check for multivariate outliers via stahel-donoho projection techique (from WRS2 package, code lifted from [here]( https://github.com/cran/WRS2/blob/master/R/outpro.R)
   * select regressors tothat have $R^2$ in top 20 within both pearson's and spearman's
-    * <= 20 regressors will keep the model comparison procedure tractable
+    * <= 25 regressors will keep the model comparison procedure tractable
 
 
-```{r superparcels_feature_selection, fig.width = 20, fig.height = 10, cache = TRUE}
+```{r superparcels_feature_selection, fig.width = 20, fig.height = 7, cache = TRUE}
 
 ## (1) bivariate correlations ----
 
@@ -824,10 +831,11 @@ This narrows it down to a set of `r nrow(topcors)` regressors.
 varnames <- c(as.character(topcors$id))
 nvars <- length(varnames)  ## number of predictors in full model
 combs <- lapply(1:nvars, function(x) gtools::combinations(n = nvars, r = x))  ## row indicates columns of design matrix
-nmods <- sum(sapply(combs, nrow))  ## number of models fit
+(nmods <- sum(sapply(combs, nrow)))  ## number of models fit
+2^nvars - 1 == nmods
 X <- as.matrix(w.super[ids$is.analysis.group, varnames])
-k <- 10  ## k folds
-n <- nrow(X)  # n obs
+(k <- 10)  ## k folds
+(n <- nrow(X))  # n obs
 
 ## build cross-validation folds
 
@@ -925,11 +933,11 @@ for (comb.i in seq_along(combs)) {
 
 res <- bind_rows(res)
 
-fwrite(res, here::here("out", "indif", "model-comp_superparcel.csv"))
+fwrite(res, here::here("out", "indif", "superparcels_best_subset.csv"))
 
 ```
 
-#### results
+### results
 
 ```{r superparcels_best_subset_print}
 
@@ -942,7 +950,7 @@ res[which.min(res$bic), ]  ## minimum BIC
 
 ```
 
-#### evaluation: prediction error in held-out set
+### evaluation: prediction error in held-out set
 
 ```{r superparcels_best_subset_eval, cache = TRUE}
 
@@ -971,14 +979,14 @@ X.bestsub_p <- m.super[!ids$is.analysis.group, names.bestsub]
 
 lambdas.bestsub <- tune_lambda(X.bestsub, strooprt, alpha = 0, selection_crit = function(fit) fit$lambda.1se)
 hist(lambdas.bestsub, breaks = 50, col = "grey50")
-lambda.best.bestsub <- Mode(lambdas.bestsub)
+lambda.best.bestsub <- min(Mode(lambdas.bestsub))
 ridge.bestsub <- glmnet(x = X.bestsub, y = strooprt, lambda = lambda.best.bestsub, alpha = 0)
 coef(ridge.bestsub)
 
 ## observed error
 
 ys.bestsub <- cbind(
-  y = c(strooprt),
+  y = c(strooprt_p),
   # yhat = c(predict(ols.bestsub, newdata = w.bestsub_p))
   yhat = c(predict(ridge.bestsub, newx = X.bestsub_p))
   )
@@ -1018,7 +1026,7 @@ sum(is.na(cor.perm.bestsub))  ## num models with no predictors
 
 ```
 
-### 2b. elastic net selection
+## elastic net selection
 
 * 10-fold cross-validation with grid of $\lambda$ (default settings)
 * select $\lambda$ that minimizes estimate of test error + 1SE
@@ -1032,11 +1040,7 @@ sum(is.na(cor.perm.bestsub))  ## num models with no predictors
 
 X.super <- m.super[ids$is.analysis.group, -(1:2)]  ## analysis set
 
-lambdas.super <- tune_lambda(
-  X.super, strooprt, alpha = 0.5, 
-  selection_crit = function(fit) fit$lambda.1se, 
-  n_reps = 1E3
-  )
+lambdas.super <- tune_lambda(X.super, strooprt, alpha = 0.5, selection_crit = function(fit) fit$lambda.1se)
 hist(lambdas.super, breaks = 50, col = "grey50")
 lambda.best.super <- min(Mode(lambdas.super))
 
@@ -1099,7 +1103,7 @@ plot(stabs.super)
 ```
 
 
-## 3. MD MMP (Assem, 2020) parcel model selection and evaluation
+# MD MMP (Assem, 2020) parcel model selection and evaluation
 
 * from set of 360 MMP parcels (180/hemisphere), 11 parcels (per hemisphere) were independently defined as commonly involved in multiple different cognitive tasks within HCP dataset (Assem, 2019)
   * strong correspondence to "multiple demand" network discussed in previous research (e.g., Duncan, Fedorenko, and colleagues).
