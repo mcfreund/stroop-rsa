@@ -1,5 +1,5 @@
-out/indiv/mds_trichotomy_bootstrap.csv
-in/HCP_S1200_Atlas_pkXDZ
+*mds_trichotomy_bootstrap.csv
+in/HCP_S1200_Atlas_pkXDZ/*
 
 # images
 *.nii.gz
