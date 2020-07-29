@@ -1,0 +1,899 @@
+---
+title: "group-level analysis: LFP/MFC dissociation"
+author: "michael freund"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    theme: spacelab
+    highlight: zenburn
+---
+
+```{r setup, include = FALSE}
+
+knitr::opts_chunk$set(
+  fig.align = 'center', fig.width = 11.5, fig.fullwidth = TRUE
+  )
+
+
+library(here)
+library(knitr)
+library(magrittr)
+library(data.table)
+library(ggplot2)
+library(mikeutils)
+library(doParallel)
+library(foreach)
+library(gifti)
+library(viridis)
+library(colorspace)
+library(boot)
+library(vegan)
+library(grid)
+library(gridExtra)
+library(lme4)
+library(lmerTest)
+library(multcomp)
+library(dplyr)
+library(magick)
+library(viridis)
+source(here("code", "strings.R"))
+source(here("code", "funs.R"))
+source(here("code", "read_atlases.R"))
+
+
+## global settings
+
+
+theme_set(theme_bw(base_size = 12))
+n_cores <- detectCores()
+nresamps <- 1E4
+
+
+## functions
+
+noise.ceiling <- function(x, roi) {
+  # x = rsarray.mmp; roi = "V1_L"
+  
+  xi <- x[, , , roi]
+  is.lt <- lower.tri(xi[, , 1])
+  v <- apply(xi, 3, "[", is.lt)
+  
+  nsubj <- ncol(v)
+  subjs <- colnames(v)
+  
+  centroid <- rowMeans(v)
+  ub <- cor(centroid, v)
+  
+  lb <- rep(NA, nsubj)
+  for (subj.i in seq_len(nsubj)) lb[subj.i] <- cor(rowMeans(v[, -subj.i]), v[, subj.i])
+  
+  data.frame(ub = c(ub), lb = lb, subj = subjs)
+  
+}
+
+## strings
+
+
+colors.model <- c(incongruency = "#d95f02", target = "#1b9e77", distractor = "#7570b3")
+colors.region <- setNames(viridis(3), c("DLPFC", "LPPC", "MFC"))
+
+params.interest <- names(colors.model)
+
+md <- list(
+  core       = c("p9-46v", "a9-46v", "i6-8", "AVI", "8C", "IFJp", "IP2", "IP1", "PFm", "8BM", "SCEF"),
+  extended   = c(
+    "p9-46v", "a9-46v", "i6-8", "AVi", "8C", "IFJp", "IP2", "IP1", "PFm", "8BM",
+    "TE1m", "TE1p", "PGs", "PFm", "AIP", "MIP", "LIPd", "IP1", "IP2", "s6-8", 
+    "i6-8", "a9-46v", "FOP5", "AVI", "11l", "a10p", "p10p", "a47r", "p47r"
+  )
+)
+
+
+## data
+
+## subject-level data:
+stats.subjs.mmp <- 
+  fread(
+    here("out", "rsa", "stats", paste0("subjs_pro_bias_acc-only_mmp_pearson_residual_glm-tdic.csv"))
+    )
+stats.subjs.mmp <- stats.subjs.mmp[is.analysis.group == TRUE & y == "rank", ]  ## EXCLUDE HELD OUT SUBJECTS!
+stats.subjs.mmp <- stats.subjs.mmp[, "coef" := NULL]
+stats.subjs.mmp %<>% full_join(atlas.key$mmp, by = "roi")
+
+stats.subjs.super <- 
+  fread(
+    here("out", "rsa", "stats", paste0("subjs_pro_bias_acc-only_masks_pearson_residual_glm-tdic.csv"))
+    ) %>%
+    filter(grepl("^anat_|vwfa", .$roi), is.analysis.group) %>%
+    mutate(roi = gsub("anat_", "", .$roi)) %>%
+  mutate(roi.hemi = roi, roi = gsub("_L|_R", "", roi), hemi = ifelse(grepl("_L", roi.hemi), "L", "R"))
+
+## group-level data:
+stats.group.mmp <- fread(here("out", "rsa", "stats", "group_pro_bias_acc-only_mmp_pearson_residual_glm-tdic.csv"))
+stats.group.mmp <- stats.group.mmp[measure == "beta" & y == "rank" & param %in% params.interest, ]
+stats.group.mmp <- stats.group.mmp[, c("measure", "y") := NULL]
+
+
+## for workbench
+
+inds.left <- atlas.key$mmp$roi %>% grep("_L$", .)
+inds.right <- atlas.key$mmp$roi %>% grep("_R$", .)
+atlas.key$mmp$roi <- atlas.key$mmp$roi[c(inds.right, inds.left)]  ## correctly order mmp atlas
+
+fname.pscalar.mmp <- here(
+  "out", "wb", 
+  "Q1-Q6_RelatedValidation210.CorticalAreas_dil_Final_Final_Areas_Group_Colors.32k_fs_LR.pscalar.nii"
+  )
+
+if (!file.exists(fname.pscalar.mmp)) cifti.parcellate(name.atlas = "glasser", dir.to.write = here("out", "wb"))
+
+```
+
+# preliminary validation analyses
+
+## cortical distributions of target, distractor, and incongruency
+
+identify parcels significantly coding for each task dimension (across subjs)
+
+* one-sample sign-rank test: $\beta > 0$ (one-sided)
+* FDR controlled across all 360 parcels, independently for each RSA model
+* $\alpha = 0.05$
+
+```{r}
+
+## 'coding' parcels
+
+(rois.targt <- stats.group.mmp[param == "target" & p.fdr < 0.05, roi])
+(rois.distr <- stats.group.mmp[param == "distractor" & p.fdr < 0.01, roi])
+(rois.incon <- stats.group.mmp[param == "incongruency" & p.fdr < 0.05, roi])
+(rois.congr <- stats.group.mmp[param == "congruency" & p.fdr < 0.05, roi])
+
+# keep.these.bois <- c("m", "v", "p.fdr", "num.roi", "roi", "hemi")
+# stats.coding.targt <- stats.group.mmp[param == "target", ..keep.these.bois]
+# stats.coding.distr <- stats.group.mmp[param == "distractor", ..keep.these.bois]
+# stats.coding.incon <- stats.group.mmp[param == "incongruency", ..keep.these.bois]
+# stats.coding.congr <- stats.group.mmp[param == "congruency", ..keep.these.bois]
+ 
+## intersections
+
+(rois.targt.incon <- intersect(rois.targt, rois.incon))
+(rois.targt.distr <- intersect(rois.targt, rois.distr))
+(rois.distr.incon <- intersect(rois.distr, rois.incon))
+(rois.targt.distr.incon <- Reduce(intersect, list(rois.targt, rois.incon, rois.distr)))
+
+```
+
+
+
+```{r}
+
+
+## read or write files for workbench ----
+
+fname.overlay.coding <- c(
+  here("out", "group", "target_veryinflated.tiff"), 
+  here("out", "group", "distractor_veryinflated.tiff"),
+  here("out", "group", "incongruency_veryinflated.tiff")
+)
+
+if (all(file.exists(fname.overlay.coding))) {
+  
+  p.coding <- lapply(fname.overlay.coding, image_read)
+  grobs <- lapply(p.coding, rasterGrob)
+  
+  grid.arrange(
+    arrangeGrob(grobs[[1]], top = textGrob("target", gp = gpar(fontsize = 24))), 
+    arrangeGrob(grobs[[2]], top = textGrob("distractor", gp = gpar(fontsize = 24))),
+    arrangeGrob(grobs[[3]], top = textGrob("incongruency", gp = gpar(fontsize = 24))),
+    ncol = 3
+  )
+  
+} else {
+  
+  overlay.targt <- stats.group.mmp %>% 
+    
+    filter(param == "target") %>% select(roi, num.roi, hemi, v, p.fdr, m) %>% 
+    mutate(val = ifelse(p.fdr < 0.05, v, 0)) %>% 
+    arrange(rev(hemi), num.roi)  ## weirdness with MMP atlas! flip hemis.
+  
+  cifti.convert(
+    fname.overlay  = "group_target",
+    dir.to.write   = here("out", "group"),
+    values.overlay = overlay.targt$val,
+    dir.template   = here("out", "wb"),
+    name.atlas     = "glasser"
+  )
+  
+  overlay.distr <- stats.group.mmp %>% 
+    
+    filter(param == "distractor") %>% select(roi, num.roi, hemi, v, p.fdr, m) %>% 
+    mutate(val = ifelse(p.fdr < 0.05, v, 0)) %>%
+    arrange(rev(hemi), num.roi)  ## weirdness with MMP atlas! flip hemis.
+  
+  cifti.convert(
+    fname.overlay  = "group_distractor",
+    dir.to.write   = here("out", "group"),
+    values.overlay = overlay.distr$val,
+    dir.template   = here("out", "wb"),
+    name.atlas     = "glasser"
+  )
+  
+  overlay.incon <- stats.group.mmp %>% 
+    
+    filter(param == "incongruency") %>% select(roi, num.roi, hemi, v, p.fdr, m) %>%
+    mutate(val = ifelse(p.fdr < 0.05, v, 0)) %>% 
+    arrange(rev(hemi), num.roi)  ## weirdness with MMP atlas! flip hemis.
+  
+  cifti.convert(
+    fname.overlay  = "group_incongruency",
+    dir.to.write   = here("out", "group"),
+    values.overlay = overlay.incon$val,
+    dir.template   = here("out", "wb"),
+    name.atlas     = "glasser"
+  )
+  
+  ## now build and save plots with workbench, and re-run this .rmd file
+  
+}
+
+
+```
+
+
+## MDS of select parcels
+
+```{r}
+
+```
+
+
+## double dissociation between somatomotor and visual cortex
+
+```{r}
+
+```
+
+
+# MFC/DLPFC/LPPC dissociation analyses
+
+## whole-brain analysis
+
+### narrow down target coding group: which target-coding parcels have target > distractor?
+
+* $\beta_\text{target} > \{0, \beta_\text{distractor}\}$ coding profile in line with role in top-down control processes
+* conducted on parcels with significant target coding (identified above)
+* paired sign-rank test: $|\beta_{\text{target}} - \beta_{\text{distractor}}| > 0$ (two-sided)
+* FDR controlled across all `r length(rois.targt)` target-coding parcels
+* $\alpha = 0.05$
+
+
+```{r}
+
+## get p values ----
+
+targt.vs.distr <-
+  
+  stats.subjs.mmp %>%
+  
+  filter(param %in% c("target", "distractor")) %>%
+  mutate(param = factor(param, levels = c("target", "distractor"))) %>%
+  
+  group_by(roi) %>%
+  summarize(
+    p = wilcox.test(beta ~ param, paired = TRUE)$p.value,
+    b = mean(beta[param == "target"]) - mean(beta[param == "distractor"])
+  ) %>%
+  
+  mutate(p.fdr = p.adjust(p, method = "fdr")) %>% 
+  left_join(atlas.key$mmp, by = "roi") %>%
+  filter(p.fdr < 0.05, b > 0)
+  
+targt.vs.distr %>% arrange(community, -p.fdr) %>% kable(digits = 2)
+
+```
+
+Make workbench file for conjunction map:
+
+```{r}
+
+
+fname.overlay.conjunction <- here("out", "group", "conjunction_alpha05_veryinflated.tiff")
+
+if (file.exists(fname.overlay.conjunction)) {
+  
+  p.conjunction <- image_read(fname.overlay.conjunction)
+  
+  grid.arrange(
+    rasterGrob(p.conjunction), 
+    top = textGrob("conjunction", gp = gpar(fontsize = 24))
+  )
+
+} else {
+  
+  stats.group.mmp.wide <- stats.group.mmp %>%
+    
+    select(param, m, roi, community.short) %>%
+    filter(param %in% params.interest) %>%
+    tidyr::spread(param, m) %>%
+    filter(roi %in% c(rois.incon, rois.distr, targt.vs.distr$roi)) %>%
+    
+    mutate(
+      prof = ifelse(
+        roi %in% setdiff(targt.vs.distr$roi, rois.targt.incon), "targtpref",
+          ifelse(
+            roi %in% intersect(targt.vs.distr$roi, rois.targt.incon), "targpref.incon",
+            ifelse(
+              roi %in% rois.distr, "distr",
+              ifelse(
+                roi %in% rois.incon, "incon", NA
+              )
+            )
+          )
+        )
+      )
+  
+  overlay <- rbind(
+    stats.group.mmp.wide %>% select(roi, prof),
+    data.frame(
+      roi = setdiff(atlas.key$mmp$roi, c(rois.incon, rois.distr, targt.vs.distr$roi)), 
+      prof = "none", stringsAsFactors = FALSE
+    )
+  )
+  overlay$profnum <- as.numeric(factor(overlay$prof, levels = c("none", unique(stats.group.mmp.wide$prof)))) - 1
+  overlay$roi.num <- match(overlay$roi, atlas.key$mmp$roi)
+  overlay %<>% arrange(roi.num)
+  
+  cifti.convert(
+    fname.overlay  = "conjunction",
+    dir.to.write   = here("out", "group"),
+    values.overlay = overlay$profnum,
+    dir.template   = here("out", "wb"),
+    name.atlas     = "glasser"
+  )
+    
+}
+
+
+```
+Color key:
+
+* **burgandy**: target-preferential (t>d,t>0)
+* **red**: distractor (d>0)
+* **lavender**: incongruency (i>0)
+* **yellow**: target-preferential AND incongruency (t>d,t>0,i>0)
+
+
+### test
+
+* target>distractor parcels (identified above) selected from four MMP communities 
+  * MFC: "anterior cingulate and medial prefrontal cortex"
+  * DLPFC: "dorsolateral prefrontal cortex"
+  * LPPC: "inferior parietal", "superior parietal", and "dorsal stream visual cortex"
+
+```{r}
+
+## format ----
+
+rois.mmp.mfc <- c("8BM_R", "p32pr_R")
+# rois.mmp.mfc <- targt.vs.distr %>% filter(community.short == "aCC and mPFC") %>% pull("roi")
+rois.mmp.dlpfc <- targt.vs.distr %>% filter(community.short == "dlPFC") %>% pull("roi")
+# rois.mmp.dlpfc <- targt.vs.distr %>% filter(community.short %in% c("dlPFC", "iFC", "PM")) %>% pull("roi")
+rois.mmp.lppc <- targt.vs.distr %>% filter(community.short %in% c("iP", "sP", "d vis.")) %>% pull("roi")
+# rois.mmp.lppc <- "IP2_R"
+
+d.mmp <- stats.subjs.mmp %>% 
+  
+  filter(roi %in% c(rois.mmp.mfc, rois.mmp.dlpfc, rois.mmp.lppc)) %>%
+  
+  mutate(
+    region = ifelse(
+      roi %in% rois.mmp.dlpfc, "DLPFC", 
+      ifelse(
+        roi %in% rois.mmp.mfc, "MFC",
+        ifelse(roi %in% rois.mmp.lppc, "LPPC", NA)
+        )
+      )
+    )
+
+## plot ----
+
+d.mmp %>%  
+  
+  filter(param %in% c("incongruency", "target")) %>%
+  
+  {
+    
+    grid.arrange(
+    
+        
+      filter(., region == "DLPFC") %>%
+        
+        ggplot(aes(param, beta, color = param)) +
+        stat_summary(fun.data = mean_cl_boot, size = 1) +
+        
+        facet_wrap(vars(roi)) +
+        scale_color_manual(values = colors.model) +
+        
+        theme(legend.position = "none") +
+        labs(title = "DLPFC"),
+  
+          
+      filter(., region == "LPPC") %>%
+        
+        ggplot(aes(param, beta, color = param)) +
+        stat_summary(fun.data = mean_cl_boot, size = 1) +
+        
+        facet_wrap(vars(roi)) +
+        scale_color_manual(values = colors.model) +
+        
+        theme(legend.position = "none") +
+        labs(title = "LPPC"),
+      
+      
+      filter(., region == "MFC") %>%
+        
+        ggplot(aes(param, beta, color = param)) +
+        stat_summary(fun.data = mean_cl_boot, size = 1) +
+        
+        facet_wrap(vars(roi)) +
+        
+        scale_color_manual(values = colors.model) +
+        annotate(
+          geom = "text", x = -Inf, y = 0.23, label = "incongruency", color = colors.model["incongruency"],
+          hjust = 0, vjust = 1, size = rel(6)
+          ) +
+        annotate(
+          geom = "text", x = -Inf, y = 0.25, label = "target", color = colors.model["target"],
+          hjust = 0, vjust = 1, size = rel(6)
+          ) +
+        
+        theme(legend.position = "none") +
+        labs(title = "MFC"),
+      
+      
+      ncol = 3
+
+    )
+    
+  }
+
+
+## test ----
+
+
+fit.mmp <- lmer(
+  beta ~ region * param + (param + region | subj), 
+  d.mmp %>% filter(region %in% c("DLPFC", "MFC", "LPPC"), param %in% c("target", "incongruency"))
+  )
+summary(fit.mmp)
+
+## ORDER:
+## dlpfcincon, lppc-dlpfc|incon, mfc-dlpfc|incon, target-incon|dlpfc, (lppc-dlpfc)(target-incon), (mfc-dlpfc)(target-incon)
+dlpfc.incon <- c(1, 0, 0, 0, 0, 0)
+mfc.incon   <- c(1, 0, 1, 0, 0, 0)
+lppc.incon  <- c(1, 1, 0, 0, 0, 0)
+dlpfc.targt <- c(1, 0, 0, 1, 0, 0)
+mfc.targt   <- c(1, 0, 1, 1, 0, 1)
+lppc.targt  <- c(1, 1, 0, 1, 1, 0)
+
+W <- rbind(
+  
+  ## means of each condition:
+  "dlpfc_incon" = dlpfc.incon,
+  "dlpfc_targt" = dlpfc.targt,
+  "mfc_incon"   = mfc.incon,
+  "mfc_targt"   = mfc.targt,
+  "lppc_incon"  = lppc.incon,
+  "lppc_targt"  = lppc.targt,
+  
+  ## within-parcel contrasts:
+  "incon-targt|mfc"   = mfc.incon - mfc.targt,
+  "incon-targt|dlpfc" = dlpfc.incon - dlpfc.targt,
+  "incon-targt|lppc"  = lppc.incon - lppc.targt,
+  
+  ## between-parcel contrasts:
+  "mfc-dlpfc|targt" = mfc.targt - dlpfc.targt,
+  "mfc-lppc|targt"  = mfc.targt - lppc.targt,
+  "mfc-dlpfc|incon" = mfc.incon - dlpfc.incon,
+  "mfc-lppc|incon"  = mfc.incon - lppc.incon,
+  
+  ## interactions:
+  "(incon-targt)(mfc-dlpfc)" = (mfc.targt - dlpfc.targt) - (mfc.incon - dlpfc.incon),
+  "(incon-targt)(mfc-lppc)"  = (mfc.targt - lppc.targt) - (mfc.incon - lppc.incon)
+  
+)
+
+summary(glht(fit.mmp, W), test = adjusted("none"))
+
+```
+
+### noise ceilings
+
+Weak evidence for single dissociation was found: stronger congruency coding, versus, target coding in MFC parcels.
+This pattern leaves open the possibility that SNR was poor in DLPFC.
+This possibility is tested here by computing and comparing noise ceilings across these DLPFC and MFC parcels.
+
+```{r, fig.height = 7}
+
+## estimate ----
+
+rsarray.mmp <- readRDS(
+  here("out", "rsa", "obsv", "rsarray_pro_bias_acc-only_mmp_pearson_residual-rank.rds")
+  )[, , unique(stats.subjs.mmp$subj), ]
+
+ceilings.mmp <- lapply(dimnames(rsarray.mmp)$roi, noise.ceiling, x = rsarray.mmp)
+names(ceilings.mmp) <- dimnames(rsarray.mmp)$roi
+
+ceilings.mmp %<>% bind_rows(.id = "roi") %>% full_join(atlas.key$mmp, by = "roi")
+
+
+ceilings.mmp.rois <- ceilings.mmp %>% 
+  
+  filter(roi %in% c(rois.mmp.mfc, rois.mmp.dlpfc, rois.mmp.lppc)) %>%
+  
+  mutate(
+    region = ifelse(
+      roi %in% rois.mmp.dlpfc, "DLPFC", 
+      ifelse(
+        roi %in% rois.mmp.mfc, "MFC",
+        ifelse(roi %in% rois.mmp.lppc, "LPPC", NA)
+        )
+      )
+    )
+
+## plot ----
+
+
+ceilings.mmp.rois %>%
+  
+  {
+    grid.arrange(
+      
+      ggplot(., aes(roi, lb, color = region)) +
+        stat_summary(fun.data = mean_cl_boot, size = 2) +
+        scale_color_viridis_d() +
+        theme(legend.position = "none") +
+        labs(title = "lower bound", x = "parcel", y = "across-subject mean"),
+      
+      ggplot(., aes(roi, ub, color = region)) +
+        stat_summary(fun.data = mean_cl_boot, size = 2) +
+        scale_color_viridis_d() +
+        annotate(
+          geom = "text", x = -Inf, y = 0.25, label = "DLPFC", color = colors.region["DLPFC"],
+          hjust = 0, vjust = 1, size = rel(6)
+          ) +
+        annotate(
+          geom = "text", x = -Inf, y = 0.24, label = "LPPC", color = colors.region["LPPC"],
+          hjust = 0, vjust = 1, size = rel(6)
+          ) +
+        annotate(
+          geom = "text", x = -Inf, y = 0.23, label = "MFC", color = colors.region["MFC"],
+          hjust = 0, vjust = 1, size = rel(6)
+          ) +
+        theme(legend.position = "none") +
+        labs(title = "upper bound", x = "parcel", y = "across-subject mean"),
+
+      nrow = 2,
+      
+      top = textGrob("noise ceilings", gp = gpar(fontsize = 24))
+      
+    )
+  }
+
+
+## compare ----
+
+ceilings.mmp.rois %<>% mutate(region = relevel(as.factor(region), "MFC"))
+
+fit.mmp.lb <- lmer(
+  lb ~ region + hemi + (1 | subj),
+  ceilings.mmp.rois
+  )
+summary(fit.mmp.lb)
+
+fit.mmp.ub <- refit(fit.mmp.lb, ceilings.mmp.rois$ub)
+summary(fit.mmp.ub)
+
+```
+
+
+## superparcel analysis
+
+### across entire superparcel
+
+```{r}
+
+## get group-level model fit statistics ----
+
+stats.super.dissoc <- stats.subjs.super %>%
+  
+  filter(param %in% params.interest, grepl("dlpfc|lppc|mfc", roi)) %>%
+
+  group_by(param, roi) %>%
+  summarize(
+    p = wilcox.test(beta, alternative = "greater")$p.value,
+    beta = mean(beta)
+  ) %>%
+  
+  mutate(p.fdr = p.adjust(p, method = "fdr"))
+
+rois.super.incon <- stats.super.dissoc %>% filter(p.fdr < 0.05, param == "incongruency") %>% pull(roi)
+rois.super.targt <- stats.super.dissoc %>% filter(p.fdr < 0.05, param == "target") %>% pull(roi)
+rois.super.distr <- stats.super.dissoc %>% filter(p.fdr < 0.05, param == "distractor") %>% pull(roi)
+
+
+## get target-distractor contrast ----
+
+targt.vs.distr.super <-
+  
+  stats.subjs.super %>%
+  
+  filter(param %in% c("target", "distractor"), roi %in% rois.super.targt) %>%
+  mutate(param = factor(param, levels = c("target", "distractor"))) %>%
+  
+  group_by(roi.hemi) %>%
+  summarize(
+    p = wilcox.test(beta ~ param, paired = TRUE)$p.value,
+    b = mean(beta[param == "target"]) - mean(beta[param == "distractor"])
+  ) %>%
+  
+  mutate(p.fdr = p.adjust(p, method = "fdr")) %>% 
+  filter(p.fdr < 0.01, b > 0)
+  
+targt.vs.distr.super %>% arrange(-p.fdr) %>% kable(digits = 2)
+
+
+## plot ----
+
+stats.subjs.super %>%
+  
+  filter(param %in% params.interest, roi %in% c("dlpfc", "mfc", "lppc")) %>%
+  
+  ggplot(aes(roi.hemi, beta, color = param)) +
+  stat_summary(fun.data = mean_cl_boot, size = 2, position = position_dodge(width = 0.5)) +
+  
+  scale_color_manual(values = colors.model) +
+  annotate(
+    geom = "text", x = -Inf, y = 0.15, label = "incongruency", color = colors.model["incongruency"],
+    hjust = 0, vjust = 1, size = rel(6)
+    ) +
+  annotate(
+    geom = "text", x = -Inf, y = 0.14, label = "target", color = colors.model["target"],
+    hjust = 0, vjust = 1, size = rel(6)
+    ) +
+  annotate(
+    geom = "text", x = -Inf, y = 0.13, label = "distractor", color = colors.model["distractor"],
+    hjust = 0, vjust = 1, size = rel(6)
+    ) +
+
+  theme(legend.position = "none") +
+  labs(title = "superparcels")
+
+
+## test ----
+
+fit.super <- lmer(
+  beta ~ roi * param + (param + roi | subj), 
+  stats.subjs.super %>% filter(roi %in% c("dlpfc", "mfc", "lppc"), param %in% c("target", "incongruency"))
+  )
+summary(fit.super)
+
+summary(glht(fit.super, W), test = adjusted("none"))
+
+```
+
+
+#### noise ceilings
+
+```{r fig.height = 5}
+
+rsarray.super <- readRDS(
+  here("out", "rsa", "obsv", "rsarray_pro_bias_acc-only_masks_pearson_residual-rank.rds")
+  )[, , unique(stats.subjs.mmp$subj), ]
+
+ceilings.super <- lapply(dimnames(rsarray.super)$roi, noise.ceiling, x = rsarray.super)
+
+names(ceilings.super) <- dimnames(rsarray.super)$roi
+ceilings.super %<>% bind_rows(.id = "roi")
+
+
+ceilings.super.rois <- ceilings.super %>% 
+  
+  filter(grepl("^anat_", roi)) %>%
+  # filter(grepl("dlpfc|lppc|mfc", roi)) %>%
+  
+  mutate(
+    roi.hemi = gsub("anat_", "", .$roi),
+    roi = gsub("_L|_R", "", roi.hemi), 
+    hemi = ifelse(grepl("_L", roi.hemi), "L", "R")
+    )
+
+## plot ----
+
+
+ceilings.super.rois %>%
+  
+  filter(roi %in% c("dlpfc", "lppc", "mfc")) %>%
+  
+  {
+    grid.arrange(
+      
+      
+      ggplot(., aes(roi.hemi, lb, color = roi)) +
+        stat_summary(fun.data = mean_cl_boot, size = 2) +
+        scale_color_viridis_d() +
+        theme(legend.position = "none") +
+        labs(title = "lower bound", x = "parcel", y = "across-subject mean"),
+      
+      
+      ggplot(., aes(roi.hemi, ub, color = roi)) +
+        stat_summary(fun.data = mean_cl_boot, size = 2) +
+        scale_color_viridis_d() +
+        annotate(
+          geom = "text", x = -Inf, y = 0.25, label = "DLPFC", color = colors.region["DLPFC"],
+          hjust = 0, vjust = 1, size = rel(6)
+          ) +
+        annotate(
+          geom = "text", x = -Inf, y = 0.24, label = "LPPC", color = colors.region["LPPC"],
+          hjust = 0, vjust = 1, size = rel(6)
+          ) +
+        annotate(
+          geom = "text", x = -Inf, y = 0.23, label = "MFC", color = colors.region["MFC"],
+          hjust = 0, vjust = 1, size = rel(6)
+          ) +
+        theme(legend.position = "none") +
+        labs(title = "upper bound", x = "parcel", y = "across-subject mean"),
+      
+      ncol = 2,
+      
+      top = textGrob("noise ceilings", gp = gpar(fontsize = 24))
+      
+    )
+  }
+
+
+## compare ----
+
+ceilings.super.rois %<>% mutate(roi = relevel(as.factor(roi), "mfc"))
+
+fit.super.lb <- lmer(
+  lb ~ roi + hemi + (1 | subj),
+  ceilings.super.rois
+  )
+summary(fit.super.lb)
+
+fit.super.ub <- refit(fit.super.lb, ceilings.super.rois$ub)
+summary(fit.super.ub)
+
+
+```
+
+
+### parcel-wise
+
+```{r}
+
+## by parcel
+
+rois.super.dlpfc <- combo_paste(c("p9-46v", "i6-8", "8Av", "8C"), c("R", "L"))
+rois.super.mfc <- combo_paste(c("SCEF", "8BM",  "p32pr", "a32pr"), c("R", "L"))
+rois.super.lppc <- combo_paste(
+  c("IP0", "IPS1", "IP1", "MIP", "7PL", "7AL", "7PC", "VIP", "LIPv", "LIPd", "AIP", "IP2"), 
+  c("R", "L")
+  )
+
+d.byparcel <- stats.subjs.mmp %>% 
+  
+  filter(roi %in% c(rois.super.mfc, rois.super.dlpfc, rois.super.lppc)) %>%
+  
+  mutate(
+    region = ifelse(
+      roi %in% rois.super.dlpfc, "DLPFC", 
+      ifelse(
+        roi %in% rois.super.mfc, "MFC",
+        ifelse(roi %in% rois.super.lppc, "LPPC", NA)
+        )
+      )
+    )
+
+fit.super.byparcel <- lmer(
+  beta ~ region * param + (param | subj), 
+  d.byparcel %>% filter(region %in% c("DLPFC", "MFC", "LPPC"), param %in% c("target", "incongruency"))
+  )
+summary(fit.super.byparcel)
+
+summary(glht(fit.super.byparcel, W), test = adjusted("none"))
+
+```
+
+
+#### noise ceilings
+
+```{r, fig.height = 7}
+
+## estimate ----
+
+ceilings.super.byparcel.rois <- ceilings.mmp %>% 
+  
+  filter(roi %in% c(rois.super.dlpfc, rois.super.mfc, rois.super.lppc)) %>%
+  
+  mutate(
+    region = ifelse(
+      roi %in% rois.super.dlpfc, "dlpfc", 
+      ifelse(
+        roi %in% rois.super.mfc, "mfc",
+        ifelse(roi %in% rois.super.lppc, "lppc", NA)
+        )
+      )
+    )
+
+## plot ----
+
+
+ceilings.super.byparcel.rois %>%
+  
+  mutate(roi = forcats::fct_reorder(roi, region)) %>%
+
+  {
+    grid.arrange(
+  
+          
+      ggplot(., aes(roi, lb, color = region)) +
+        stat_summary(fun.data = mean_cl_boot, size = 2) +
+        scale_color_viridis_d() +
+        theme(legend.position = "none", axis.text.x = element_text(angle = 90, vjust = 0)) +
+        labs(title = "lower bound", x = "parcel", y = "across-subject mean"),
+      
+      
+      ggplot(., aes(roi, ub, color = region)) +
+        stat_summary(fun.data = mean_cl_boot, size = 2) +
+        scale_color_viridis_d() +
+        annotate(
+          geom = "text", x = -Inf, y = 0.27, label = "DLPFC", color = colors.region["DLPFC"],
+          hjust = 0, vjust = 1, size = rel(6)
+          ) +
+        annotate(
+          geom = "text", x = -Inf, y = 0.25, label = "LPPC", color = colors.region["LPPC"],
+          hjust = 0, vjust = 1, size = rel(6)
+          ) +
+        annotate(
+          geom = "text", x = -Inf, y = 0.24, label = "MFC", color = colors.region["MFC"],
+          hjust = 0, vjust = 1, size = rel(6)
+          ) +
+        theme(legend.position = "none", axis.text.x = element_text(angle = 90, vjust = 0)) +
+        labs(title = "upper bound", x = "parcel", y = "across-subject mean"),
+      
+      nrow = 2,
+      
+      top = textGrob("noise ceilings", gp = gpar(fontsize = 24))
+      
+      
+    )
+  }
+
+
+## compare ----
+
+ceilings.mmp.rois %<>% mutate(region = relevel(as.factor(region), "MFC"))
+
+fit.mmp.dlpfc.mfc.lb <- lmer(
+  lb ~ region + hemi + (1 | subj),
+  ceilings.mmp.rois %>% filter(region %in% c("DLPFC", "MFC", "LPPC"))
+  )
+summary(fit.mmp.dlpfc.mfc.lb)
+
+fit.mmp.dlpfc.mfc.ub <- lmer(
+  ub ~ region + hemi + (hemi | subj),
+  ceilings.mmp.rois %>% filter(region %in% c("DLPFC", "MFC", "LPPC"))
+  )
+summary(fit.mmp.dlpfc.mfc.ub)
+
+
+
+```
+
+
+

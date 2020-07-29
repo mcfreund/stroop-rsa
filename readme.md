@@ -5,6 +5,7 @@ ___WORK IN PROGRESS___
 ### ./data
 * contains behavioral data assembled by stroop-rsa/write_behav_stroop_rsa.R.
 * no other script writes to this directory.
+* underlay surfaces downloaded from BALSA: https://balsa.wustl.edu/sceneFile/show/7qP5m
 
 ### ./code
 * primary analysis pipeline

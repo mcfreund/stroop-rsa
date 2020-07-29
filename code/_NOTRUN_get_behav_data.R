@@ -38,6 +38,6 @@ subj_sum <- subset(subj_sum, subj %in% subjlist$subj)
 stroop$is.analysis.group <- stroop$subj %in% subjlist$subj[subjlist$is.analysis.group]
 subj_sum$is.analysis.group <- subj_sum$subj %in% subjlist$subj[subjlist$is.analysis.group]
 
-write.csv(stroop, "data/behavior-and-events_group201902.csv", row.names = FALSE)
-write.csv(subj_sum, "data/summary_group201902.csv", row.names = FALSE)
+write.csv(stroop, "in/behavior-and-events_group201902.csv", row.names = FALSE)
+write.csv(subj_sum, "in/summary_group201902.csv", row.names = FALSE)
 
