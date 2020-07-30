@@ -17,7 +17,7 @@ split.str.item <- function(col.j, prefix = "") {
 
 nmds <- function(arr, roi, ...) {
   
-  D <- 1 - apply(rsarray[, , , roi], c(".row", ".col"), function(.) tanh((mean(atanh(.)))))
+  D <- 1 - apply(arr[, , , roi], c(".row", ".col"), function(.) tanh((mean(atanh(.)))))
   D <- as.dist(D)
   metaMDS(D, trace = FALSE, ...)
   
@@ -80,7 +80,7 @@ plot.mds <- function(.df, .title = "", .add.lines = "nolines", .fill = "white", 
 mds.line <- function(b, e) {
   geom_segment(
     aes(x = MDS1[item == b], xend = MDS1[item == e], y = MDS2[item == b], yend = MDS2[item == e]), 
-    size = 0.15, color = "grey70"
+    size = rel(0.25), color = "grey70"
   )
 }
 
@@ -205,3 +205,180 @@ cifti.convert <- function(
   if (!was.removed) stop("trouble removing text file")
   
 }
+
+
+
+
+noise.ceiling <- function(x, roi) {
+  # x = rsarray.mmp; roi = "V1_L"
+  
+  xi <- x[, , , roi]
+  is.lt <- lower.tri(xi[, , 1])
+  v <- apply(xi, 3, "[", is.lt)
+  
+  nsubj <- ncol(v)
+  subjs <- colnames(v)
+  
+  centroid <- rowMeans(v)
+  ub <- cor(centroid, v, method = "spearman")
+  
+  lb <- rep(NA, nsubj)
+  for (subj.i in seq_len(nsubj)) lb[subj.i] <- cor(rowMeans(v[, -subj.i]), v[, subj.i], method = "spearman")
+  
+  data.frame(ub = c(ub), lb = lb, subj = subjs)
+  
+}
+
+noise.ceiling.region <- function(x, rois) {
+  # x = rsarray.mmp; rois = rois.mmp.dlpfc
+  
+  nroi <- length(rois)
+  subjs <- dimnames(x)$subj
+  nsubj <- length(subjs)
+  
+  if(!nroi > 1) stop("need more than one parcel")
+  
+  xi <- x[, , , rois]
+  is.lt <- lower.tri(xi[, , 1, 1])  ## for extracting lower tri
+  
+  ub <- matrix(NA, nrow = nsubj, ncol = nroi, dimnames = list(dimnames(x)$subj))
+  lb <- ub
+  for (roi.i in seq_along(rois)) {
+    # roi.i = 1
+    
+    v <- apply(xi[, , , roi.i], 3, "[", is.lt)  ## lower-triangle RSM
+    centroid <- rowMeans(v)
+    ub[, roi.i] <- cor(centroid, v, method = "spearman")  ## mean upper-bound z for roi.i
+
+    for (subj.i in seq_len(nsubj)) {
+      lb[subj.i, roi.i] <- cor(rowMeans(v[, -subj.i]), v[, subj.i], method = "spearman")
+    }
+    
+  }
+
+  data.frame(lb = rowMeans(atanh(lb)), ub = rowMeans(atanh(ub)), subj = subjs)  ## average across ROIs
+  
+}
+
+
+
+mds.to.df <- function(mat) {
+  mat %>%
+    as.data.frame %>%
+    tibble::rownames_to_column("stim") %>%
+    bind_cols(., split.str.item(.$stim))
+}
+
+# plot.mds <- function(df) {
+#   df %>%
+#     ggplot(aes(MDS1, MDS2)) +
+#     geom_label(aes(label = word, color = color), fill = "grey60", fontface = "bold", label.size = 0) +
+#     scale_color_manual(values = setNames(bias.colors, bias.colors)) +
+#     theme(
+#       panel.background = element_blank(), 
+#       axis.text = element_blank(), 
+#       legend.position = "none", 
+#       axis.ticks = element_blank()
+#     )
+# }
+
+panel.cor <- function(x, y, digits = 2, prefix = "", cex.cor, ...)
+{
+  usr <- par("usr"); on.exit(par(usr))
+  par(usr = c(0, 1, 0, 1))
+  r <- cor(x, y)
+  txt <- format(c(r, 0.123456789), digits = digits)[1]
+  txt <- paste0(prefix, txt)
+  if(missing(cex.cor)) cex.cor <- 0.8/strwidth(txt)
+  text(0.5, 0.5, txt, cex = cex.cor * r)
+}
+
+bic <- function(eps, k, n = length(eps), w = rep(1, n)) {
+  ## https://stackoverflow.com/questions/35131450/calculating-bic-manually-for-lm-object
+  ll <- 0.5 * ( sum(log(w)) - n * (log(2 * pi) + 1 - log(n) + log(sum(w * eps^2))) )
+  -2 * ll + log(n) * (k + 1)
+}
+
+aic <- function(eps, k, n = length(eps), w = rep(1, n)) {
+  ## https://stackoverflow.com/questions/35131450/calculating-bic-manually-for-lm-object
+  ll <- 0.5 * ( sum(log(w)) - n * (log(2 * pi) + 1 - log(n) + log(sum(w * eps^2))) )
+  -2 * ll + 2 * (k + 1)
+}
+
+bootcor <- function(d, ii) cor(d[ii, 1], d[ii, 2])
+
+cor_ci <- function(d, R = 1000, type = "bca", ...) {
+  
+  if (ncol(d) != 2) stop("ncol(d) != 2")
+  
+  out <- boot(d, bootcor, R = R)
+  ci <- boot.ci(out, type = type, ...)[[type]][4:5]
+  p.geq0 <- sum(out$t >= 0) / nrow(out$t)
+  
+  data.frame(lower = ci[1], upper = ci[2], p.geq0 = p.geq0)
+  
+}
+
+lm.allcombs <- function(df, yname) {
+  ## dependencies: gtools()
+  ## warning: number of models fit increases exponentially with ncol(df) (i.e., num explanatory variables)
+  
+  ## model comparison ----
+  
+  xnames <- names(df)[-grep(yname, names(df))]
+  nvars  <- length(xnames)  ## num explanatory vars
+  combs  <- lapply(1:nvars, function(x) gtools::combinations(n = nvars, r = x))  ## unique combos for each number of vars
+  nmods  <- sum(sapply(combs, nrow))  ## total num models
+  lmods  <- vector("list", nmods)  ## output list
+  
+  a <- 1
+  for (ii in seq_along(combs)) {  ## along number of vars
+    
+    combs.ii <- combs[[ii]]
+    
+    for (jj in seq_len(nrow(combs.ii))) {  ## along unique combos
+      
+      xnames.jj <- xnames[combs.ii[jj, ]]
+      
+      lmform <- as.formula(paste0(yname, " ~ ", paste0(xnames.jj, collapse = " + ")))
+      
+      lmods[[a]] <- lm(lmform, df[, c(xnames.jj, yname)])
+      
+      a <- a + 1
+      
+    }
+    
+  }
+  
+  lmods
+  
+}
+
+tune_lambda <- function(
+  X, y, n_reps = 1E3, 
+  selection_crit = function(fit) fit$lambda.min, n_cores = detectCores(), 
+  seed = 0,  
+  ...
+) {
+  
+  set.seed(seed)
+  
+  cl <- makeCluster(n_cores - 1)
+  registerDoParallel(cl)
+  
+  results <- foreach(ii = seq_len(n_reps), .inorder = FALSE, .combine = "c", .packages = "glmnet") %dorng% {
+    
+    fit.ii <- cv.glmnet(x = X, y = y, ...)
+    
+    selection_crit(fit.ii)
+    
+  }
+  
+  stopCluster(cl)
+  
+  results
+  
+}
+
+
+ci2p <- function(bootobj, index = 1) min( sum(bootobj$t[, index] > 0), sum(bootobj$t[, index] < 0) ) / bootobj$R * 2

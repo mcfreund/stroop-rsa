@@ -13,6 +13,7 @@ output:
 
 ```{r setup, include = FALSE}
 
+
 ## setup ----
 
 library(mikeutils)
@@ -45,6 +46,7 @@ library(lme4)
 library(lmerTest)
 library(nlme)
 source(here("code", "strings.R"))
+source(here("code", "funs.R"))
 
 
 ## global settings
@@ -54,142 +56,6 @@ theme_set(theme_bw(base_size = 12))
 n_cores <- detectCores()
 nreps <- 5E3
 nresamps <- 1E4
-
-## functions
-
-
-split.str.item <- function(col.j, prefix = "") {
-  ## takes a single "item" vector, e.g. "blueBLUE", and decomposes
-  ## it into color ("blue") word ("BLUE"), congruency ("C"), and label 
-  ## ("C.BLUE", for plotting). 
-  # prefix <- paste0(col.j, ".")
-  col.j      <- as.character(col.j)
-  color      <- gsub("[A-Z]", "", col.j)
-  word       <- gsub("[a-z]", "", col.j)
-  congruency <- ifelse(color == tolower(word), "C", "I")
-  label      <- paste0(congruency, ".", word)
-  cols       <- as.data.frame(cbind(color, word, congruency, label))
-  colnames(cols) <- paste0(prefix, c("color", "word", "congruency", "label"))
-  return(cols)
-}
-
-mds.to.df <- function(mat) {
-  mat %>%
-    as.data.frame %>%
-    tibble::rownames_to_column("stim") %>%
-    bind_cols(., split.str.item(.$stim))
-}
-
-plot.mds <- function(df) {
-  df %>%
-    ggplot(aes(MDS1, MDS2)) +
-    geom_label(aes(label = word, color = color), fill = "grey60", fontface = "bold", label.size = 0) +
-    scale_color_manual(values = setNames(bias.colors, bias.colors)) +
-    theme(
-      panel.background = element_blank(), 
-      axis.text = element_blank(), 
-      legend.position = "none", 
-      axis.ticks = element_blank()
-    )
-}
-
-panel.cor <- function(x, y, digits = 2, prefix = "", cex.cor, ...)
-{
-    usr <- par("usr"); on.exit(par(usr))
-    par(usr = c(0, 1, 0, 1))
-    r <- cor(x, y)
-    txt <- format(c(r, 0.123456789), digits = digits)[1]
-    txt <- paste0(prefix, txt)
-    if(missing(cex.cor)) cex.cor <- 0.8/strwidth(txt)
-    text(0.5, 0.5, txt, cex = cex.cor * r)
-}
-
-bic <- function(eps, k, n = length(eps), w = rep(1, n)) {
-  ## https://stackoverflow.com/questions/35131450/calculating-bic-manually-for-lm-object
-  ll <- 0.5 * ( sum(log(w)) - n * (log(2 * pi) + 1 - log(n) + log(sum(w * eps^2))) )
-  -2 * ll + log(n) * (k + 1)
-}
-
-aic <- function(eps, k, n = length(eps), w = rep(1, n)) {
-  ## https://stackoverflow.com/questions/35131450/calculating-bic-manually-for-lm-object
-  ll <- 0.5 * ( sum(log(w)) - n * (log(2 * pi) + 1 - log(n) + log(sum(w * eps^2))) )
-  -2 * ll + 2 * (k + 1)
-}
-
-bootcor <- function(d, ii) cor(d[ii, 1], d[ii, 2])
-
-cor_ci <- function(d, R = 1000, type = "bca", ...) {
-  
-  if (ncol(d) != 2) stop("ncol(d) != 2")
-  
-  out <- boot(d, bootcor, R = R)
-  ci <- boot.ci(out, type = type, ...)[[type]][4:5]
-  p.geq0 <- sum(out$t >= 0) / nrow(out$t)
-  
-  data.frame(lower = ci[1], upper = ci[2], p.geq0 = p.geq0)
-  
-}
-
-lm.allcombs <- function(df, yname) {
-  ## dependencies: gtools()
-  ## warning: number of models fit increases exponentially with ncol(df) (i.e., num explanatory variables)
-
-  ## model comparison ----
-  
-  xnames <- names(df)[-grep(yname, names(df))]
-  nvars  <- length(xnames)  ## num explanatory vars
-  combs  <- lapply(1:nvars, function(x) gtools::combinations(n = nvars, r = x))  ## unique combos for each number of vars
-  nmods  <- sum(sapply(combs, nrow))  ## total num models
-  lmods  <- vector("list", nmods)  ## output list
-  
-  a <- 1
-  for (ii in seq_along(combs)) {  ## along number of vars
-    
-    combs.ii <- combs[[ii]]
-    
-    for (jj in seq_len(nrow(combs.ii))) {  ## along unique combos
-      
-      xnames.jj <- xnames[combs.ii[jj, ]]
-      
-      lmform <- as.formula(paste0(yname, " ~ ", paste0(xnames.jj, collapse = " + ")))
-      
-      lmods[[a]] <- lm(lmform, df[, c(xnames.jj, yname)])
-      
-      a <- a + 1
-      
-    }
-    
-  }
-  
-  lmods
-  
-}
-
-tune_lambda <- function(
-  X, y, n_reps = 1E3, 
-  selection_crit = function(fit) fit$lambda.min, n_cores = detectCores(), 
-  seed = 0,  
-  ...
-  ) {
-
-  set.seed(seed)
-  
-  cl <- makeCluster(n_cores - 1)
-  registerDoParallel(cl)
-  
-  results <- foreach(ii = seq_len(n_reps), .inorder = FALSE, .combine = "c", .packages = "glmnet") %dorng% {
-    
-    fit.ii <- cv.glmnet(x = X, y = y, ...)
-    
-    selection_crit(fit.ii)
-    
-  }
-  
-  stopCluster(cl)
-  
-  results
-  
-}
 
 
 ## strings

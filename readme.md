@@ -1,18 +1,20 @@
-## development directory for project involving RSA of color-word Stroop
+# directory for project involving RSA of color-word Stroop
 
-___WORK IN PROGRESS___
-
-### ./data
+## ./in
 * contains behavioral data assembled by stroop-rsa/write_behav_stroop_rsa.R.
 * no other script writes to this directory.
 * underlay surfaces downloaded from BALSA: https://balsa.wustl.edu/sceneFile/show/7qP5m
 
-### ./code
-* primary analysis pipeline
+## ./code
+* primary analysis pipeline (bash, .R scripts)
+* dynamic reports (.rmd files)
 * reads from ./data, nil-bluearc (for 3D+t images), ./out
 * writes to ./out
+* __./behav__: scripts / reports for generating behavioral analysis (RT and accuracy)
+* __./group__: scripts / reports for generating group-level analyses
+* __./indiv__: scripts / reports for generating individual difference analyses (brain~behavior)
 
-### ./out
+## ./out
 * all output of scripts are directed to this directory
 * the one exeption is output related to fMRI GLMs, which is saved within __./glms__
 * __./rsa__
@@ -21,11 +23,11 @@ ___WORK IN PROGRESS___
   * __./stats__: subject level fits and group statistics, saved in long-form .csvs
 * __./summaries__: various summary tables (.csvs) for QC, misc analyses, and things that might be read into a manuscript file.
 * __./masks__: functionally or anatomically defined brain masks, created by scripts within __./code/masks__
+* __./behav__: output of scripts / reports for generating behavioral analysis (RT and accuracy)
+* __./group__: output of group-level analyses
+* __./indiv__: output of individual difference analyses (brain~behavior)
 
-### ./glms
+## ./glms
 * contains AFNI GLM input (e.g., stimtime and movreg files), shell scripts, and output (e.g., .nii brick files)
 * 3D+t images read from nil-bluearc
 * GLMs fit on ccplinux1, and results merged with local directory via rsync
-
-### ./analyses
-* self-contained reports (.rmd) of exploratory or QC analyses
