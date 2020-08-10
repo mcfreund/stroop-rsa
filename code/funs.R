@@ -315,7 +315,7 @@ cor_ci <- function(d, R = 1000, type = "bca", ...) {
   ci <- boot.ci(out, type = type, ...)[[type]][4:5]
   p.geq0 <- sum(out$t >= 0) / nrow(out$t)
   
-  data.frame(lower = ci[1], upper = ci[2], p.geq0 = p.geq0)
+  data.frame(t0 = c(out$t0), lower = ci[1], upper = ci[2], p.geq0 = p.geq0)
   
 }
 
