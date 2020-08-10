@@ -123,7 +123,7 @@ rsarray.mmp <- readRDS(
   here("out", "rsa", "obsv", "rsarray_pro_bias_acc-only_mmp_pearson_residual-rank.rds")
   )[, , unique(stats.subjs.mmp$subj), ]
 
-rsarray.super <- readRDS(
+e <- readRDS(
   here("out", "rsa", "obsv", "rsarray_pro_bias_acc-only_masks_pearson_residual-rank.rds")
   )[, , unique(stats.subjs.mmp$subj), ]
 
@@ -160,7 +160,8 @@ means.prelim <- stats.subjs.super %>%
   
   tidyr::unnest(cols = c(res))
 
-p.means.mmp <- means.prelim %>%  
+# p.means.prelim <-
+  means.prelim %>%  
   
   ggplot(aes(param, y, group = roi, color = roi)) +
   
@@ -172,47 +173,13 @@ p.means.mmp <- means.prelim %>%
   scale_y_continuous(breaks = c(0.02, 0.10), limits = c(0.02, 0.11)) +
   
   annotate(
-    geom = "text", x = Inf, y = 0.09, label = "DLPFC", color = colors.region["DLPFC"],
+    geom = "text", x = Inf, y = 0.09, label = "ventral S1/M1", color = "#2166ac",
     hjust = 1, vjust = 1, size = label.size, fontface = "bold"
     ) +
   annotate(
-    geom = "text", x = Inf, y = 0.08, label = "LPPC", color = colors.region["LPPC"],
+    geom = "text", x = Inf, y = 0.08, label = "V1", color = "#b2182b",
     hjust = 1, vjust = 1, size = label.size, fontface = "bold"
     ) +
-  annotate(
-    geom = "text", x = Inf, y = 0.07, label = "MFC", color = colors.region["MFC"],
-    hjust = 1, vjust = 1, size = label.size, fontface = "bold"
-    ) +
-  # annotate(
-  #   geom = "segment", 
-  #   y = means.mmp %>% filter(region == "DLPFC", param == "incongruency") %>% .$y,
-  #   yend = means.mmp %>% filter(region == "MFC", param == "incongruency") %>% .$y,
-  #   x = 0.85, xend = 0.85, color = "grey40", size = 1
-  #   ) +
-  # annotate(
-  #   geom = "text", 
-  #   x = 0.85 - 0.01, 
-  #   y = means.mmp %>% filter(region %in% c("DLPFC", "MFC"), param == "incongruency") %>% .$y %>% mean, 
-  #   size = rel(8), vjust = 0, color = "grey40", fontface = "italic",
-  #   label = paste0("p = ", round(glht.mmp$test$pvalues["mfc-dlpfc|incon"], 4)),
-  #   angle = 90
-  #   ) +
-  # 
-  # annotate(
-  #   geom = "segment", 
-  #   y = means.mmp %>% filter(region == "DLPFC", param == "incongruency") %>% .$y,
-  #   yend = means.mmp %>% filter(region == "LPPC", param == "incongruency") %>% .$y,
-  #   x = 0.84, xend = 0.85, color = "grey40", size = 1
-  #   ) +
-  # annotate(
-  #   geom = "text", 
-  #   x = 0.84 - 0.01, 
-  #   y = means.mmp %>% filter(region %in% c("DLPFC", "LPPC"), param == "incongruency") %>% .$y %>% mean, 
-  #   size = rel(8), vjust = 0, color = "grey40", fontface = "italic",
-  #   label = paste0("p = ", round(glht.mmp$test$pvalues["lppc-dlpfc|incon"], 4)),
-  #   angle = 90
-  #   ) +
-
   
   labs(y = bquote("mean model fit ("*beta*")"), x = "model") +
   

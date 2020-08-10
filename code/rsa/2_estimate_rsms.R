@@ -176,7 +176,8 @@ for (set.i in sets.of.rois) {
       
       ## get and apply mask for roi.i
       
-      if (set.i != "masks") mask.i <- atlas[[set.i]] == roi.i else mask.i <- masks[[roi.i]] == 1
+      if (set.i != "masks") mask.i <- atlas[[set.i]] == roi.i 
+      else mask.i <- masks[[roi.i]] == 1
       
       roi.betas <- apply(image.betas, "reg", function(.) .[mask.i])
       
