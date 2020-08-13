@@ -219,7 +219,7 @@ for (set.i in sets.of.rois) {
   
   ## add is.analysis.group col
   
-  stroop <- fread(here("data", "behavior-and-events_group201902.csv"))
+  stroop <- fread(here("in", "behavior-and-events_group201902.csv"))
   sample.analysis <- unique(filter(stroop, is.analysis.group)$subj)
   stats.subjs$is.analysis.group <- stats.subjs$subj %in% sample.analysis
   

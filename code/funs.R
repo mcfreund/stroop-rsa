@@ -305,17 +305,17 @@ aic <- function(eps, k, n = length(eps), w = rep(1, n)) {
   -2 * ll + 2 * (k + 1)
 }
 
-bootcor <- function(d, ii) cor(d[ii, 1], d[ii, 2])
+bootcor <- function(d, ii, ...) cor(d[ii, 1], d[ii, 2], ...)
 
-cor_ci <- function(d, R = 1000, type = "bca", ...) {
+cor_ci <- function(d, R = 1E4, type = "bca", method = "pearson", ...) {
   
   if (ncol(d) != 2) stop("ncol(d) != 2")
   
-  out <- boot(d, bootcor, R = R)
+  out <- boot(d, bootcor, R = R, method = method)
   ci <- boot.ci(out, type = type, ...)[[type]][4:5]
-  p.geq0 <- sum(out$t >= 0) / nrow(out$t)
+  p.leq0 <- sum(out$t >= 0) / nrow(out$t)
   
-  data.frame(t0 = c(out$t0), lower = ci[1], upper = ci[2], p.geq0 = p.geq0)
+  data.frame(t0 = c(out$t0), lower = ci[1], upper = ci[2], p.leq0 = p.leq0)
   
 }
 

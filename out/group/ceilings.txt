@@ -1,0 +1,7 @@
+p,contrast,ceiling
+0.5914,dlpfc.dmfc,lb
+0.0414,lppc.dmfc,lb
+0.0466,dlpfc.lppc,lb
+0.6764,dlpfc.dmfc,ub
+0.2714,lppc.dmfc,ub
+0.3958,dlpfc.lppc,ub

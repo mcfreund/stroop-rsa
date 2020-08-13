@@ -14,6 +14,7 @@ library(data.table)
 library(nlme)
 library(lme4)
 library(ggplot2)
+library(magrittr)
 
 source(here("code", "strings.R"))
 
@@ -28,14 +29,16 @@ farout <- function(x) {
   
 }
 
+logit2prob <- function(x) exp(x) / (1 + exp(x))
+
 ## read and subset
 
-stroop.pro <- read.csv(here("data", "behavior-and-events_group201902.csv"),  stringsAsFactors = FALSE) %>%
+stroop.pro <- read.csv(here("in", "behavior-and-events_group201902.csv"),  stringsAsFactors = FALSE) %>%
   filter(session == "pro", is.analysis.group) %>%
   mutate(trial.type = ifelse(trial.type == "i", "incon", "congr"))
 
 
-## model ----
+## model RT ----
 
 ## initial fit  
 
@@ -59,59 +62,92 @@ fit1.het <- lme(
 stroop.pro.rt$resid.p <- resid(fit1.het, type = "p")
 stroop.pro.rt$is.far.out <- farout(stroop.pro.rt$resid.p)
 
-fit1.het.trim <- update(fit1.het, subset = !is.far.out)
-
-## extract predictions
-
-blups <- as.data.frame(coef(fit1.het.trim))
-blups %<>% rename(congr = "(Intercept)", stroop = "trial.typeincon") %>% tibble::rownames_to_column("subj")
+fit1.het.trim <- update(fit1.het, data = stroop.pro.rt %>% filter(!is.far.out))
+fit1.het.trim.ml <- update(fit1.het.trim, method = "ML")  ## for model comparisons
 
 
-## estimate split-half reliability (cross-run) ----
+## test heterogeneity of variance
 
-fit1.het.run.reml.trim <- lme(
-  rt ~ trial.type * run, stroop.pro.rt, ~ trial.type * run | subj,
-  weights = varIdent(form = ~ 1 | subj),
+fit1.hom.trim.ml <- lme(
+  rt ~ trial.type, 
+  random  = ~ trial.type | subj,
+  data    = stroop.pro.rt %>% filter(!is.far.out),
   control = lmeControl(maxIter = 1e5, msMaxIter = 1e5, niterEM = 1e5, msMaxEval = 1e5),
-  method = "REML",
-  subset = !is.far.out
+  method  = "ML"
 )
 
-summary(fit1.het.run.reml.trim)
+rt.hom.v.het <- anova(fit1.hom.trim.ml, fit1.het.trim.ml)
+
+## test stroop effect variance
+
+fit0.het.trim.ml <- update(fit1.het.trim.ml, random  = ~ 1 | subj)
+rt.stroopvar <- anova(fit0.het.trim.ml, fit1.het.trim.ml)
+
+## estimate split-half reliability (across run)
+
+fit1.het.run.trim <- lme(
+  rt ~ trial.type * run, stroop.pro.rt %>% filter(!is.far.out), ~ trial.type * run | subj,
+  weights = varIdent(form = ~ 1 | subj),
+  control = lmeControl(maxIter = 1e5, msMaxIter = 1e5, niterEM = 1e5, msMaxEval = 1e5),
+  method = "REML"
+)
+
+summary(fit1.het.run.trim)
 
 ## conditional covariances
 
 m <- rbind(c(0, 1, 0, 0), c(0, 1, 0, 1))  ## a contrast matrix that gives us what we want
-u.trim <- as.matrix(coef(fit1.het.run.reml.trim)) %*% t(m)
+u.trim <- as.matrix(coef(fit1.het.run.trim)) %*% t(m)
 cov(u.trim)
 (r.conditional.trim <- cor(u.trim)[1, 2])  ## correlation of conditional modes
 
 ## unconditional / marginal covariances
 
-tau.trim <- getVarCov(fit1.het.run.reml.trim)
+tau.trim <- getVarCov(fit1.het.run.trim)
 (tau.trim <- m %*% tau.trim %*% t(m))
 
 (r.marginal.trim <- cov2cor(tau.trim)[1, 2])
 
 u.trim <- as.data.frame(u.trim)
-
 names(u.trim) <- c("stroop.run1", "stroop.run2")
 
-## errors
+
+
+## model errors ---
+
 stroop.pro.er <- stroop.pro %>% mutate(error = 1 - acc)
-fit.error0 <- glmer(error ~ trial.type + (1 | subj), stroop.pro.er, family = binomial)
-fit.error1 <- glmer(error ~ trial.type + (trial.type | subj), stroop.pro.er, family = binomial)
-anova()
+
+## test for stroop effect variance
+
+fit.error0 <- glmer(
+  error ~ trial.type + (1 | subj),
+  stroop.pro.er, 
+  family = binomial,
+  control = glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 1E9))
+  )
+fit.error1 <- glmer(
+  error ~ trial.type + (trial.type | subj), 
+  stroop.pro.er, 
+  family = binomial,
+  control = glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 1E9))
+  )
+er.stroopvar <- anova(fit.error0, fit.error1)
 
 
 
+## wrangle estimates and plot figures ----
 
-behav %<>%
+## get blups
+blups <- as.data.frame(coef(fit1.het.trim))
+blups %<>% rename(congr = "(Intercept)", stroop = "trial.typeincon") %>% tibble::rownames_to_column("subj")
+
+
+blups %<>%
   full_join(
     data.frame(
-      subj = rownames(coef(m.er1)$subj),
-      er.logit.stroop = coef(m.er1)$subj$trial.typei,
-      er.logit.congru = coef(m.er1)$subj[["(Intercept)"]]
+      subj = rownames(coef(fit.error1)$subj),
+      er.logit.stroop = coef(fit.error1)$subj$trial.typei,
+      er.logit.congru = coef(fit.error1)$subj[["(Intercept)"]]
     ) %>%
       mutate(
         er.logit.incon = er.logit.stroop + er.logit.congru,
@@ -122,19 +158,24 @@ behav %<>%
     by = "subj"
   )
 
+
 ## draw figure ----
 
-plot.behav <- behav %>%
-  mutate(subj = factor(subj, levels = subj[order(rt.mlm.hetvar, decreasing = TRUE)])) %>%
-  select(subj, rt.mlm.hetvar, er.mlm) %>%
-  melt %>%
+plot.behav <- blups %>%
+  
+  mutate(subj = factor(subj, levels = subj[order(stroop, decreasing = TRUE)])) %>%
+  select(subj, stroop, er.mlm) %>%
+  reshape2::melt() %>%
+  
   ggplot(aes(subj, value)) +
   facet_grid(
     rows = vars(variable), scales = "free", switch = "y",
     labeller = as_labeller(c(rt.mlm.hetvar = "response time", er.mlm = "% error"))
   ) +
+  
   geom_segment(aes(x = subj, y = 0, xend = subj, yend = value), color = "grey50") +
   geom_point(fill = "grey30", color = "black", shape = 21, size = 1) +
+  
   xlab("participant") +
   theme(
     plot.margin = unit(c(1, 1, 1, 1), "mm"),
@@ -152,6 +193,7 @@ plot.behav <- behav %>%
 
 
 u.trim %>%
+  
   ggplot(aes(stroop.run1, stroop.run2)) +
   geom_abline() +
   stat_boot_ci(n = 1E4, alpha = 0.2) +
@@ -164,10 +206,15 @@ u.trim %>%
   theme(panel.grid = element_blank())
 
 
-
-
-
 ## write ----
 
 write.csv(blups, here("out", "behav", "stroop_blups_rt_group201902.csv"),  row.names = FALSE)  ## blups
-saveRDS(fit1.het.trim, here("out", "behav", "fit1-het-trim_group201902.RDS"))
+behav.mod.objs <- list(
+  fit1.het.trim = fit1.het.trim,
+  er.stroopvar = er.stroopvar,
+  rt.stroopvar = rt.stroopvar,
+  rt.hom.v.het = rt.hom.v.het,
+  r.marginal.trim = r.marginal.trim,
+  u.trim = u.trim
+)
+saveRDS(behav.mod.objs, here("out", "behav", "mod_objs.RDS"))
