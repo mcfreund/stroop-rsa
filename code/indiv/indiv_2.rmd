@@ -340,7 +340,7 @@ W.full <- rbind(
 
 ## save results
 
-indiv.mod.objs.sep <- list(
+indiv.mod.objs <- list(
   mods = mods, ps = pvals, 
   contrasts = list(
     dmfc_L = contrast.dmfc_L, 
@@ -349,7 +349,7 @@ indiv.mod.objs.sep <- list(
     dmfc_L.lfp_R = contrast.dmfc_L.lfp_R
     )
   )
-saveRDS(indiv.mod.objs.sep, here("out", "indiv", "indiv_separate.RDS"))
+saveRDS(indiv.mod.objs, here("out", "indiv", "indiv.RDS"))
 
 # indiv.mod.objs.sep <- readRDS(here("out", "indiv", "indiv_separate.RDS"))
 # mods <- indiv.mod.objs.sep$mods
