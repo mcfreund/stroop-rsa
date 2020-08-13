@@ -342,7 +342,12 @@ W.full <- rbind(
 
 indiv.mod.objs.sep <- list(
   mods = mods, ps = pvals, 
-  contrasts = list(contrast.dmfc_L, contrast.lppc_R, contrast.dlpfc_R, contrast.dmfc_L.lfp_R)
+  contrasts = list(
+    dmfc_L = contrast.dmfc_L, 
+    lppc_R = contrast.lppc_R,
+    dlpfc_R = contrast.dlpfc_R, 
+    dmfc_L.lfp_R = contrast.dmfc_L.lfp_R
+    )
   )
 saveRDS(indiv.mod.objs.sep, here("out", "indiv", "indiv_separate.RDS"))
 
