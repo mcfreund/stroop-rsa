@@ -184,7 +184,6 @@ strooprt_p <- m.super[!ids$is.analysis.group, "stroop"]
 behav.mod.objs <- readRDS(here("out", "behav", "mod_objs.RDS"))
 names(behav.mod.objs) <- c("fit1.het.trim", "er.stroopvar", "rt.stroopvar", "rt.hom.v.het", "r.marginal.trim", "u.trim")
 
-
 ```
 
 
@@ -262,7 +261,7 @@ w.super$lfp_R_incongruency <- (w.super$dlpfc_R_incongruency + w.super$lppc_R_inc
 
 d.dissoc.hlm <- full_join(
   behav.mod.objs$fit1.het.trim$data, 
-  w.super %>% filter(is.analysis.group) %>% ungroup %>% select(subj, one_of(hyps)),
+  w.super %>% filter(is.analysis.group) %>% ungroup %>% dplyr::select(subj, one_of(hyps)),
   by = "subj"
 )
 d.dissoc.hlm$lfp_R_target <- (d.dissoc.hlm$dlpfc_R_target + d.dissoc.hlm$lppc_R_target) / 2
@@ -335,7 +334,7 @@ W.full <- rbind(
   "[Btarg(I-C)-Bincon(I-C)](lfp-dmfc)" = c(0, 0, 0, 0, 0, 0, 1, -1, -1, 1)  ## 4-way interaction
   )
 
-(contrast.dmfc_L.lfp_R <- summary(glht(mods$dmfc_L.lfp_R, W), test = adjusted("none")))
+(contrast.dmfc_L.lfp_R <- summary(glht(mods$dmfc_L.lfp_R, W.full), test = adjusted("none")))
 
 
 
@@ -352,20 +351,8 @@ saveRDS(indiv.mod.objs.sep, here("out", "indiv", "indiv_separate.RDS"))
 
 ```
 
-## full model
-
-
-```{r superparcels_composite}
-
-
-
-```
-
-
 
 # model selection analysis
-
-
 
 
 ```{r plot_panel_a}
