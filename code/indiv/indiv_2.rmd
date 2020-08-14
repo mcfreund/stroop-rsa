@@ -253,9 +253,10 @@ p.allcors <- d.super %>%
   
   stat_boot_ci(n = 1E4, alpha = 0.3, color = "transparent") +
   geom_smooth(method = "lm", se = FALSE) +
-  geom_point(color = "white", shape = 21, size = geom.point.size) +
+  geom_point(color = "white", shape = 21, size = geom.point.size/2) +
   
   scale_fill_manual(values = colors.model) +
+  scale_color_manual(values = colors.model) +
 
   facet_grid(vars(hemi), vars(region)) +
   
