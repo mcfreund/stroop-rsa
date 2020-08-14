@@ -251,9 +251,9 @@ p.allcors <- d.super %>%
   
   ggplot(aes(beta, stroop, fill = param, color = param)) +
   
-  stat_boot_ci(n = 1E4, alpha = 0.3) +
+  stat_boot_ci(n = 1E4, alpha = 0.3, color = "transparent") +
   geom_smooth(method = "lm", se = FALSE) +
-  geom_point(color = "white", shape = 21, size = geom.point.size/1.5) +
+  geom_point(color = "white", shape = 21, size = geom.point.size) +
   
   scale_fill_manual(values = colors.model) +
 
@@ -314,6 +314,8 @@ cors.lfp <- w.super %>%
     ) %>%
   as.data.table
 
+
+fwrite(cors.lfp, here("out", "indiv", "cors_lfp.txt"))
 
 ## combine
 

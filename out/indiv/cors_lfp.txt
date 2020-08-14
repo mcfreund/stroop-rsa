@@ -1,0 +1,2 @@
+scheme,is.analysis.group,r_target,r_incongruency
+superparcel,TRUE,0.53229417230366,0.35514865083765
