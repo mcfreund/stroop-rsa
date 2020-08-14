@@ -366,7 +366,7 @@ tune_lambda <- function(
   cl <- makeCluster(n_cores - 1)
   registerDoParallel(cl)
   
-  results <- foreach(ii = seq_len(n_reps), .inorder = FALSE, .combine = "c", .packages = "glmnet") %dorng% {
+  results <- foreach(ii = seq_len(n_reps), .inorder = FALSE, .combine = "c", .packages = "glmnet") %do% {
     
     fit.ii <- cv.glmnet(x = X, y = y, ...)
     
