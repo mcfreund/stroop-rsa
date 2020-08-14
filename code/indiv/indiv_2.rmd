@@ -252,8 +252,8 @@ p.allcors <- d.super %>%
   ggplot(aes(beta, stroop, fill = param, color = param)) +
   
   stat_boot_ci(n = 1E4, alpha = 0.3, color = "transparent") +
-  geom_smooth(method = "lm", se = FALSE) +
-  geom_point(color = "white", shape = 21, size = geom.point.size/2) +
+  geom_smooth(method = "lm", se = FALSE, size = geom.line.size/2) +
+  geom_point(size = geom.point.size/2) +
   
   scale_fill_manual(values = colors.model) +
   scale_color_manual(values = colors.model) +
