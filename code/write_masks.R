@@ -62,7 +62,8 @@ superparcels <- c(
   setNames(superparcels.r, paste0(names(superparcels.r), "_R")),
   list(
     aud   = combo_paste(c("LBelt", "A1", "MBelt", "PBelt"), c("L", "R")),
-    evis  = paste0("V1", c("_L", "_R"))
+    evis  = combo_paste(c("V1", "V2", "V3"), c("L", "R")),
+    V1    = paste0("V1", c("_L", "_R"))  ## for prelim. validation analysis (group-level)
   )
 )
 

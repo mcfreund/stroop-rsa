@@ -1,5 +1,3 @@
-#!/usr/bin/env Rscript
-
 ## about ----
 ## 
 ## reads in afni images (beta estimates from GLM) into a list.
@@ -22,31 +20,11 @@
 ## TODO
 ## function for matching brick string
 
-doc <- 
-"Usage:
-   2_estimate_rsms.R [-a <do_atlases> -m <do_masks> -u <univariate> -r <runwisepro>]
 
-Options:
-   -a Conduct analysis using atlases (Glasser's Multi Modal Parcellation, and Gordon's RSFC communities)? [default: 0]
-   -m Conduct analysis using user-specified masks? [default: 0]
-   -u Estimate univariate statistics? [default: 0]
-   -r Do runwise proactive instead of proactive? [default: 0]
- ]"
-
-opts <- docopt::docopt(doc)
-
-do.atlas <- as.logical(as.integer(opts$a))
-do.masks <- as.logical(as.integer(opts$m))
-do.univa <- as.logical(as.integer(opts$u))
-do.rwpro <- as.logical(as.integer(opts$r))
-
-## defaults for interactive use (e.g., debugging, ...):
-if (interactive()) {
-  do.atlas <- FALSE
-  do.masks <- TRUE
-  do.univa <- FALSE
-  do.rwpro <- FALSE
-}
+do.atlas <- FALSE
+do.masks <- TRUE
+do.univa <- FALSE
+do.rwpro <- FALSE
 
 if (all(!do.atlas, !do.masks, !do.univa, !do.rwpro)) stop(paste0("you must do something!"))
 
