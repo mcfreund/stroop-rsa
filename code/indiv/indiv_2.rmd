@@ -940,7 +940,7 @@ sum(is.na(cor.perm.bestsub))  ## num models with no predictors
 
 X.super <- m.super[ids$is.analysis.group, -(1:2)]  ## analysis set
 
-lambdas.super <- tune_lambda(X.super, strooprt, alpha = 0.5, selection_crit = function(fit) fit$lambda.1se)
+lambdas.super <- tune_lambda(X.super, strooprt, alpha = 0.5, selection_crit = function(fit) fit$lambda.1se, n_reps = nreps)
 hist(lambdas.super, breaks = 50, col = "grey50")
 lambda.best.super <- min(Mode(lambdas.super))
 
