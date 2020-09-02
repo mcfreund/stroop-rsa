@@ -41,6 +41,7 @@ library(dplyr)
 library(magick)
 library(viridis)
 library(cowplot)
+library(lemon)
 source(here("code", "strings.R"))
 source(here("code", "funs.R"))
 source(here("code", "read_atlases.R"))
@@ -151,24 +152,28 @@ if (!file.exists(fname.pscalar.mmp)) cifti.parcellate(name.atlas = "glasser", di
 
 fit.prelim <- lmer(
   beta ~ 0 + interaction(roi, param) + (1 | subj),
-  stats.subjs.super %>% filter(param %in% c("distractor", "target"), roi %in% c("evis", "smmouth"))
+  stats.subjs.super %>% filter(param %in% c("distractor", "target"), roi %in% c("V1", "smmouth"))
   )
 summary(fit.prelim)
 
 contrasts.prelim <- rbind(
   diag(4),  ## means
   ## cross-parcel contrasts:
-  "evis-smmouth|distractor" = c(1, -1, 0, 0),
-  "smmouth-evis|target"     = c(0, 0, -1, 1),
+  "V1-smmouth|distractor" = c(1, -1, 0, 0),
+  "smmouth-V1|target"     = c(0, 0, 1, -1),
   ## within-parcel contrasts:
-  "distractor-target|evis" = c(1, 0, -1, 0),
-  "target-distractor|smmouth"= c(0, -1, 0, 1),
+  "distractor-target|V1"     = c(0, 1, 0, -1),
+  "target-distractor|smmouth"= c(-1, 0, 1, 0),
   ## interaction:
-  "(smmouth-evis)(target-distractor)" = c(1, -1, -1, 1)
+  "(smmouth-V1)(target-distractor)" = c(-1, -1, 1, 1)
 )
-rownames(contrasts.prelim)[1:4] <- c("evis.distractor", "smmouth.distractor", "evis.target", "smmouth.target")
+rownames(contrasts.prelim)[1:4] <- c("V1.distractor", "smmouth.distractor", "V1.target", "smmouth.target")
 
 (glht.prelim <- summary(glht(fit.prelim, contrasts.prelim, alternative = "greater"), test = adjusted("none")))
+glht.prelim$test$pvalues["(smmouth-V1)(target-distractor)"] <- 
+  glht.prelim$test$pvalues["(smmouth-V1)(target-distractor)"]*2  ## interaction should be two-sided
+
+glht.prelim
 
 ```
 
@@ -195,29 +200,29 @@ p.means.prelim <- means.prelim %>%
   geom_line(size = geom.line.size, position = position_dodge(width = 0.25)) +
   
   scale_color_manual(values = c(evis = "#b2182b", smmouth = "#2166ac")) +
-  lemon::coord_capped_cart(left = "both") +
+  coord_capped_cart(left = "both") +
   
   annotate(
     geom = "text", x = 0.5, y = 0.12, label = "ventral S1/M1", color = "#2166ac",
-    hjust = 0, vjust = 1, size = label.size*2, fontface = "bold"
+    hjust = 0, vjust = 1, size = label.size*1.5, fontface = "bold"
     ) +
   annotate(
-    geom = "text", x = 0.5, y = 0.05, label = "V1", color = "#b2182b",
-    hjust = 0, vjust = 1, size = label.size*2, fontface = "bold"
+    geom = "text", x = 0.5, y = 0.09, label = "V1", color = "#b2182b",
+    hjust = 0, vjust = 1, size = label.size*1.5, fontface = "bold"
     ) +
   
   annotate(
-    geom = "text", x = 2, y = 0.05,
-    label = paste0("p(distr.-targt.)>0 = ", round(glht.prelim$test$pvalues["distractor-target|evis"], 4)),
+    geom = "text", x = 0.5, y = 0.08,
+    label = paste0("p(distr.-targt.)>0 = ", round(glht.prelim$test$pvalues["distractor-target|V1"], 4)),
     color = "#b2182b",
-    hjust = 0.5, vjust = 1, size = label.size, fontface = "bold"
+    hjust = 0, vjust = 1, size = label.size, fontface = "bold"
     ) +
 
   annotate(
-    geom = "text", x = 1.25, y = 0.1,
+    geom = "text", x = 0.5, y = 0.11,
     label = bquote("p(targt.-distr.)>0 <"~2%*%10^-16),
     color = "#2166ac",
-    hjust = 0.5, vjust = 1, size = label.size, fontface = "bold"
+    hjust = 0, vjust = 1, size = label.size, fontface = "bold"
     ) +
 
   
@@ -233,15 +238,11 @@ p.means.prelim <- means.prelim %>%
     axis.ticks.y    = element_line(size = axis.line.size),
     axis.ticks.x    = element_blank(),
     axis.title    = element_text(size = axis.title.size)
-    )  ## will trip warning due to vectorized input to axis.text.x (for colors)
+    )  ## will trip warning due to bquote weirdness
 
 p.means.prelim
 
 ggsave(here("out", "group", "prelim.pdf"), p.means.prelim, device = "pdf", width = figwidth, height = 3)
-# ggsave(
-#   here("docs", "papers", "ms_v1", "figs", "group", "prelim.pdf"), 
-#   p.means.prelim, device = "pdf", width = figwidth, height = 3
-#   )
 
 ```
 
@@ -472,17 +473,38 @@ contrasts.super <- rbind(
   
   ## region*model means (over hemi)
   
-  DLPFC.target = is.dlpfc * is.target / 2,
-  LPPC.target = is.lppc * is.target / 2,
-  DMFC.target = is.dmfc * is.target / 2,
+  DLPFC_L.target = is.dlpfc * is.target * is.left,
+  LPPC_L.target = is.lppc * is.target * is.left,
+  DMFC_L.target = is.dmfc * is.target * is.left,
+  DLPFC_R.target = is.dlpfc * is.target * is.right,
+  LPPC_R.target = is.lppc * is.target * is.right,
+  DMFC_R.target = is.dmfc * is.target * is.right,
   
-  DLPFC.distractor = is.dlpfc * is.distractor / 2,
-  LPPC.distractor = is.lppc * is.distractor / 2,
-  DMFC.distractor = is.dmfc * is.distractor / 2,
+  DLPFC_L.distractor = is.dlpfc * is.distractor * is.left,
+  LPPC_L.distractor = is.lppc * is.distractor * is.left,
+  DMFC_L.distractor = is.dmfc * is.distractor * is.left,
+  DLPFC_R.distractor = is.dlpfc * is.distractor * is.right,
+  LPPC_R.distractor = is.lppc * is.distractor * is.right,
+  DMFC_R.distractor = is.dmfc * is.distractor * is.right,
+
+  DLPFC_L.incongruency = is.dlpfc * is.incongruency * is.left,
+  LPPC_L.incongruency = is.lppc * is.incongruency * is.left,
+  DMFC_L.incongruency = is.dmfc * is.incongruency * is.left,
+  DLPFC_R.incongruency = is.dlpfc * is.incongruency * is.right,
+  LPPC_R.incongruency = is.lppc * is.incongruency * is.right,
+  DMFC_R.incongruency = is.dmfc * is.incongruency * is.right,
   
-  DLPFC.incongruency = is.dlpfc * is.incongruency / 2,
-  LPPC.incongruency = is.lppc * is.incongruency / 2,
-  DMFC.incongruency = is.dmfc * is.incongruency / 2,
+  # DLPFC.target = is.dlpfc * is.target / 2,
+  # LPPC.target = is.lppc * is.target / 2,
+  # DMFC.target = is.dmfc * is.target / 2,
+  # 
+  # DLPFC.distractor = is.dlpfc * is.distractor / 2,
+  # LPPC.distractor = is.lppc * is.distractor / 2,
+  # DMFC.distractor = is.dmfc * is.distractor / 2,
+  # 
+  # DLPFC.incongruency = is.dlpfc * is.incongruency / 2,
+  # LPPC.incongruency = is.lppc * is.incongruency / 2,
+  # DMFC.incongruency = is.dmfc * is.incongruency / 2,
   
   ## within-region contrasts (over hemi)
   
@@ -508,9 +530,9 @@ contrasts.super <- rbind(
 
 glht.super <- summary(glht(fit.super, contrasts.super), test = adjusted("none"))
 
-p.fdr.tvi.dlpfc.super <- glht.super$test$pvalues[grep("dlpfc_", rownames(contrasts.super))] %>% p.adjust(method = "fdr")
-p.fdr.tvi.lppc.super <- glht.super$test$pvalues[grep("lppc_", rownames(contrasts.super))] %>% p.adjust(method = "fdr")
-p.fdr.tvi.dmfc.super <- glht.super$test$pvalues[grep("dmfc_", rownames(contrasts.super))] %>% p.adjust(method = "fdr")
+p.fdr.tvi.dlpfc.super <- glht.super$test$pvalues[grep("\\|DLPFC_", rownames(contrasts.super))] %>% p.adjust(method = "fdr")
+p.fdr.tvi.lppc.super <- glht.super$test$pvalues[grep("\\|LPPC_", rownames(contrasts.super))] %>% p.adjust(method = "fdr")
+p.fdr.tvi.dmfc.super <- glht.super$test$pvalues[grep("\\|DMFC_", rownames(contrasts.super))] %>% p.adjust(method = "fdr")
 
 contrasts.super.all <- rbind(
   contrasts.super,
@@ -533,8 +555,89 @@ contrasts.super.all <- rbind(
 
 ## table ----
 
+table.group.type <- c(
+  "conditional mean",
+  "conditional mean",
+  "conditional mean",
+  "conditional mean",
+  "conditional mean",
+  "conditional mean",
+  "conditional mean",
+  "conditional mean",
+  "conditional mean",
+  "conditional mean",
+  "conditional mean",
+  "conditional mean",
+  "conditional mean",
+  "conditional mean",
+  "conditional mean",
+  "conditional mean",
+  "conditional mean",
+  "conditional mean",
+  "within-region contrast",
+  "within-region contrast",
+  "within-region contrast",
+  "within-region contrast",
+  "within-region contrast",
+  "within-region contrast",
+  "within-region contrast",
+  "within-region contrast",
+  "within-region contrast",
+  "within-region contrast",
+  "within-region contrast",
+  "within-region contrast",
+  "between-region contrast",
+  "between-region contrast",
+  "between-region contrast",
+  "between-region contrast",
+  "interaction",
+  "interaction"
+)
+
+
+table.group.contrast <- c(
+  "\\textit{target DLPFC (L)}",
+  "\\textit{target LPPC (L)}",
+  "\\textit{target DMFC (L)}",
+  "\\textit{target DLPFC (R)}",
+  "\\textit{target LPPC (R)}",
+  "\\textit{target DMFC (R)}",
+  "\\textit{distractor DLPFC (L)}",
+  "\\textit{distractor LPPC (L)}",
+  "\\textit{distractor DMFC (L)}",
+  "\\textit{distractor DLPFC (R)}",
+  "\\textit{distractor LPPC (R)}",
+  "\\textit{distractor DMFC (R)}",
+  "\\textit{incongruency DLPFC (L)}",
+  "\\textit{incongruency LPPC (L)}",
+  "\\textit{incongruency DMFC (L)}",
+  "\\textit{incongruency DLPFC (R)}",
+  "\\textit{incongruency LPPC (R)}",
+  "\\textit{incongruency DMFC (R)}",
+  "\\textit{DLPFC: }$\\mathit{target}-\\mathit{distractor}$",
+  "\\textit{LPPC: }$\\mathit{target}-\\mathit{distractor}$",
+  "\\textit{DMFC: }$\\mathit{target}-\\mathit{distractor}$",
+  "\\textit{DLPFC: }$\\mathit{target}-\\mathit{incongruency}$",
+  "\\textit{LPPC: }$\\mathit{target}-\\mathit{incongruency}$",
+  "\\textit{DMFC: }$\\mathit{target}-\\mathit{incongruency}$",
+  "\\textit{DLPFC (L): }$\\mathit{target}-\\mathit{incongruency}$",
+  "\\textit{LPPC (L): }$\\mathit{target}-\\mathit{incongruency}$",
+  "\\textit{DMFC (L): }$\\mathit{target}-\\mathit{incongruency}$",
+  "\\textit{DLPFC (R): }$\\mathit{target}-\\mathit{incongruency}$",
+  "\\textit{LPPC (R): }$\\mathit{target}-\\mathit{incongruency}$",
+  "\\textit{DMFC (R): }$\\mathit{target}-\\mathit{incongruency}$",
+  "\\textit{incongruency: }$\\mathit{DLPFC}-\\mathit{DMFC (L)}$",
+  "\\textit{incongruency: }$\\mathit{DLPFC}-\\mathit{LPPC (L)}$",
+  "\\textit{target: }$\\mathit{DLPFC}-\\mathit{DMFC (L)}$",
+  "\\textit{target: }$\\mathit{DLPFC}-\\mathit{LPPC (L)}$",
+  "$(\\mathit{DLPFC}-\\mathit{DMFC (L)})\\times(\\mathit{target}-\\mathit{incongruency})$",
+  "$(\\mathit{DLPFC}-\\mathit{LPPC (L)})\\times(\\mathit{target}-\\mathit{incongruency})$"
+)
+
+
 table.group <- data.frame(
-  contrast = names(glht.super.all$test$coefficients),
+  contrast = table.group.contrast,
+  type = table.group.type,
   b = glht.super.all$test$coefficients,
   se = glht.super.all$test$sigma,
   t = glht.super.all$test$tstat,
@@ -545,11 +648,9 @@ table.group[
   table.group$contrast %in% c(names(p.fdr.tvi.dlpfc.super), names(p.fdr.tvi.lppc.super), names(p.fdr.tvi.dmfc.super)),
   "p"
 ] <- c(p.fdr.tvi.dlpfc.super, p.fdr.tvi.lppc.super, p.fdr.tvi.dmfc.super)
-table.group$contrast %<>%
-  gsub("\\.", " ", .) %>%
-  gsub("\\|", " | ", .) %>%
-  gsub("-", " - ", .)
 rownames(table.group) <- NULL
+# names(table.group)[3] <- "$\\bar\\beta$"
+# names(table.group)[4] <- "$\\sigma$"
 
 kable(table.group)
 
@@ -1128,7 +1229,8 @@ p.fdr.tvi.dmfc.super.alt <- glht.super.all.alt$test$pvalues[grep("dmfc_", rownam
 ## table ----
 
 table.group.alt <- data.frame(
-  contrast = names(glht.super.all.alt$test$coefficients),
+  contrast = table.group.contrast,
+  type = table.group.type,
   b        = glht.super.all.alt$test$coefficients,
   se       = glht.super.all.alt$test$sigma,
   t        = glht.super.all.alt$test$tstat,
@@ -1140,11 +1242,9 @@ table.group.alt[
     c(names(p.fdr.tvi.dlpfc.super.alt), names(p.fdr.tvi.lppc.super.alt), names(p.fdr.tvi.dmfc.super.alt)),
   "p"
 ] <- c(p.fdr.tvi.dlpfc.super.alt, p.fdr.tvi.lppc.super.alt, p.fdr.tvi.dmfc.super.alt)
-table.group.alt$contrast %<>%
-  gsub("\\.", " ", .) %>%
-  gsub("\\|", " | ", .) %>%
-  gsub("-", " - ", .)
 rownames(table.group.alt) <- NULL
+# names(table.group.alt)[3] <- "$\\bar\\beta$"
+# names(table.group.alt)[4] <- "$\\sigma$"
 
 kable(table.group.alt)
 

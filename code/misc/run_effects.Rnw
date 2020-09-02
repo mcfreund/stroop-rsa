@@ -1,0 +1,390 @@
+%% about ----
+%% mike freund, 2019-03-05
+%% 
+
+\documentclass{article}
+
+\usepackage[margin = 0.5in]{geometry}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{caption}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage[natbibapa]{apacite}
+\bibliographystyle{apacite}
+\usepackage{url}
+\renewcommand{\familydefault}{\sfdefault}  %% sans-serif
+\newcommand*{\mono}{\fontfamily{qcr}\selectfont}
+
+
+\begin{document}
+
+\title{testing the impact of unbalanced event counts across runs}
+\author{mike freund}
+\date{\today}
+\maketitle
+
+
+<<setup, echo = FALSE, warning = FALSE, message = FALSE, error = FALSE>>=
+
+
+## set up env ----
+
+library(knitr)
+knitr::opts_chunk$set(
+  echo = FALSE, warning = FALSE, message = FALSE, error = FALSE, results = FALSE, cache = TRUE,
+  fig.align = "center", dev = "pdf", fig.height = 3.5, fig.width = 3.5
+)
+## https://tex.stackexchange.com/questions/148188/knitr-xcolor-incompatible-color-definition/254482
+knit_hooks$set(document = function(x) {sub('\\usepackage[]{color}', '\\usepackage{xcolor}', x, fixed = TRUE)})
+
+library(here)
+library(dplyr)
+library(data.table)
+library(purrr)
+library(ggplot2)
+theme_set(theme_minimal(base_size = 8))
+library(grid)
+library(gridExtra)
+library(colorspace)
+library(mikeutils)
+source(here("code", "funs.R"))
+source(here("code", "strings.R"))
+
+
+## reprisimil matrix
+rsarray <- readRDS(here("out", "rsa", "obsv", "rsarray_pro_bias_acc-only_mmp_pearson.rds"))
+
+## event counts
+counts <- read.csv(here("in", "summary_event-counts.csv"), stringsAsFactors = FALSE)
+names(counts)[1] <- "stimulus"
+counts <- counts[17:32, c("proactive1", "proactive2", "stimulus")]
+
+
+@
+
+
+\section{description}
+
+Here I test whether the imbalance in item events across runs poses a problem for our RSA analyses in stroop proactive.
+That is, does this imbalance distort the similarity structure in measured RSMs?
+Displayed below are the counts per run per item in proactive 
+(see the sheet \path{./Box/stroop-rsa/sheets/summary_event-counts.xlsx} for event counts from all sessions).
+
+\vspace{12pt}
+
+<<table, results = TRUE>>=
+kable(counts)
+@
+
+\vspace{12pt}
+
+\noindent Note that some items (e.g., blueBLUE, bluePURPLE, blueRED) tend to occur mostly in run 1 (8 total), and 
+the other items in run 2.
+
+Questions I'll try to answer:
+
+\begin{enumerate}
+  \item is this run imbalance confounded with our model coding schemes?
+  \item does this run imbalance lead to systematic distortions in our measured similarity matrices?
+  \item if so, does removing this imbalance via linear regression impact our findings?
+\end{enumerate}
+
+\section{a `model' for run effects}
+
+NB: `color' in lowercase, `word' in uppercase. e.g., blueBLUE.
+<<building-mods, fig.height = 2.5, fig.width = 2.5>>=
+
+empty.rsm <- matrix(0, ncol = 16, nrow = 16, dimnames = list(bias.items, bias.items))
+
+## run model:
+
+counts$proactive1 <- counts$proactive1 > 3
+counts$proactive2 <- counts$proactive2 > 3
+run1.items <- counts$stimulus[counts$proactive1]
+run2.items <- counts$stimulus[counts$proactive2]
+
+run.rsm <- empty.rsm
+run.rsm[run1.items, run1.items] <- 1
+run.rsm[run2.items, run2.items] <- 1
+
+
+run1.rsm <- empty.rsm
+run1.rsm[run1.items, run1.items] <- 1
+run2.rsm <- empty.rsm
+run2.rsm[run2.items, run2.items] <- 1
+
+
+## representational models:
+
+target.rsm <- empty.rsm
+distractor.rsm <- empty.rsm
+incongruency.rsm <- empty.rsm
+
+for (color.i in bias.colors) target.rsm[grepl(color.i, bias.items), grepl(color.i, bias.items)] <- 1
+for (word.i in bias.words) distractor.rsm[grepl(word.i, bias.items), grepl(word.i, bias.items)] <- 1
+bias.items.incongruency <- !c(
+  TRUE, FALSE, FALSE, FALSE, FALSE, 
+  TRUE, FALSE, FALSE, FALSE, FALSE, 
+  TRUE, FALSE, FALSE, FALSE, FALSE, 
+  TRUE
+  )  ## in same order as bias.items
+incongruency.rsm[bias.items.incongruency, bias.items.incongruency] <- 1
+
+
+## all looks good with schemes:
+
+qcor(run.rsm, "run model", tl.cex = 0.5, cl.pos = "n")
+qcor(run1.rsm, "run1 model", tl.cex = 0.5, cl.pos = "n")
+qcor(run2.rsm, "run2 model", tl.cex = 0.5, cl.pos = "n")
+qcor(target.rsm, "target model", tl.cex = 0.5, cl.pos = "n")
+qcor(distractor.rsm, "distractor model", tl.cex = 0.5, cl.pos = "n")
+qcor(incongruency.rsm, "incongruency model", tl.cex = 0.5, cl.pos = "n")
+
+## now to correlate...
+
+vectors <- data.frame(
+  run = run.rsm[upper.tri(diag(16))],
+  run1 = run1.rsm[upper.tri(diag(16))],
+  run2 = run2.rsm[upper.tri(diag(16))],
+  tar = target.rsm[upper.tri(diag(16))],
+  dis = distractor.rsm[upper.tri(diag(16))],
+  inc = incongruency.rsm[upper.tri(diag(16))]
+)
+
+@
+
+\vspace{12pt}
+
+And for the lower-triangle correlations among them:
+
+<<mod-cors, results = TRUE>>=
+cor(vectors)  ## very weak correlaions.
+## but, negatively correlated with distractor and congruency, positively correlated with target.
+## ...
+## as first pass sensitivity test, should regress out 'run effects' from matrices and re-run analyses.
+## a more thourough pass would have us (randomly) downsample each stimulus to have equal counts within each run 
+## and subject, then fit fmri glms and conduct analyses---repeating this process a handful (> 100) times.
+
+@
+Very weak correlations.
+But, negatively correlated with distractor and congruency, positively correlated with target.
+This is in line with our results, as we found widespread target coding, and limited distractor and congruency coding.
+The weak correlations with our models are also promising for linear regression (residualization) of the pattern prior to fitting our models.
+
+\section{fitting this `run model' to our brain data}
+
+I fit this `run model' to to each subjects' rsm from each MMP parcel via OLS, in two ways: a linear model
+\[\mathit{atanh}(\mathbf{r}) \sim \mathbf{\mathit{X}} \beta\]
+and a monotonic model
+\[\mathit{rank}(\mathbf{r}) \sim \mathbf{\mathit{X}} \beta,\]
+where $\mathbf{r}$ is the lower-triangle vector of Pearson's correlation statistics from RSM, $\mathit{atanh}$ is the Fisher \textit{z}-transform, $\mathit{rank}$ is the rank-transform, and $\mathbf{\mathit{X}}$ is the lower-triangle vector from the `run model'.
+In both models, the dependent variable was z-score normalized to put the parameter estimates from each model on the same scale.
+ 
+<<fitting-mods>>=
+
+## unwrap run model to lower-tri vector:
+run.rsv <- mat2vec(run.rsm)
+names(run.rsv) <- c("r", "c", "run.model")
+
+## initialize indices and lists
+subjs <- dimnames(rsarray)$subj
+parcels <- dimnames(rsarray)$roi
+stats.linear <- vector("list", length(subjs) * length(parcels))
+names(stats.linear) <- combo_paste(subjs, parcels)
+stats.rank <- stats.linear
+for (n.subj.i in seq_along(subjs)) {
+  for (n.parcel.j in seq_along(parcels)) {
+
+      rsm <- rsarray[, , n.subj.i, n.parcel.j]
+      rsv <- mat2vec(rsm, varnames = c("r", "c"))
+      rsv <- full_join(rsv, run.rsv, by = c("r", "c"))
+
+      fit.linear <- lm(scale(atanh(value)) ~ run.model, rsv)
+      fit.rank <- lm(scale(rank(value)) ~ run.model, rsv)
+
+      name.ijk <- paste(subjs[n.subj.i], parcels[n.parcel.j], sep = "_")
+
+      stats.linear[[name.ijk]] <- data.frame(b = coef(fit.linear)["run.model"], r2 = summary(fit.linear)$r.squared)
+      stats.rank[[name.ijk]] <- data.frame(b = coef(fit.rank)["run.model"], r2 = summary(fit.rank)$r.squared)
+
+  }
+}
+
+stats <- full_join(
+  stats.linear %>% bind_rows(.id = "subj_parcel_hemi") %>% rename(b.linear = b, r2.linear = r2),
+  stats.rank %>% bind_rows(.id = "subj_parcel_hemi") %>% rename(b.rank = b, r2.rank = r2),
+  by = "subj_parcel_hemi"
+)
+stats <- bind_cols(
+  stats,
+  stats$subj_parcel_hemi %>% reshape2::colsplit("_", c("subj", "parcel", "hemi"))
+)
+
+@
+
+Both models yielded relatively similar $\beta$ estimates, with a Pearson's $r = \Sexpr{cor(stats$b.linear, stats$b.rank)}$.
+
+<<plot-stats>>=
+
+stats %>%
+  ggplot(aes(b.linear, b.rank)) +
+  geom_point(aes(alpha = 0.25)) +
+  theme(legend.position = "none") +
+  ggtitle("betas from rank and linear models: by subj*parcel") +
+  geom_abline(slope = 1, intercept = 0)
+@
+
+and $R^2$s:
+<<>>=
+stats %>%
+  ggplot(aes(r2.linear, r2.rank)) +
+  geom_point(aes(alpha = 0.25)) +
+  theme(legend.position = "none") +
+  ggtitle("R^2 from rank and linear models: by subj*parcel") +
+  geom_abline(slope = 1, intercept = 0)
+@
+
+
+
+
+
+<<fitting-mods2>>=
+
+## unwrap run model to lower-tri vector:
+run1.rsv <- mat2vec(run1.rsm)
+names(run1.rsv) <- c("r", "c", "run1.model")
+run2.rsv <- mat2vec(run2.rsm)
+names(run2.rsv) <- c("r", "c", "run2.model")
+run.rsv <- full_join(run1.rsv, run2.rsv, by = c("r", "c"))
+
+## initialize indices and lists
+stats2.linear <- vector("list", length(subjs) * length(parcels))
+names(stats2.linear) <- combo_paste(subjs, parcels)
+stats2.rank <- stats2.linear
+for (n.subj.i in seq_along(subjs)) {
+  for (n.parcel.j in seq_along(parcels)) {
+
+      rsm <- rsarray[, , n.subj.i, n.parcel.j]
+      rsv <- mat2vec(rsm, varnames = c("r", "c"))
+      rsv <- full_join(rsv, run.rsv, by = c("r", "c"))
+
+      fit.linear <- lm(scale(atanh(value)) ~ run1.model + run2.model, rsv)
+      fit.rank <- lm(scale(rank(value)) ~ run1.model + run2.model, rsv)
+
+      name.ijk <- paste(subjs[n.subj.i], parcels[n.parcel.j], sep = "_")
+
+      stats2.linear[[name.ijk]] <- data.frame(b1 = coef(fit.linear)["run1.model"], 
+                                             b2 = coef(fit.linear)["run2.model"],
+                                             r2 = summary(fit.linear)$r.squared)
+      stats2.rank[[name.ijk]] <- data.frame(b1 = coef(fit.rank)["run1.model"], 
+                                           b2 = coef(fit.rank)["run2.model"],
+                                           r2 = summary(fit.rank)$r.squared)
+
+  }
+}
+
+
+stats2.linear <- stats2.linear %>% bind_rows(.id = "subj_parcel_hemi")
+stats2.linear$parcel <- gsub("(.*)_(.*)_(.*)", "\\2_\\3", stats2.linear$subj_parcel_hemi)
+
+stats2.linear %>%
+  group_by(parcel) %>%
+  summarize_if(is.numeric, mean) %>%
+  
+  ggplot(aes(b1, b2)) +
+  geom_point() +
+  geom_abline(slope = -1)
+
+
+stats2.rank <- stats2.rank %>% bind_rows(.id = "subj_parcel_hemi")
+stats2.rank$parcel <- gsub("(.*)_(.*)_(.*)", "\\2_\\3", stats2.rank$subj_parcel_hemi)
+stats2.rank %>%
+  group_by(parcel) %>%
+  summarize_if(is.numeric, mean) %>%
+  
+  ggplot(aes(b1, b2)) +
+  geom_point() +
+  geom_abline(slope = -1)
+
+
+
+@
+
+
+
+
+
+
+\subsection{does this model explain an above-chance level of variance in our models?}
+
+
+<<get-results>>=
+
+results <- stats %>%
+  group_by(parcel, hemi) %>%
+  summarize(
+    mean.b.linear = mean(b.linear),
+    mean.b.rank   = mean(b.rank),
+    p.linear      = wilcox.test(b.linear, alternative = "greater")$p.value,  ## may yield warnings from inexact pval
+    p.rank        = wilcox.test(b.rank, alternative = "greater")$p.value,
+    r2.linear = mean(r2.linear),
+    r2.rank   = mean(r2.rank)
+  ) %>%
+  rename(b.linear = mean.b.linear, b.rank = mean.b.rank)  %>% ## for consistency
+  ungroup %>%
+  mutate(
+    p.linear = p.adjust(p.linear, method = "fdr"),
+    p.rank   = p.adjust(p.rank, method = "fdr")
+    )
+
+
+
+@
+
+At the aggregate parcel level (still split by hemi) most of the betas (from either model) are positive:
+
+<<plot-results-betas>>=
+results %>%
+  ggplot(aes(b.linear, b.rank)) +
+  geom_point(aes(alpha = 0.25)) +
+  theme(legend.position = "none") +
+  ggtitle("betas from rank and linear models: by parcel") +
+  geom_abline(slope = 1, intercept = 0)
+@
+
+and a large proportion of the p-values (from one-tailed wilcoxon sign-rank, whole-brain FDR-corrected) are less than 0.05:
+
+<<plot-results-pvals>>=
+results %>%
+  ggplot(aes(p.linear, p.rank)) +
+  geom_point(aes(alpha = 0.25)) +
+  theme(legend.position = "none") +
+  ggtitle("p values from rank and linear models: by parcel") +
+  geom_hline(yintercept = 0.05) +
+  geom_abline(slope = 1, intercept = 0) +
+  annotate(geom = "text", x = Inf, y = 0.05, label = "p = 0.05", hjust = 1.5, vjust = -0.5)
+
+@
+
+
+\subsection{how much variance in our similarity matrices does this `run model' explain?}
+
+<<>>=
+results %>%
+  ggplot(aes(r2.linear, r2.rank)) +
+  geom_point(aes(alpha = 0.25)) +
+  theme(legend.position = "none") +
+  geom_abline(slope = 1, intercept = 0) +
+  geom_point(
+    data = results %>% summarize(r2.linear = mean(r2.linear), r2.rank = mean(r2.rank)),
+    aes(r2.linear, r2.rank), color = "red", size = 4
+  ) +
+  ggtitle("R^2 from rank and linear models: by parcel")
+@
+
+
+
+
+
+\end{document}

@@ -1,0 +1,72 @@
+## todo
+## 1. incorporate exact RSA pipeline
+##	- prewhitening run effects
+##  - congruency/incongruency model
+##	- fit each subj
+##  - sign rank test
+## 2. add movregs+derivs
+##  - sign rank
+##  - paired sample
+
+
+library(mikeutils)
+library(here)
+library(dplyr)
+library(data.table)
+library(magrittr)
+source(here("code", "strings.R"))
+source(here("code", "funs.R"))
+
+subjs <- 
+  unique(
+	  fread(
+		here("out", "rsa", "stats", paste0("subjs_pro_bias_acc-only_mmp_pearson_residual_glm-tdic.csv"))
+		)$subj
+	)
+	
+xmat.paths <- 
+	file.path(
+		"/data/nil-external/ccp/freund/stroop-rsa/glms",
+		subjs,
+		"results/pro_bias_acc-only/X.xmat.1D"
+		)
+		
+xmats <- lapply(xmat.paths, read_xmat, uncensored = FALSE)
+regnames <- colnames(xmats[[1]])
+ynames <- regnames[grep("movregs", regnames)]
+xnames <- regnames[grep(paste0(bias.items, collapse = "|"), regnames)]
+
+b <- lapply(
+
+	xmats,
+	
+	function(.) {
+		
+		m <- .lm.fit(x = cbind(1, .[, xnames]), y = .[, ynames])
+		
+		B <- t(coef(m))
+		
+		colnames(B) <- c("intercept", bias.items)
+		
+		B
+		
+	}
+)
+
+r <- lapply(b, function(.) cor(.[, -1]))
+r <- array(unlist(r), dim = c(16, 16, length(subjs)))
+rbar <- tanh(apply(atanh(r), 1:2, mean))
+dimnames(rbar) <- list(NULL = bias.items, NULL = bias.items)
+d <- mat2vec(rbar)
+
+.row <- split.str.item(d$.row)
+.col <- split.str.item(d$.col)
+
+X <- cbind(
+	target = .row$color == .col$color,
+	congruency = .row$congruency == .col$congruency,
+	distractor = .row$word == .col$word
+)
+X[] <- as.numeric(X)
+
+lm(d$value ~ X)

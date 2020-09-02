@@ -44,22 +44,27 @@
    </DataFile>
    <DataFile Structure="All"
              DataFileType="CONNECTIVITY_PARCEL_SCALAR"
-             Selected="true">
+             Selected="false">
       ..\group/group_target.pscalar.nii
    </DataFile>
    <DataFile Structure="All"
              DataFileType="CONNECTIVITY_PARCEL_SCALAR"
-             Selected="true">
+             Selected="false">
       ..\group/group_incongruency.pscalar.nii
    </DataFile>
    <DataFile Structure="All"
              DataFileType="CONNECTIVITY_PARCEL_SCALAR"
-             Selected="true">
+             Selected="false">
       ..\group/group_distractor.pscalar.nii
    </DataFile>
    <DataFile Structure="All"
              DataFileType="CONNECTIVITY_PARCEL_SCALAR"
              Selected="true">
       ..\group/conjunction.pscalar.nii
+   </DataFile>
+   <DataFile Structure="All"
+             DataFileType="SCENE"
+             Selected="true">
+      ms_v1.scene
    </DataFile>
 </CaretSpecFile>
