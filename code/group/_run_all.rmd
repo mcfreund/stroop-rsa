@@ -1,0 +1,73 @@
+---
+  title: "group-level analysis: LFPC/DMFC dissociation"
+author: "michael freund"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+  toc: true
+toc_depth: 3
+number_sections: true
+theme: spacelab
+highlight: zenburn
+---
+
+  
+```{r}
+
+knitr::opts_chunk$set(
+  fig.align = 'center', fig.width = 11.5, fig.fullwidth = TRUE,
+  cache = TRUE
+)
+
+
+
+
+
+## underlay for workbench
+
+inds.left <- atlas.key$mmp$roi %>% grep("_L$", .)
+inds.right <- atlas.key$mmp$roi %>% grep("_R$", .)
+atlas.key$mmp$roi <- atlas.key$mmp$roi[c(inds.right, inds.left)]  ## correctly order mmp atlas
+
+fname.pscalar.mmp <- here(
+  "out", "wb", 
+  "Q1-Q6_RelatedValidation210.CorticalAreas_dil_Final_Final_Areas_Group_Colors.32k_fs_LR.pscalar.nii"
+)
+
+if (!file.exists(fname.pscalar.mmp)) cifti.parcellate(name.atlas = "glasser", dir.to.write = here("out", "wb"))
+
+
+read_subj_stats <- function(analysis.group = TRUE, roi.set = "masks") {
+  
+  stats.subjs <- 
+    data.table::fread(here("out", "rsa", "stats", paste0("subjs_pro_bias_acc-only_", roi.set, "_residual.csv")))
+  
+  stats.subjs <- stats.subjs[
+    is.analysis.group == analysis.group & param %in% c("target", "distractor", "incongruency"), 
+    ]  ## EXCLUDE HELD OUT SUBJECTS!
+  
+  if (roi.set == "mmp") {
+    stats.subjs %<>% dplyr::full_join(atlas.key$mmp, by = "roi")
+  } else if (roi.set == "masks") {
+    stats.subjs %<>% dplyr::mutate(
+      roi.hemi = roi, roi = gsub("_L|_R", "", roi), hemi = ifelse(grepl("_L", roi.hemi), "L", "R")
+      )
+  }
+  
+  stats.subjs
+  
+}
+
+read_simil_mats <- function(analysis.group = TRUE, roi.set = "masks", tfrm = "residual-rank") {
+  
+  readRDS(
+    here("out", "rsa", "obsv", "rsarray_pro_bias_acc-only_", roi.set, "_", tfrm, ".rds")
+  )[, , these.subjs, ]
+  
+}
+
+
+
+
+```
+

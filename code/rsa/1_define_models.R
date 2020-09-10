@@ -5,9 +5,6 @@
 ## mike freund, 2019-02-20
 ## adapted for new project directory 2019-12-24
 ##
-## TODO
-## incorporate coding-scheme generation
-## 
 
 ## setup ----
 

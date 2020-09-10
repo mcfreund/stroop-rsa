@@ -6,46 +6,26 @@
 ##  .RDS files to stroop-rsa/out/rsa/.
 ## additionaly saved are mean values for conducting a univariate analysis.
 ## 
-## this script is configured to run as an executable on a *nix system.
-## however, it can also be run locally (on mike's lenovo) in an interactive session.
-## 
-## update: 2020-02-29
-## configured to get RSMs for baseline GLMs.
-## when baseline option specified, only RSMs for Glasser's MMP are estimated, and no univariate stats are calculated, 
-## or saved.
-## i.e., the other input options (a, m, u) are disregarded.
-## 
 ## mike freund, 2019-12-24
 
-## TODO
-## function for matching brick string
 
-
-do.atlas <- FALSE
+do.atlas <- TRUE
 do.masks <- TRUE
-do.univa <- FALSE
-do.rwpro <- FALSE
+do.univa <- TRUE
 
-if (all(!do.atlas, !do.masks, !do.univa, !do.rwpro)) stop(paste0("you must do something!"))
+if (all(!do.atlas, !do.masks, !do.univa)) stop(paste0("you must do something!"))
 
 ## setup ----
 
 source(here::here("code", "strings.R"))
-if (do.atlas | do.univa | do.rwpro) source(here::here("code", "read_atlases.R"))
-if (do.rwpro) {
-  atlas$gordon <- NULL
-  atlas.key$gordon <- NULL
-  do.univa <- FALSE
-  do.masks <- FALSE
-}
+if (do.atlas | do.univa) source(here::here("code", "read_atlases.R"))
 if (do.masks) source(here::here("code", "read_masks.R"))
 
 ## paths, vars
 
 dir.analysis <- here::here("glms")
-glm.name <- ifelse(do.rwpro, "pro_bias_acc-only_downsamp", "pro_bias_acc-only")
 files.dir.analysis <- list.files(dir.analysis, pattern = "stats_var", recursive = TRUE)  ## get fit.subjs
-files.dir.analysis <- files.dir.analysis[grep(glm.name, files.dir.analysis)]
+files.dir.analysis <- files.dir.analysis[grep("pro_bias_acc-only/", files.dir.analysis)]
 fit.subjs <- unique(gsub("/results/.*", "", files.dir.analysis))
 
 ## regs will be used to pull out (via string match) the statistic from the afni brick;
@@ -58,7 +38,7 @@ n.bias.items <- length(bias.items)
 ## this variable defines the outermost loop.
 ## each iteration collates RSMs into a single array, and saves it as a single .rds file.
 sets.of.rois <- character(0)
-if (do.atlas | do.rwpro) sets.of.rois <- c(sets.of.rois, names(atlas))
+if (do.atlas) sets.of.rois <- c(sets.of.rois, names(atlas))
 if (do.masks) sets.of.rois <- c(sets.of.rois, "masks")
 
 
@@ -77,7 +57,7 @@ for (set.i in sets.of.rois) {
     roi.names <- names(masks)
   }
   
-  rsarray.pearson <- array(  ## for representational similarity matrices
+  rsarray <- array(  ## for representational similarity matrices
     NA,
     dim = c(n.bias.items, n.bias.items, n.subj, n.roi),
     dimnames = list(
@@ -87,7 +67,6 @@ for (set.i in sets.of.rois) {
       roi  = roi.names
     )
   )
-  rsarray.euclidean <- rsarray.pearson
   
   ## for tallying voxels:
   voxels.silent <- matrix(NA, nrow = n.roi, ncol = n.subj)  ## for num unresponsive / roi
@@ -106,7 +85,7 @@ for (set.i in sets.of.rois) {
     
     ## get afni images
     
-    dir.glms <- file.path(dir.analysis, fit.subjs[subj.i], "results", glm.name)
+    dir.glms <- file.path(dir.analysis, fit.subjs[subj.i], "results", "pro_bias_acc-only")
     fname.nii <- file.path(dir.glms, paste0("stats_", fit.subjs[subj.i], ".nii.gz"))
     
     if (file.exists(fname.nii)) {
@@ -154,8 +133,11 @@ for (set.i in sets.of.rois) {
       
       ## get and apply mask for roi.i
       
-      if (set.i != "masks") mask.i <- atlas[[set.i]] == roi.i 
-      else mask.i <- masks[[roi.i]] == 1
+      if (set.i != "masks") {
+        mask.i <- atlas[[set.i]] == roi.i 
+      } else {
+        mask.i <- masks[[roi.i]] == 1
+      }
       
       roi.betas <- apply(image.betas, "reg", function(.) .[mask.i])
       
@@ -169,10 +151,9 @@ for (set.i in sets.of.rois) {
       n.voxels <- nrow(roi.betas)
       if (subj.i == 1) voxels.number[n.roi] <- n.voxels
       
-      ## get rsm (pearson and euclidean)
+      ## get rsm
       
-      rsarray.pearson[, , subj.i, roi.i] <- cor(roi.betas[, bias.items])
-      rsarray.euclidean[, , subj.i, roi.i] <- mikeutils::dist2mat(roi.betas[, bias.items]) / n.voxels
+      rsarray[, , subj.i, roi.i] <- cor(roi.betas[, bias.items])
       
       ## get univariate stats (across-voxel means)
       
@@ -190,20 +171,9 @@ for (set.i in sets.of.rois) {
   ## RSA results
   
   saveRDS(
-    rsarray.pearson, 
-    here::here(
-      "out", "rsa", "obsv", 
-      paste0("rsarray_", glm.name, "_", set.i, "_pearson.rds")
-      )
+    rsarray, 
+    here::here("out", "rsa", "obsv", paste0("rsarray_pro_bias_acc-only_", set.i, ".rds"))
     )
-  
-  saveRDS(
-    rsarray.euclidean, 
-    here::here(
-      "out", "rsa", "obsv", 
-      paste0("rsarray_", glm.name, "_", set.i, "_euclidean.rds")
-    )
-  )
   
   ## univariate results
   
@@ -213,7 +183,7 @@ for (set.i in sets.of.rois) {
       roi.means, 
       here::here(
         "out", "rsa", "obsv",  ## not an RSA, but save in ./out/rsa/ for consistency...
-        paste0("roi-means_", glm.name, "_", set.i, ".rds")
+        paste0("roi-means_pro_bias_acc-only_", set.i, ".rds")
       )
     )
     
@@ -227,14 +197,14 @@ for (set.i in sets.of.rois) {
   data.table::fwrite(
     voxels.silent,
     here::here(
-      "out", "summaries", paste0("voxel-counts_unresponsive_", set.i, "_", glm.name, ".csv")
+      "out", "summaries", paste0("voxel-counts_unresponsive_", set.i, "_pro_bias_acc-only.csv")
     )
   )
   
   data.table::fwrite(
     data.table::data.table(roi = roi.names, n.total = voxels.number),
     here::here(
-      "out", "summaries", paste0("voxel-counts_total_", set.i, "_", glm.name, ".csv")
+      "out", "summaries", paste0("voxel-counts_total_", set.i, "_pro_bias_acc-only.csv")
     )
   )
   

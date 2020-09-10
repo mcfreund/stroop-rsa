@@ -52,7 +52,7 @@ for (set.i in sets.of.rois) {
   rsarray <- readRDS(
     here(
       "out", "rsa", "obsv",
-      paste0("rsarray_pro_bias_acc-only_", set.i, "_pearson_residual-rank.rds")
+      paste0("rsarray_pro_bias_acc-only_", set.i, "_residual-rank.rds")
     )
   )
 
@@ -119,7 +119,7 @@ for (set.i in sets.of.rois) {
 
   fwrite(
     stats.subjs,
-    here("out", "rsa", "stats",  paste0("subjs_pro_bias_acc-only_", set.i, "_pearson_residual.csv"))
+    here("out", "rsa", "stats",  paste0("subjs_pro_bias_acc-only_", set.i, "_residual.csv"))
     )
   
   

@@ -319,6 +319,17 @@ cor_ci <- function(d, R = 1E4, type = "bca", method = "pearson", ...) {
   
 }
 
+
+boot_mean_ci <- function(x, R = 1E4, type = "bca", ...) {
+  
+  out <- boot::boot(x, statistic = function(x, ii) mean(x[ii]), R = R)
+  ci <- boot::boot.ci(out, type = type)[[type]][4:5]
+  
+  data.frame(y = out$t0, ymin = ci[1], ymax = ci[2])
+  
+}
+
+
 lm.allcombs <- function(df, yname) {
   ## dependencies: gtools()
   ## warning: number of models fit increases exponentially with ncol(df) (i.e., num explanatory variables)
