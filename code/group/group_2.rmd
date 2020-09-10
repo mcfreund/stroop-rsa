@@ -100,21 +100,20 @@ md <- list(
 ## subject-level data:
 stats.subjs.mmp <- 
   fread(
-    here("out", "rsa", "stats", paste0("subjs_pro_bias_acc-only_mmp_pearson_residual_glm-tdic.csv"))
+    here("out", "rsa", "stats", paste0("subjs_pro_bias_acc-only_mmp_pearson_residual.csv"))
     )
-stats.subjs.mmp <- stats.subjs.mmp[is.analysis.group == TRUE & y == "rank", ]  ## EXCLUDE HELD OUT SUBJECTS!
-stats.subjs.mmp <- stats.subjs.mmp[, "coef" := NULL]
+stats.subjs.mmp <- stats.subjs.mmp[is.analysis.group == TRUE, ]  ## EXCLUDE HELD OUT SUBJECTS!
 stats.subjs.mmp %<>% full_join(atlas.key$mmp, by = "roi")
 
 stats.subjs.super <- 
   fread(
-    here("out", "rsa", "stats", paste0("subjs_pro_bias_acc-only_masks_pearson_residual_glm-tdic.csv"))
+    here("out", "rsa", "stats", paste0("subjs_pro_bias_acc-only_masks_pearson_residual.csv"))
     ) %>%
-    filter(is.analysis.group, y == "rank", param %in% c("target", "distractor", "incongruency")) %>%
+    filter(is.analysis.group, param %in% c("target", "distractor", "incongruency")) %>%
   mutate(roi.hemi = roi, roi = gsub("_L|_R", "", roi), hemi = ifelse(grepl("_L", roi.hemi), "L", "R"))
 
 ## group-level data:
-stats.group.mmp <- fread(here("out", "rsa", "stats", "group_pro_bias_acc-only_mmp_pearson_residual_glm-tdic.csv"))
+stats.group.mmp <- fread(here("out", "rsa", "stats", "group_pro_bias_acc-only_mmp_pearson_residual.csv"))
 stats.group.mmp <- stats.group.mmp[measure == "beta" & y == "rank" & param %in% params.interest, ]
 stats.group.mmp <- stats.group.mmp[, c("measure", "y") := NULL]
 

@@ -78,13 +78,14 @@ write.csv(rsm.target, here("out", "rsa", "mods", "rsm_bias_target.csv"))
 write.csv(rsm.distractor, here("out", "rsa", "mods", "rsm_bias_distractor.csv"))
 write.csv(rsm.congruency, here("out", "rsa", "mods", "rsm_bias_congruency.csv"))
 write.csv(rsm.incongruency, here("out", "rsa", "mods", "rsm_bias_incongruency.csv"))
+write.csv(rsv.models.full, here("out", "rsa", "mods", "rsv_bias_full-matrices.csv"), row.names = FALSE)  ## for plotting
+write.csv(rsv.models.ltri, here("out", "rsa", "mods", "rsv_bias_lower-triangles.csv"), row.names = FALSE)
 
 
-## run models ----
+## run model ----
 
-## proactive run model
 
-counts <- data.table::fread(here("data", "summary_event-counts.csv"))
+counts <- data.table::fread(here("in", "summary_event-counts.csv"))
 # View(counts)
 counts <- counts[counts$stimulus %in% bias.items, c("proactive1", "proactive2", "stimulus")]
 counts$proactive1 <- counts$proactive1 > 3
@@ -99,87 +100,9 @@ rsm.run[run2.items, run2.items] <- 1
 
 qcor(rsm.run, "run model", tl.cex = 0.5)  ## all looks good with schemes:
 
+
 ## write
 
 write.csv(rsm.run, here("out", "rsa", "mods", "rsm_pro_bias_run.csv"))
 
-## baseline run model
 
-counts <- data.table::fread(here("data", "summary_event-counts.csv"))
-# View(counts)
-counts <- counts[counts$stimulus %in% bias.items, c("baseline1", "baseline2", "stimulus")]
-counts[counts$baseline1 == 15, "baseline1"] <- 3  ## downsampled items
-counts[counts$baseline1 == 12, "baseline1"] <- 0
-counts[counts$baseline2 == 15, "baseline2"] <- 3
-counts[counts$baseline2 == 12, "baseline2"] <- 0
-counts$baseline1 <- counts$baseline1 > 0
-counts$baseline2 <- counts$baseline2 > 0
-run1.items <- counts$stimulus[counts$baseline1]
-run2.items <- counts$stimulus[counts$baseline2]
-rsm.run <- matrix(0, ncol = 16, nrow = 16, dimnames = list(bias.items, bias.items))
-rsm.run[run1.items, run1.items] <- 1
-rsm.run[run2.items, run2.items] <- 1
-
-## check
-
-qcor(rsm.run, "run model", tl.cex = 0.5)  ## all looks good with schemes:
-
-
-## write
-
-write.csv(rsm.run, here("out", "rsa", "mods", "rsm_bas_bias_run.csv"))
-
-
-
-## continuous models ----
-
-## read
-
-rsv.models.full.continuous <- read.csv(
-  here("old", "wustl_proj_stroop-rsa", "_to-clean", "_coding-schemes", "coding-schemes.csv"),
-  stringsAsFactors = FALSE
-) %>%
-  filter(set == "bias") %>%
-  select(
-    .row = a, .col = b, 
-    silhou = silh.vec,
-    orthog = seriol06.vec,
-    dphono = phon.word.dist,
-    cielab = cielab.indoor.dist,
-    tphono = phon.color.dist
-  ) %>% 
-  mutate(dphono = -dphono, cielab = -cielab, tphono = -tphono)
-
-rsv.models.full <- full_join(rsv.models.full, rsv.models.full.continuous, by = c(".row", ".col"))
-
-## create matrices
-
-names.continuous <- c("silhou", "orthog", "dphono", "cielab", "tphono")
-rsm.continuous <- lapply(
-  rsv.models.full[names.continuous],
-  function(x) {
-    m <- matrix(x, nrow = length(bias.items))
-    dimnames(m) <- list(bias.items, bias.items)
-    m
-  }
-)
-
-## check
-
-lapply(rsm.continuous, function(x) qcor(scale2unit(x - mean(x))))
-
-## get lower triangles
-
-rsv.models.ltri <- cbind(rsv.models.ltri, lapply(rsm.continuous, function(x) x[lower.tri(x)]))
-
-## write
-
-lapply(
-  names(rsm.continuous), function(name)
-    write.csv(rsm.continuous[[name]], here("out", "rsa", "mods", paste0("rsm_bias_", name, ".csv")))
-)
-
-## write lower triangles and vectors:
-
-write.csv(rsv.models.full, here("out", "rsa", "mods", "rsv_bias_full-matrices.csv"), row.names = FALSE)  ## for plotting
-write.csv(rsv.models.ltri, here("out", "rsa", "mods", "rsv_bias_lower-triangles.csv"), row.names = FALSE)
