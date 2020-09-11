@@ -12,6 +12,7 @@ if (interactive()) {
   
   # behav <- fread(here("in", "behavior-and-events_group201902.csv")) %>% mutate(error = 1 - acc)
   behav <- fread(here("out", "behavior-and-events_group201902_with-subset-cols.csv"))
+  cl1 <- lmeControl(maxIter = 1E5, msMaxIter = 1E5, niterEM = 1E5, msMaxEval = 1E5)
   
 }
 
@@ -134,11 +135,11 @@ fit <- lmer(
 )
 summary(fit)
 
-cl1 <- lmeControl(
-  maxIter = 100000, msMaxIter = 100000, niterEM = 100000,
-  msMaxEval = 100000, tolerance = 0.000001, msTol = 0.0000001, returnObject = TRUE,
-  minAbsParApVar = 0.05, opt = c("nlminb"), optimMethod = "BFGS"
-)
+# cl1 <- lmeControl(
+#   maxIter = 100000, msMaxIter = 100000, niterEM = 100000,
+#   msMaxEval = 100000, tolerance = 0.000001, msTol = 0.0000001, returnObject = TRUE,
+#   minAbsParApVar = 0.05, opt = c("nlminb"), optimMethod = "BFGS"
+# )
 
 fit.het <- lme(
   rt ~ trial.type * mic, 

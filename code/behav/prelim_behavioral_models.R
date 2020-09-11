@@ -11,7 +11,7 @@ if (interactive()) {
   source(here("code", "read_atlases.R"))
   
   behav <- fread(here("in", "behavior-and-events_group201902.csv"))
-  
+  cl1 <- lmeControl(maxIter = 1E5, msMaxIter = 1E5, niterEM = 1E5, msMaxEval = 1E5)
 }
 
 
@@ -126,7 +126,7 @@ fit1.het <- lme(
   random  = ~ trial.type | subj,
   data    = behav.rt.aset,
   weights = varIdent(form = ~ 1 | subj),
-  control = lmeControl(maxIter = 1E9, msMaxIter = 1E9, niterEM = 1E9, msMaxEval = 1E9),
+  control = cl1,
   method  = "REML"
 )
 
@@ -148,7 +148,7 @@ fit1.hom.trim.ml <- lme(
   rt ~ trial.type, 
   random  = ~ trial.type | subj,
   data    = behav.rt.aset %>% filter(!is.far.out),
-  control = lmeControl(maxIter = 1E9, msMaxIter = 1E9, niterEM = 1E9, msMaxEval = 1E9),
+  control = cl1,
   method  = "ML"
 )
 
@@ -168,7 +168,7 @@ fit1.het.run.trim <- lme(
   random  = ~ trial.type * run | subj,
   data    = behav.rt.aset %>% filter(!is.far.out),
   weights = varIdent(form = ~ 1 | subj),
-  control = lmeControl(maxIter = 1E9, msMaxIter = 1E9, niterEM = 1E9, msMaxEval = 1E9),
+  control = cl1,
   method  = "REML"
 )
 summary(fit1.het.run.trim)
