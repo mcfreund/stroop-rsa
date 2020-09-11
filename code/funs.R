@@ -1,4 +1,39 @@
 
+
+read_subj_stats <- function(subjs = subjs.analysis, roi.set = "masks") {
+  
+  stats.subjs <- 
+    data.table::fread(here("out", "rsa", "stats", paste0("subjs_pro_bias_acc-only_", roi.set, "_residual.csv")))
+  
+  stats.subjs <- stats.subjs[subj %in% subjs & param %in% c("target", "distractor", "incongruency"), ]
+  
+  if (roi.set %in% c("mmp", "gordon")) {
+    
+    stats.subjs %<>% dplyr::full_join(atlas.key[[roi.set]], by = "roi")
+    
+  } else if (roi.set == "masks") {
+    
+    stats.subjs %<>% dplyr::mutate(
+      roi.hemi = roi, 
+      roi = gsub("_L|_R", "", roi), 
+      hemi = ifelse(grepl("_L", roi.hemi), "L", "R")
+    )
+    
+  }
+  
+  stats.subjs
+  
+}
+
+read_simil_mats <- function(subjs = subjs.analysis, roi.set = "masks", tfrm = "residual-rank") {
+  
+  readRDS(
+    here("out", "rsa", "obsv", paste0("rsarray_pro_bias_acc-only_", roi.set, "_", tfrm, ".rds"))
+  )[, , subjs, ]
+  
+}
+
+
 split.str.item <- function(col.j, prefix = "") {
   ## takes a single "item" vector, e.g. "blueBLUE", and decomposes
   ## it into color ("blue") word ("BLUE"), congruency ("C"), and label 
@@ -327,6 +362,15 @@ boot_mean_ci <- function(x, R = 1E4, type = "bca", ...) {
   
   data.frame(y = out$t0, ymin = ci[1], ymax = ci[2])
   
+}
+
+logit2prob <- function(x) exp(x) / (1 + exp(x))
+
+
+qqr2 <- function(x, fun = qnorm, ...) {
+  x <- sort(x)
+  q <- fun(p = seq_along(x) / (length(x) + 1), ...)
+  cor(q, x)^2
 }
 
 

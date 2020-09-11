@@ -1,0 +1,50 @@
+---
+title: "behavioral (only) analyses: master report"
+author: "michael freund"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    theme: spacelab
+    highlight: zenburn
+---
+
+
+Generated from rmarkdown file: "code/behav/_behav.rmd".
+This rmd file executes 'child' R-scripts within this directory.
+These child scripts contain analysis code.
+Their output is captured and 'knitted' back into this this report.
+To run the code, you can either execute this .rmd file (i.e., 'knit' to html), or source each child script individually.
+(These child scripts *should* be configured to run on their own.)
+
+
+```{r setup, include = FALSE}
+
+knitr::opts_chunk$set(
+  fig.align = 'center', fig.width = 11.5, fig.fullwidth = TRUE, cache = TRUE
+)
+
+source(here::here("code", "packages.R"))
+source(here("code", "strings.R"))
+source(here("code", "funs.R"))
+source(here("code", "plots.R"))
+source(here("code", "read_atlases.R"))
+
+behav <- fread(here("in", "behavior-and-events_group201902.csv"))
+
+```
+
+# analysis-set subjs: model construction, estimation of stroop effects
+
+`r spin_child('prelim_behavioral_models.R')`
+
+# microphone comparison
+
+`r spin_child('microphone_comparison.R')`
+
+# validation-set subjs: estimation of stroop effects
+
+`r spin_child('prelim_behavioral_models_validation.R')`
+

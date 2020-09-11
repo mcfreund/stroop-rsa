@@ -1,0 +1,76 @@
+---
+title: "group-level analyses: master report"
+author: "michael freund"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    theme: spacelab
+    highlight: zenburn
+---
+
+
+Generated from rmarkdown file: "code/group/_group.rmd".
+This rmd file executes 'child' R-scripts within this directory.
+These child scripts contain analysis code.
+Their output is captured and 'knitted' back into this this report.
+To run the code, you can either execute this .rmd file (i.e., 'knit' to html), or source each child script individually.
+(These child scripts *should* be configured to run on their own.)
+
+
+```{r setup, include = FALSE}
+
+knitr::opts_chunk$set(
+  fig.align = 'center', fig.width = 11.5, fig.fullwidth = TRUE, cache = TRUE
+)
+
+source(here::here("code", "packages.R"))
+source(here("code", "strings.R"))
+source(here("code", "funs.R"))
+source(here("code", "plots.R"))
+source(here("code", "read_atlases.R"))
+
+stats.subjs.super <- read_subj_stats()
+stats.subjs.mmp <- read_subj_stats(roi.set = "mmp")
+rsarray.line <- read_simil_mats(tfrm = "residual-line")  ## for MDS
+rsarray.rank <- read_simil_mats(tfrm = "residual-rank")  ## for noise ceiling
+
+```
+
+# preliminary validation analyses
+
+## visual--somatomotor dissociation
+
+`r spin_child('visual_sm_dissoc.R')`
+
+# MDS of select parcels
+
+`r spin_child('mds.R')`
+
+# MFC/DLPFC/LPPC dissociation analyses
+
+## primary analysis
+  * suerparcel level
+  * more restrictive definitions of DLPFC and DMFC
+
+`r spin_child('fpc_dissoc.R')`
+
+## noise ceiling
+  * does group-level SNR differ between DLPFC and DMFC?
+
+`r spin_child('noise_ceiling.R')`
+`r spin_child('noise_ceiling_tost.R')`
+
+## alternative superparcel definitions
+  * more expansive/inclusive definitions of DLPFC and DMFC
+
+`r spin_child('fpc_dissoc_altdef.R')`
+
+
+## parcel-level analysis
+  * do preferences of superparcels generally reflect those of constituent parcels?
+
+`r spin_child('fpc_dissoc_parcel.R')`
+

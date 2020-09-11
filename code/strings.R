@@ -41,3 +41,7 @@ pc50.words  <- toupper(pc50.colors)
 pc50.items  <- mikeutils::combo.paste(pc50.colors, pc50.words, sep = "")
 pc50.items.incon <- pc50.items[!pc50.items %in% c("blackBLACK", "greenGREEN", "pinkPINK", "yellowYELLOW")]
 pc50.items.con <- pc50.items[!pc50.items %in% pc50.items.incon]
+subjs.analysis <- 
+  unique(data.table::fread(here::here("in", "behavior-and-events_group201902.csv"))[is.analysis.group == TRUE]$subj)
+subjs.validation <- 
+  unique(data.table::fread(here::here("in", "behavior-and-events_group201902.csv"))[is.analysis.group == FALSE]$subj)
