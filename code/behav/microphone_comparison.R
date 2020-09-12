@@ -11,7 +11,7 @@ if (interactive()) {
   source(here("code", "read_atlases.R"))
   
   # behav <- fread(here("in", "behavior-and-events_group201902.csv")) %>% mutate(error = 1 - acc)
-  behav <- fread(here("out", "behavior-and-events_group201902_with-subset-cols.csv"))
+  behav <- fread(here("out", "behav", "behavior-and-events_group201902_with-subset-cols.csv"))
   cl1 <- lmeControl(maxIter = 1E5, msMaxIter = 1E5, niterEM = 1E5, msMaxEval = 1E5)
   
 }
@@ -44,7 +44,7 @@ behav %>%
 
 #+ 
 
-#+ rawvals
+#+ rawvals, fig.height = 3, fig.width = 5
 
 behav %>%
   
@@ -135,12 +135,6 @@ fit <- lmer(
 )
 summary(fit)
 
-# cl1 <- lmeControl(
-#   maxIter = 100000, msMaxIter = 100000, niterEM = 100000,
-#   msMaxEval = 100000, tolerance = 0.000001, msTol = 0.0000001, returnObject = TRUE,
-#   minAbsParApVar = 0.05, opt = c("nlminb"), optimMethod = "BFGS"
-# )
-
 fit.het <- lme(
   rt ~ trial.type * mic, 
   random  = ~ trial.type | subj,
@@ -149,21 +143,25 @@ fit.het <- lme(
   control = cl1
 )
 summary(fit.het)
-
+#+
 #' * fomri microphone recorded faster RTs
 #' * no observed impact of microphone on size of mean stroop effect
 
 
-## differences in variance btw microphones?
-
 #' ### differences in variance between mics?
 #+ vars
 
-fit.het.ml  <- update(m.het, . ~ ., method = "ML")
+fit.het.ml  <- update(fit.het, . ~ ., method = "ML")
 fit.het.mic.ml <- update(fit.het.ml, . ~ ., weights = varIdent(form = ~ 1 | mic))
 fit.hom.mic.ml <- update(fit.het.ml, . ~ ., weights = NULL)
-anova(fit.het.ml, fit.het.mic.ml, fit.hom.mic.ml)
+(anova.mic <- anova(fit.het.ml, fit.het.mic.ml, fit.hom.mic.ml))
 
+modobjs <- list(
+  anova.mic = anova.mic,
+  mic.model.means = fit.het
+)
+
+saveRDS(modobjs, here("out", "behav", "mod_objs_mic.RDS"))
 #+
 #' * microoptics microphone recorded more variable RTs
 

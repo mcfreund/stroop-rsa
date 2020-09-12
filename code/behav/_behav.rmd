@@ -15,9 +15,9 @@ output:
 Generated from rmarkdown file: "code/behav/_behav.rmd".
 This rmd file executes 'child' R-scripts within this directory.
 These child scripts contain analysis code.
-Their output is captured and 'knitted' back into this this report.
+Their output is captured and 'knitted' back into this report.
 To run the code, you can either execute this .rmd file (i.e., 'knit' to html), or source each child script individually.
-(These child scripts *should* be configured to run on their own.)
+(These child scripts *should* be configured to run on their own when sourced directly.)
 
 
 ```{r setup, include = FALSE}
@@ -33,6 +33,7 @@ source(here("code", "plots.R"))
 source(here("code", "read_atlases.R"))
 
 behav <- fread(here("in", "behavior-and-events_group201902.csv"))
+cl1 <- lmeControl(maxIter = 1E5, msMaxIter = 1E5, niterEM = 1E5, msMaxEval = 1E5)
 
 ```
 
@@ -46,5 +47,5 @@ behav <- fread(here("in", "behavior-and-events_group201902.csv"))
 
 # validation-set subjs: estimation of stroop effects
 
-`r spin_child('prelim_behavioral_models_validation.R')`
+`r spin_child('prelim_behavioral_models_validation_set.R')`
 

@@ -11,7 +11,7 @@ library(gifti)  ## must be loaded with mikeutils...
 library(ggplot2)
 library(viridis)
 library(colorspace)
-library(magick)
+# library(magick)
 library(viridis)
 library(cowplot)
 library(grid)

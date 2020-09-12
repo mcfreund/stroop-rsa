@@ -12,6 +12,7 @@ if (interactive()) {
   
   behav <- fread(here("in", "behavior-and-events_group201902.csv"))
   cl1 <- lmeControl(maxIter = 1E5, msMaxIter = 1E5, niterEM = 1E5, msMaxEval = 1E5)
+  
 }
 
 
@@ -159,7 +160,7 @@ fit1.hom.trim.ml <- lme(
 #+ prelim-behav_test-stroopvar-rt
 
 fit0.het.trim.ml <- update(fit1.het.trim.ml, random  = ~ 1 | subj)
-rt.stroopvar <- anova(fit0.het.trim.ml, fit1.het.trim.ml)
+(rt.stroopvar <- anova(fit0.het.trim.ml, fit1.het.trim.ml))
 
 #' ### estimate cross-run reliability
 #+ prelim-behav_est-reliability-rt
@@ -276,7 +277,7 @@ plot.behav <-
     strip.placement  = "outside",
     strip.background = element_blank(),
     strip.text       = element_text(size = axis.title.size),
-    axis.line.y     = element_line(size = axis.line.size),
+    axis.line.y     = element_line(size = axis.line.size*0.6),
     axis.text.y     = element_text(size = axis.text.size),
     axis.text.x     = element_blank(),
     axis.ticks.y    = element_line(size = axis.line.size),
@@ -285,7 +286,7 @@ plot.behav <-
     axis.title.y = element_blank()
   )
 
-ggsave()
+ggsave(here("out", "behav", "stroop-blups.pdf"), height = 2.5, width = figwidth)
 
 ## write
 
