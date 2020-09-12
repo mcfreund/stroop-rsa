@@ -1,16 +1,10 @@
+library(here)
+library(knitr)
+
 ## misc
 
 library(mikeutils)
 library(gifti)  ## must be loaded with mikeutils...
-
-## wrangling
-
-library(here)
-library(knitr)
-library(magrittr)
-library(dplyr)
-library(data.table)
-library(tidyr)
 
 ## vis
 
@@ -44,3 +38,10 @@ library(lmerTest)
 library(multcomp)
 
 
+## wrangling
+
+library(magrittr)
+library(dplyr)
+library(purrr)
+library(tidyr)
+library(data.table)

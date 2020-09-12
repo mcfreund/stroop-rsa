@@ -84,55 +84,216 @@ saveRDS(superparcels, here::here("out", "masks", "ids_superparcels.RDS"))
 
 ## create workbench files ----
 
+
+
 ## all superparcels
 
-# superparcels <- atlas.key$mmp
-# superparcels$id <- "none"
-# for (superparcel.i in seq_along(superparcels)) {
-#   superparcels$id[superparcels$roi %in% superparcels[[superparcel.i]]] <- names(superparcels)[superparcel.i]
-# }
-# superparcels$id <- relevel(as.factor(superparcels$id), "none")
-# overlay <- superparcels %>% select(roi, id)
-# overlay$id <- as.numeric(overlay$id) - 1
-# 
-# inds.left <- atlas.key$mmp$roi %>% grep("_L$", .)
-# inds.right <- atlas.key$mmp$roi %>% grep("_R$", .)
-# atlas.key$mmp$roi <- atlas.key$mmp$roi[c(inds.right, inds.left)]
-# 
-# overlay$roi.num <- match(overlay$roi, atlas.key$mmp$roi)
-# overlay %<>% arrange(roi.num)
-# 
-# cifti.convert(
-#   fname.overlay = "superparcels_superparcels",
-#   values.overlay = overlay$id,
-#   dir.template = here("out", "figs"),
-#   name.atlas = "glasser",
-#   dir.to.write = here("out", "figs", "ms_v1_2020-03", "indif_explor")
-# )
+atlas.key$mmp$id <- "none"
+superparcels4wb <- superparcels[names(superparcels)[-grep("\\.alt", names(superparcels))]]
+for (superparcel.i in seq_along(superparcels4wb)) {
+  atlas.key$mmp$id[atlas.key$mmp$roi %in% superparcels4wb[[superparcel.i]]] <- names(superparcels4wb)[superparcel.i]
+}
+atlas.key$mmp$id <- relevel(as.factor(atlas.key$mmp$id), "none")
+overlay <- atlas.key$mmp %>% select(roi, id)
+overlay$id <- as.numeric(overlay$id) - 1
+overlay$roi.num <- match(overlay$roi, atlas.key$mmp$roi)
+overlay %<>% arrange(roi.num)
+cifti.convert(
+  fname.overlay  = "superparcels_all",
+  values.overlay = overlay$id,
+  dir.template   = here("out", "wb"),
+  name.atlas     = "glasser",
+  dir.to.write   = here("out", "masks")
+)
 
 
-## only lateral and medial pfc, ips
+## only ROIs
+overlay.rois <- overlay
+inds.rois <- which(levels(atlas.key$mmp$id) %in% c("lppc_L", "lppc_R", "dlpfc_L", "dlpfc_R", "dmfc_L", "dmfc_R"))-1
+overlay.rois$id[!overlay.rois$id %in% inds.rois] <- 0
+cifti.convert(
+  fname.overlay  = "superparcels_rois",
+  values.overlay = overlay.rois$id,
+  dir.template   = here("out", "wb"),
+  name.atlas     = "glasser",
+  dir.to.write   = here("out", "masks")
+)
 
-# superparcels$id <- "none"
-# anatfunc.dissoc <- anatfunc[grep("lppc|mfc|dlpfc", names(anatfunc))]
-# for (superparcel.i in seq_along(anatfunc.dissoc)) {
-#   superparcels$id[superparcels$roi %in% anatfunc.dissoc[[superparcel.i]]] <- names(anatfunc.dissoc)[superparcel.i]
-# }
-# superparcels$id <- relevel(as.factor(superparcels$id), "none")
-# overlay <- superparcels %>% select(roi, id)
-# overlay$id <- as.numeric(overlay$id) - 1
-# 
-# inds.left <- atlas.key$mmp$roi %>% grep("_L$", .)
-# inds.right <- atlas.key$mmp$roi %>% grep("_R$", .)
-# atlas.key$mmp$roi <- atlas.key$mmp$roi[c(inds.right, inds.left)]
-# 
-# overlay$roi.num <- match(overlay$roi, atlas.key$mmp$roi)
-# overlay %<>% arrange(roi.num)
-# 
-# cifti.convert(
-#   fname.overlay = "superparcels_anatfunc_dissoc",
-#   values.overlay = overlay$id,
-#   dir.template = here("out", "figs"),
-#   name.atlas = "glasser",
-#   dir.to.write = here("out", "figs", "ms_v1_2020-03", "indif_dissoc")
-# )
+
+## for gordon smmouth
+
+fname.overlay <- "gordon"
+dir.to.write <- here("out", "masks")
+dir.origwd <- getwd()
+setwd("C:/Program Files/workbench-windows64-v1.2.3/workbench/bin_windows64")
+## for reading and writing files
+s1200.path <- "C:/local/atlases/surf/HCP_S1200_GroupAvg_v1/" ## HCP S1200 Group Average Data Release  
+fname.template <- "gordon-template.pscalar.nii"  ## filename for the template we'll make
+
+## make a template pscalar.nii from the GORDON atlas  
+system(
+  paste0(
+    "wb_command -cifti-parcellate ", s1200.path, "S1200.thickness_MSMAll.32k_fs_LR.dscalar.nii ", 
+    "C:/local/atlases/gordon/gordon_parcels/Parcels/Parcels_LR.dlabel.nii COLUMN ",  
+    file.path(dir.to.write, fname.template)
+  )
+)
+if (!file.exists(file.path(dir.to.write, fname.template))) stop(paste0("missing: ", dir.to.write, fname.template))
+
+## make a text version of the template, which has 360 rows, but the values in each row aren't the parcel numbers.  
+system(
+  paste0(
+    "wb_command -cifti-convert -to-text ", file.path(dir.to.write, fname.template), " ", file.path(dir.to.write, fname.overlay), "_text.txt"
+  )
+)
+
+
+## the text file needs to be arranged with the 180 right hemisphere parcels in the first 180 rows (in order),   
+## then the 180 parcels for the left hemisphere.  
+
+gordon.parcels <- read.csv("C:/local/atlases/gordon/Parcels.csv", stringsAsFactors = FALSE)
+# gordon.parcels <- arrange(gordon.parcels, desc(Hem), ParcelID)
+# gordon.parcels$comm.num <- as.numeric(as.factor(gordon.parcels$Community))
+# write.table(gordon.parcels$comm.num, file.path(dir.to.write, paste0(fname.overlay, ".txt")), col.names = FALSE, row.names = FALSE)
+write.table(
+  as.numeric(gordon.parcels$Community == "SMmouth"),
+  file.path(dir.to.write, paste0(fname.overlay, ".txt")), col.names = FALSE, row.names = FALSE
+)
+
+## create a CIFTI from the text file for viewing in Workbench  
+system(
+  paste0(
+    "wb_command -cifti-convert -from-text ", file.path(dir.to.write, paste0(fname.overlay, ".txt ")), 
+    file.path(dir.to.write, fname.template), " ", file.path(dir.to.write, paste0(fname.overlay, ".pscalar.nii"))
+  )
+)
+if (!file.exists(file.path(dir.to.write, paste0(fname.overlay, ".pscalar.nii")))) {
+  stop(paste("missing:", file.path(dir.to.write, paste0(fname.overlay, ".pscalar.nii"))))
+}
+setwd(dir.origwd)
+
+
+
+
+## make table for masks ----
+
+## get network info for each MMP parcel:
+
+coleanticevic <- RCurl::getURL(
+  "https://raw.githubusercontent.com/ColeLab/ColeAnticevicNetPartition/master/CortexSubcortex_ColeAnticevic_NetPartition_wSubcorGSR_parcels_LR_LabelKey.txt"
+)
+coleanticevic <- fread(text = coleanticevic)
+coleanticevic <- coleanticevic[!is.na(GLASSERLABELNAME), c("NETWORK", "GLASSERLABELNAME")]
+coleanticevic$GLASSERLABELNAME <- gsub("(^.)_(.*)_ROI", "\\2_\\1", coleanticevic$GLASSERLABELNAME)
+coleanticevic %<>% rename(roi = GLASSERLABELNAME, network = NETWORK)
+atlas.key$mmp <- full_join(atlas.key$mmp, coleanticevic, by = "roi")
+
+## MD assignments (Assem et al)
+
+md <- list(
+  core       = c("p9-46v", "a9-46v", "i6-8", "AVI", "8C", "IFJp", "IP2", "IP1", "PFm", "8BM", "SCEF"),
+  extended   = c(
+    "a9-46v", "p10p", "a10p", "11l", "a47r", "p47r", "FOP5", "AVI", "p9-46v", "8C", "IFJp", "6r", "s6-8", "i6-8",
+    "SCEF", "8BM", "a32pr", "d32",
+    "TE1m", "TE1p",
+    "AIP", "IP2", "LIPd", "MIP", "IP1", "PGs", "PFm", "POS2"
+    # "p9-46v", "a9-46v", "i6-8", "AVi", "8C", "IFJp", "IP2", "IP1", "PFm", "8BM",
+    # "TE1m", "TE1p", "PGs", "PFm", "AIP", "MIP", "LIPd", "IP1", "IP2", "s6-8", 
+    # "i6-8", "a9-46v", "FOP5", "AVI", "11l", "a10p", "p10p", "a47r", "p47r"
+  )
+)
+# length(setdiff(md$extended, md$core))
+# length(md$core)
+# md$extended[!md$extended %in% gsub("_R|_L", "", atlas.key$mmp$roi)]
+
+atlas.key$mmp$md <- ifelse(
+  atlas.key$mmp$roi %in% combo_paste(md$core, c("R", "L")), 
+  "core",
+  ifelse(
+    atlas.key$mmp$roi %in% combo_paste(md$extended, c("R", "L")), 
+    "extended", "none"
+  )
+)
+
+
+
+## LPPC
+lppc <- atlas.key$mmp %>% filter(roi %in% c(superparcels$lppc_L, superparcels$lppc_R))
+
+## DLPFC
+dlpfc <- atlas.key$mmp %>%  filter(roi %in% c(superparcels$dlpfc_L, superparcels$dlpfc_R))
+
+## DMFC
+dmfc <- atlas.key$mmp %>% filter(roi %in% c(superparcels$dmfc_L, superparcels$dmfc_R))
+
+## DLPFC---alt
+dlpfc.alt <- atlas.key$mmp %>%  filter(roi %in% c(superparcels$dlpfc.alt_L, superparcels$dlpfc.alt_R))
+
+## DMFC---alt
+dmfc.alt <- atlas.key$mmp %>% filter(roi %in% c(superparcels$dmfc.alt_L, superparcels$dmfc.alt_R))
+
+lppc
+dmfc
+dlpfc.alt
+dmfc.alt
+
+## superparcel table
+
+
+superparcel.info <- data.frame(region = names(superparcels4wb), nvox = NA)
+for (n.superparcel.i in seq_along(superparcels4wb)) {
+  # n.superparcel.i = 1
+  
+  superparcel.i <- names(superparcels4wb)[n.superparcel.i]
+  is.in.superparcel <- atlas.key$mmp$roi %in% superparcels4wb[[superparcel.i]]
+  inds.superparcel <- atlas.key$mmp$num.roi[is.in.superparcel]
+  nvox <- sum(atlas$mmp %in% inds.superparcel)
+  
+  superparcel.info[n.superparcel.i, "nvox"] <- nvox
+  
+}
+
+superparcel.info$nparc <- sapply(superparcels4wb, length)
+superparcel.info$hemi <- substr(
+  superparcel.info$region,
+  sapply(as.character(superparcel.info$region), nchar),
+  sapply(as.character(superparcel.info$region), nchar)
+)
+
+nvox.smmouth <- sum(atlas$gordon %in% atlas.key$gordon$num.roi[atlas.key$gordon$roi %in% c("smmouth_L", "smmouth_R")])
+superparcel.info %<>% rbind(
+  data.frame(region = "smmouth", nvox = nvox.smmouth, nparc = NA, hemi = "bil.")
+)
+
+
+parcels <- lapply(superparcels4wb[-grep("_R$|V1", names(superparcels4wb))], function(x) gsub("_L|_R", "", x) %>% unique)
+parcels <- sapply(parcels, function(x) paste0(x, collapse = ", "))
+
+tab.sp <- superparcel.info %>% filter(hemi != "R", region != "V1")
+tab.sp$hemi[tab.sp$hemi != "L"] <- "bil."
+tab.sp$hemi[tab.sp$hemi == "L"] <- "L, R"
+tab.sp$parcels <- c(parcels, "")
+
+tab.sp$abbreviation <- NA
+tab.sp$abbreviation[tab.sp$region == "lppc_L"] <- "LPPC"
+tab.sp$abbreviation[tab.sp$region == "dmfc_L"] <- "DMFC"
+tab.sp$abbreviation[tab.sp$region == "dlpfc_L"] <- "DLPFC"
+tab.sp$abbreviation[tab.sp$region == "dpm_L"] <- "dors. premotor"
+tab.sp$abbreviation[tab.sp$region == "vpm_L"] <- "vent. premotor"
+tab.sp$abbreviation[tab.sp$region == "vvis_L"] <- "vent. visual"
+tab.sp$abbreviation[tab.sp$region == "ins_L"] <- "ant. insular"
+tab.sp$abbreviation[tab.sp$region == "ifc_L"] <- "inf. frontal"
+tab.sp$abbreviation[tab.sp$region == "ofc_L"] <- "orbitofrontal"
+tab.sp$abbreviation[tab.sp$region == "fpc_L"] <- "frontopolar"
+tab.sp$abbreviation[tab.sp$region == "evis"] <- "V1--V3"
+tab.sp$abbreviation[tab.sp$region == "smmouth"] <- "vent. somatomotor"
+tab.sp$abbreviation[tab.sp$region == "aud"] <- "early auditory"
+
+tab.sp$nvox[tab.sp$hemi == "L, R"] <- paste0(
+  tab.sp %>% filter(hemi == "L, R") %>% pull(nvox), ", ",
+  superparcel.info %>% filter(hemi == "R", region != "V1") %>% pull(nvox)
+  )
+
+tab.sp %<>% rename("nvox (L, R)" = nvox)
+tab.sp %<>% .[c("abbreviation", "hemi", "parcels", "nvox (L, R)")]
+fwrite(tab.sp, here("out", "masks", "superparcel_all.csv"))

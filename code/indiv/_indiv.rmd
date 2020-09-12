@@ -18,27 +18,22 @@ Their output is captured and 'knitted' back into this this report.
 To run the code, you can either execute this .rmd file (i.e., 'knit' to html), or source each child script individually.
 (These child scripts *should* be configured to run on their own.)
 
+`r knitr::spin_child('setup.R')`
 
-```{r setup, include = FALSE}
+# dissociation analysis
 
-knitr::opts_chunk$set(
-  fig.align = 'center', fig.width = 11.5, fig.fullwidth = TRUE, cache = TRUE
-)
+## bivariate associations
 
-source(here::here("code", "packages.R"))
-source(here("code", "strings.R"))
-source(here("code", "funs.R"))
-source(here("code", "plots.R"))
-source(here("code", "read_atlases.R"))
+`r spin_child('bivar_superparcel.R')`
 
-stats.subjs.super <- read_subj_stats()
-# rsarray.line <- read_simil_mats(tfrm = "residual-line")  ## for MDS
-# rsarray.rank <- read_simil_mats(tfrm = "residual-rank")  ## for noise ceiling
+## within-region interactions (contrasts on slopes)
 
-```
+`r spin_child('wn_roi_contrast.R')`
 
-# preliminary validation analyses
+## full dissociation model (4-way interaction)
 
-## visual--somatomotor dissociation
+`r spin_child('full_model.R')`
 
-<!-- `r spin_child('visual_sm_dissoc.R')` -->
+# model selection analysis
+
+`r spin_child('model_selection.R')`

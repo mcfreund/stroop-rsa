@@ -61,7 +61,7 @@ if (!file.exists(fname.seoi) || !file.exists(fname.curve)) {
 ## plot
 
 plot(d$effect.size, d$hit.rate, main = "effect size (cohen's d) by hit rate (power) of percentile bootstrap")
-lines(d$effect.size, fit$fitted, col = "firebrick")
+lines(d$effect.size, d$fitted, col = "firebrick")
 abline(h = 0.8)
 abline(v = sesoi)
 

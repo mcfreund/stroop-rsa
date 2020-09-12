@@ -59,12 +59,32 @@
    </DataFile>
    <DataFile Structure="All"
              DataFileType="CONNECTIVITY_PARCEL_SCALAR"
-             Selected="true">
+             Selected="false">
       ..\group/conjunction.pscalar.nii
+   </DataFile>
+   <DataFile Structure="All"
+             DataFileType="CONNECTIVITY_PARCEL_SCALAR"
+             Selected="true">
+      ..\masks/superparcels_all.pscalar.nii
+   </DataFile>
+   <DataFile Structure="All"
+             DataFileType="CONNECTIVITY_PARCEL_SCALAR"
+             Selected="true">
+      ..\masks/superparcels_rois.pscalar.nii
+   </DataFile>
+   <DataFile Structure="All"
+             DataFileType="CONNECTIVITY_PARCEL_SCALAR"
+             Selected="true">
+      ..\masks/gordon.pscalar.nii
    </DataFile>
    <DataFile Structure="All"
              DataFileType="SCENE"
              Selected="true">
       ms_v1.scene
+   </DataFile>
+   <DataFile Structure="All"
+             DataFileType="SCENE"
+             Selected="true">
+      ms_v1_superparcels.scene
    </DataFile>
 </CaretSpecFile>

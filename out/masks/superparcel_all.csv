@@ -1,0 +1,14 @@
+abbreviation,hemi,parcels,"nvox (L, R)"
+LPPC,"L, R","IP0, IPS1, IP1, MIP, 7PL, 7AL, 7PC, VIP, LIPv, LIPd, AIP, IP2","960, 1049"
+DMFC,"L, R","SCEF, 8BM, p32pr, a32pr","618, 624"
+DLPFC,"L, R","p9-46v, i6-8, 8Av, 8C","721, 636"
+dors. premotor,"L, R","6a, FEF, 6ma","508, 495"
+vent. premotor,"L, R","6v, PEF, 6r, 55b, IFJp","629, 572"
+vent. visual,"L, R","FFC, VVC, V8, VMV3","648, 721"
+ant. insular,"L, R","FOP4, FOP5, FOP3, AVI, MI","527, 536"
+inf. frontal,"L, R","IFJa, 44, 45, IFSa, p47r, IFSp, a47r, 47l","1065, 1263"
+orbitofrontal,"L, R","47s, 47m, 11l, 13l, OFC, 10pp, 10v, 10r, s32, p32, a24, 25, pOFC","1927, 1810"
+frontopolar,"L, R","46, 9-46d, a9-46v, a10p, p10p, a47r, 9a, 9p, 10d","1657, 1769"
+early auditory,bil.,"LBelt, A1, MBelt, PBelt",473
+V1--V3,bil.,"V1, V2, V3",3904
+vent. somatomotor,bil.,"",1114

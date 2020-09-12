@@ -1,6 +1,6 @@
 #+ fpc-dissoc-altdef_setup, include = FALSE
 
-if (interactive()) source(here::here("code", "group", "mds.R"))
+if (interactive()) source(here::here("code", "group", "fpc_dissoc.R"))
 
 #' ### model and table
 #+ fpc-dissoc-altdef_model, fig.height = 7, fig.width = 9
@@ -8,20 +8,24 @@ if (interactive()) source(here::here("code", "group", "mds.R"))
 fit.super.alt <- update(
   fit.super,
   . ~ . -  (roi * param | subj) + (roi + param | subj), 
-  data = stats.subjs.super %>% filter(roi %in% c("dlpfc.alt", "dmfc.alt", "lppc"))
+  data = stats.subjs.super %>% filter(roi %in% c("dlpfc.alt", "dmfc.alt", "lppc")),
+  control = lmerControl(optimizer = "bobyqa")
 )
 summary(fit.super.alt)
 
 glht.super.all.alt <- summary(glht(fit.super.alt, contrasts.super.all), test = adjusted("none"))
 
-p.fdr.tvi.dlpfc.super.alt <- glht.super.all.alt$test$pvalues[grep("dlpfc_", rownames(contrasts.super))] %>% 
+p.fdr.tvi.dlpfc.super.alt <- 
+  glht.super.all.alt$test$pvalues[grep("dlpfc_", rownames(contrasts.super))] %>% 
   p.adjust(method = "fdr")
-p.fdr.tvi.lppc.super.alt <- glht.super.all.alt$test$pvalues[grep("lppc_", rownames(contrasts.super))] %>% 
+p.fdr.tvi.lppc.super.alt <- 
+  glht.super.all.alt$test$pvalues[grep("lppc_", rownames(contrasts.super))] %>% 
   p.adjust(method = "fdr")
-p.fdr.tvi.dmfc.super.alt <- glht.super.all.alt$test$pvalues[grep("dmfc_", rownames(contrasts.super))] %>% 
+p.fdr.tvi.dmfc.super.alt <- 
+  glht.super.all.alt$test$pvalues[grep("dmfc_", rownames(contrasts.super))] %>% 
   p.adjust(method = "fdr")
 
-## table ----
+## table
 
 table.group.alt <- data.frame(
   contrast = table.group.contrast,
@@ -38,9 +42,13 @@ table.group.alt[
   "p"
   ] <- c(p.fdr.tvi.dlpfc.super.alt, p.fdr.tvi.lppc.super.alt, p.fdr.tvi.dmfc.super.alt)
 rownames(table.group.alt) <- NULL
+
+table.group.alt <- table.group.alt[grep("DLPFC|DMFC", table.group.alt$contrast), ]  ## subset important rows
 kable(table.group.alt)
 
 fwrite(table.group.alt, here("out", "group", "superparcels_alt.txt"))
+
+#+ 
 
 #' ### plot
 #+ fpc-dissoc-altdef_plot, fig.height = 7, fig.width = 9
