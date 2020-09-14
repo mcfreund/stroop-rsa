@@ -138,12 +138,6 @@ w.super$lfp_R_target <- (w.super$dlpfc_R_target + w.super$lppc_R_target) / 2
 w.super$lfp_R_incongruency <- (w.super$dlpfc_R_incongruency + w.super$lppc_R_incongruency) / 2
 
 
-d.dissoc.hlm <- full_join(
-  fit1.het.trim$data %>% filter(!is.far.out), 
-  w.super %>% filter(is.analysis.group) %>% ungroup %>% select(subj, one_of(hyps)),
-  by = "subj"
-)
-
 d.dissoc.hlm$lfp_R_target <- (d.dissoc.hlm$dlpfc_R_target + d.dissoc.hlm$lppc_R_target) / 2
 d.dissoc.hlm$lfp_R_incongruency <- (d.dissoc.hlm$dlpfc_R_incongruency + d.dissoc.hlm$lppc_R_incongruency) / 2
 
@@ -164,3 +158,87 @@ d.super %<>%
   }
 #+
 
+#+ plot-panel-a
+
+set.seed(0)
+cor.dmfc.l.incongruency <- cor_ci(w.super[c("dmfc_L_incongruency", "stroop")], R = 1E4)
+cor.lfp.r.target <- cor_ci(w.super[c("lfp_R_target", "stroop")], R = 1E4)
+cor.dmfc.l.incongruency.rank <- w.super[c("dmfc_L_incongruency", "stroop")] %>% mutate_all(rank) %>% cor_ci(R = 1E4)
+cor.lfp.r.target.rank <- w.super[c("lfp_R_target", "stroop")] %>% mutate_all(rank) %>% cor_ci(R = 1E4)
+
+w.super %>%
+  
+  filter(is.analysis.group) %>%
+  
+  ggplot() +
+  
+  stat_boot_ci(aes(lfp_R_target, stroop), n = 1E4, alpha = 0.3, fill = colors.model["target"]) +
+  stat_smooth(aes(lfp_R_target, stroop), method = "lm", color = colors.model["target"], se = FALSE) +
+  
+  stat_boot_ci(aes(dmfc_L_incongruency, stroop), n = 1E4, alpha = 0.3, fill = colors.model["incongruency"]) +
+  stat_smooth(aes(dmfc_L_incongruency, stroop), method = "lm", color = colors.model["incongruency"], se = FALSE) +
+  
+  geom_point(
+    aes(lfp_R_target, stroop), 
+    fill = colors.model["target"], color = "white", shape = 21, size = geom.point.size*2
+  ) +
+  geom_point(
+    aes(dmfc_L_incongruency, stroop),
+    fill = colors.model["incongruency"], color = "white", shape = 21, size = geom.point.size*2
+  ) +
+  
+  annotate(
+    geom = "text", x = 0.3, y = 40, 
+    label = paste0(
+      "MFC incon.:\nr = ", 
+      round(cor.dmfc.l.incongruency$t0, 2), ", [", 
+      round(cor.dmfc.l.incongruency$lower, 2), ", ", 
+      round(cor.dmfc.l.incongruency$upper, 2), "]\n\U03C1 = ",
+      
+      round(cor.dmfc.l.incongruency.rank$t0, 2), ", [", 
+      round(cor.dmfc.l.incongruency.rank$lower, 2), ", ", 
+      round(cor.dmfc.l.incongruency.rank$upper, 2), "]"
+    ),
+    size = label.size,
+    hjust = 0,
+    fontface = "italic",
+    color = colors.model["incongruency"]
+  ) +
+  
+  annotate(
+    geom = "text", x = -0.35, y = 140, 
+    label = paste0(
+      "LFP target:\nr = ", 
+      round(cor.lfp.r.target$t0, 2), ", [", 
+      round(cor.lfp.r.target$lower, 2), ", ", 
+      round(cor.lfp.r.target$upper, 2), "]\n\U03C1 = ",
+      
+      round(cor.lfp.r.target.rank$t0, 2), ", [", 
+      round(cor.lfp.r.target.rank$lower, 2), ", ", 
+      round(cor.lfp.r.target.rank$upper, 2), "]"
+    ),
+    size = label.size,
+    hjust = 0,
+    fontface = "italic",
+    color = colors.model["target"]
+  ) +
+  
+  theme_bw(base_size = 8) +
+  
+  coord_capped_cart(left = "both", bottom = "both") +
+  
+  theme(
+    panel.grid      = element_blank(), 
+    panel.border    = element_blank(),
+    # plot.margin     = unit(c(0, 0, 0, 0), "cm") ,
+    axis.line       = element_line(size = axis.line.size),
+    axis.text       = element_text(size = axis.text.size),
+    axis.ticks      = element_line(size = axis.line.size),
+    axis.title      = element_text(size = axis.title.size*1.5)
+  ) +
+  
+  labs(y = "Stroop effect (RT)", x = bquote("Model fit ("*beta*")"))
+
+p.dissoc <- last_plot()
+
+#+

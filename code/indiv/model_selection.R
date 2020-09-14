@@ -1,7 +1,8 @@
 #+ model-selection_fit
 ## estimate model ----
 
-X.super <- m.super[ids$is.analysis.group, -(1:2)]  ## analysis set
+rm.these <- grep("stroop|^congr$|V1|\\.alt", colnames(m.super))
+X.super <- m.super[ids$is.analysis.group, -rm.these]  ## analysis set
 
 lambdas.super <- tune_lambda(X.super, strooprt, alpha = 0.5, selection_crit = function(fit) fit$lambda.1se)
 hist(lambdas.super, breaks = 50, col = "grey50")
@@ -13,13 +14,13 @@ coef(net.super)
 
 ## estimate test error ----
 
-X.super_p <- m.super[!ids$is.analysis.group, -(1:2)]  ## 'held out' / validation set
+X.super_vset <- m.super[!ids$is.analysis.group, -rm.these]  ## 'held out' / validation set
 
 ## observed error
 
 ys.super <- cbind(
-  y = c(strooprt_p),
-  yhat = c(predict(net.super, newx = X.super_p))
+  y = c(strooprt_vset),
+  yhat = c(predict(net.super, newx = X.super_vset))
 )
 
 (cor.obs.super <- cor(ys.super)["y", "yhat"])
@@ -32,6 +33,8 @@ ys.super %>%
 
 ## permuted validation error
 
+n_cores <- detectCores() - 1
+nresamps <- 1E4
 cl <- makeCluster(n_cores - 1)
 registerDoParallel(cl)
 cor.perm.super <- foreach(ii = seq_len(nresamps), .inorder = FALSE, .combine = "c", .packages = "glmnet") %dorng% {
@@ -40,7 +43,7 @@ cor.perm.super <- foreach(ii = seq_len(nresamps), .inorder = FALSE, .combine = "
   
   fit.ii <- glmnet(x = X.super, y = yperm, lambda = lambda.best.super, alpha = 0.5)
   
-  cor(strooprt_p, predict(fit.ii, newx = X.super_p))
+  cor(strooprt_vset, predict(fit.ii, newx = X.super_vset))
   
 }
 stopCluster(cl)
@@ -52,14 +55,14 @@ abline(v = cor.obs.super, col = "firebrick", lwd = 3)
 
 sum(is.na(cor.perm.super))  ## num models with no predictors
 
-glmnet.elnet <- function(alpha = 0.5, ...) glmnet.lasso(..., alpha = alpha)
 
 ## variable importance
-
-stabs.super <- stabsel(
-  x = X.super, y = strooprt, q = 10, cutoff = 0.6, 
-  fitfun = "glmnet.elnet",
-)
-stabs.super
-plot(stabs.super)
+# glmnet.elnet <- function(alpha = 0.5, ...) glmnet.lasso(..., alpha = alpha)
+# 
+# stabs.super <- stabsel(
+#   x = X.super, y = strooprt, q = 10, cutoff = 0.6, 
+#   fitfun = "glmnet.elnet"
+# )
+# stabs.super
+# plot(stabs.super)
 #+

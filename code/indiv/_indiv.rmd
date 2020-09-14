@@ -18,6 +18,11 @@ Their output is captured and 'knitted' back into this this report.
 To run the code, you can either execute this .rmd file (i.e., 'knit' to html), or source each child script individually.
 (These child scripts *should* be configured to run on their own.)
 
+```{r}
+t_start <- Sys.time()
+```
+
+
 `r knitr::spin_child('setup.R')`
 
 # dissociation analysis
@@ -34,6 +39,16 @@ To run the code, you can either execute this .rmd file (i.e., 'knit' to html), o
 
 `r spin_child('full_model.R')`
 
+
 # model selection analysis
 
 `r spin_child('model_selection.R')`
+
+
+# arrange figure
+
+`r spin_child('arrange_fig.R')`
+
+```{r}
+Sys.time() - t_start  ## wall-time
+```

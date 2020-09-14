@@ -21,9 +21,19 @@ blups <-
   )
 
 stats.subjs <- bind_rows(
-  mmp         = read_subj_stats(roi.set = "mmp") %>% mutate(roi.hemi = roi, roi = gsub("_L$|_R$", "", roi)),
-  superparcel = read_subj_stats(),
-  gordon      = read_subj_stats(roi.set = "gordon") %>% mutate(roi.hemi = roi, roi = gsub("_L$|_R$", "", roi)),
+  mmp         = 
+    read_subj_stats(
+      subjs = c(subjs.analysis, subjs.validation), 
+      roi.set = "mmp"
+      ) %>% 
+    mutate(roi.hemi = roi, roi = gsub("_L$|_R$", "", roi)),
+  superparcel = read_subj_stats(subjs = c(subjs.analysis, subjs.validation)),
+  gordon      =     
+    read_subj_stats(
+      subjs = c(subjs.analysis, subjs.validation), 
+      roi.set = "gordon"
+    ) %>% 
+    mutate(roi.hemi = roi, roi = gsub("_L$|_R$", "", roi)),
   .id = "scheme"
   )
 
@@ -32,7 +42,7 @@ stats.subjs <- bind_rows(
 stats.subjs <- stats.subjs[stats.subjs$param %in% c("target", "distractor", "incongruency"), ]
 stats.subjs <- full_join(blups, stats.subjs, by = "subj")
 stats.subjs %<>% ungroup %>% mutate(id = paste0(roi.hemi, "_", param))
-stats.subjs %<>% group_by(scheme, is.analysis.group, id) %>% mutate(beta.s = c(scale(beta)))  ## scale betas
+stats.subjs %<>% group_by(scheme, id) %>% mutate(beta.s = c(scale(beta)))  ## scale betas
 
 ## to long-form data-frame
 
