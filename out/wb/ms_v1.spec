@@ -79,12 +79,12 @@
    </DataFile>
    <DataFile Structure="All"
              DataFileType="SCENE"
-             Selected="true">
+             Selected="false">
       ms_v1.scene
    </DataFile>
    <DataFile Structure="All"
              DataFileType="SCENE"
-             Selected="true">
+             Selected="false">
       ms_v1_superparcels.scene
    </DataFile>
 </CaretSpecFile>

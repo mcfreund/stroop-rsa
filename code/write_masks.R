@@ -89,7 +89,7 @@ saveRDS(superparcels, here::here("out", "masks", "ids_superparcels.RDS"))
 ## all superparcels
 
 atlas.key$mmp$id <- "none"
-superparcels4wb <- superparcels[names(superparcels)[-grep("\\.alt", names(superparcels))]]
+superparcels4wb <- superparcels[names(superparcels)[-grep("V1|\\.alt", names(superparcels))]]
 for (superparcel.i in seq_along(superparcels4wb)) {
   atlas.key$mmp$id[atlas.key$mmp$roi %in% superparcels4wb[[superparcel.i]]] <- names(superparcels4wb)[superparcel.i]
 }
@@ -266,34 +266,34 @@ superparcel.info %<>% rbind(
 )
 
 
-parcels <- lapply(superparcels4wb[-grep("_R$|V1", names(superparcels4wb))], function(x) gsub("_L|_R", "", x) %>% unique)
+parcels <- lapply(superparcels4wb[-grep("_R$", names(superparcels4wb))], function(x) gsub("_L|_R", "", x) %>% unique)
 parcels <- sapply(parcels, function(x) paste0(x, collapse = ", "))
 
 tab.sp <- superparcel.info %>% filter(hemi != "R", region != "V1")
-tab.sp$hemi[tab.sp$hemi != "L"] <- "bil."
-tab.sp$hemi[tab.sp$hemi == "L"] <- "L, R"
+# tab.sp$hemi[tab.sp$hemi != "L"] <- "bil."
+# tab.sp$hemi[tab.sp$hemi == "L"] <- "L, R"
 tab.sp$parcels <- c(parcels, "")
+
 
 tab.sp$abbreviation <- NA
 tab.sp$abbreviation[tab.sp$region == "lppc_L"] <- "LPPC"
 tab.sp$abbreviation[tab.sp$region == "dmfc_L"] <- "DMFC"
 tab.sp$abbreviation[tab.sp$region == "dlpfc_L"] <- "DLPFC"
-tab.sp$abbreviation[tab.sp$region == "dpm_L"] <- "dors. premotor"
-tab.sp$abbreviation[tab.sp$region == "vpm_L"] <- "vent. premotor"
-tab.sp$abbreviation[tab.sp$region == "vvis_L"] <- "vent. visual"
-tab.sp$abbreviation[tab.sp$region == "ins_L"] <- "ant. insular"
-tab.sp$abbreviation[tab.sp$region == "ifc_L"] <- "inf. frontal"
-tab.sp$abbreviation[tab.sp$region == "ofc_L"] <- "orbitofrontal"
-tab.sp$abbreviation[tab.sp$region == "fpc_L"] <- "frontopolar"
+tab.sp$abbreviation[tab.sp$region == "dpm_L"] <- "DPM"
+tab.sp$abbreviation[tab.sp$region == "vpm_L"] <- "VPM"
+tab.sp$abbreviation[tab.sp$region == "vvis_L"] <- "VVis"
+tab.sp$abbreviation[tab.sp$region == "ins_L"] <- "AIns"
+tab.sp$abbreviation[tab.sp$region == "ifc_L"] <- "IFC"
+tab.sp$abbreviation[tab.sp$region == "ofc_L"] <- "OFC"
+tab.sp$abbreviation[tab.sp$region == "fpc_L"] <- "FPC"
 tab.sp$abbreviation[tab.sp$region == "evis"] <- "V1--V3"
-tab.sp$abbreviation[tab.sp$region == "smmouth"] <- "vent. somatomotor"
-tab.sp$abbreviation[tab.sp$region == "aud"] <- "early auditory"
+tab.sp$abbreviation[tab.sp$region == "smmouth"] <- "VSM"
+tab.sp$abbreviation[tab.sp$region == "aud"] <- "Aud"
 
-tab.sp$nvox[tab.sp$hemi == "L, R"] <- paste0(
-  tab.sp %>% filter(hemi == "L, R") %>% pull(nvox), ", ",
+tab.sp$nvox[tab.sp$hemi == "L"] <- paste0(
+  tab.sp %>% filter(hemi == "L") %>% pull(nvox), ", ",
   superparcel.info %>% filter(hemi == "R", region != "V1") %>% pull(nvox)
   )
 
-tab.sp %<>% rename("nvox (L, R)" = nvox)
-tab.sp %<>% .[c("abbreviation", "hemi", "parcels", "nvox (L, R)")]
+tab.sp %<>% select(superparcel = abbreviation, "constituent MMP parcels" = parcels, "# voxels (L, R)" = nvox)
 fwrite(tab.sp, here("out", "masks", "superparcel_all.csv"))
