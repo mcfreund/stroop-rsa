@@ -12,6 +12,8 @@ source(here("code", "read_atlases.R"))
 
 
 hyps <- combo_paste(c("dlpfc", "lppc", "dmfc"), c("R", "L"), c("target", "incongruency"))
+hyps.alt <- combo_paste(c("dlpfc.alt", "lppc", "dmfc.alt"), c("R", "L"), c("target", "incongruency"))
+
 # behav.mod.objs <- readRDS(here("out", "behav", "mod_objs.RDS"))  ## behavioral model objects
 
 blups <- 

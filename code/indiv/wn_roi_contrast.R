@@ -37,4 +37,12 @@ summary(mods$lppc_R)
 summary(mods$dmfc_L)
 (contrast.dmfc_L <- summary(glht(mods$dmfc_L, W.single), test = adjusted("none")))  ## predicted: positive
 
+## save
+
+saveRDS(mods, here("out", "indiv", "mods_wnroi.RDS"))
+saveRDS(pvals, here("out", "indiv", "pvals_wnroi.RDS"))
+saveRDS(contrast.dlpfc_R, here("out", "indiv", "contrast.dlpfc_R.RDS"))
+saveRDS(contrast.lppc_R, here("out", "indiv", "contrast.lppc_R.RDS"))
+saveRDS(contrast.dmfc_L, here("out", "indiv", "contrast.dmfc_L.RDS"))
+
 #+ 

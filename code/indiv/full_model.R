@@ -1,7 +1,8 @@
+### fit full model
 #+ fullmod
 ## finally, the 'full' model, to test for 4-way interaction:
 
-mods$dmfc_L.lfp_R <- lme(
+dmfc_L.lfp_R <- lme(
   
   rt ~ 
     trial.type * lfp_R_target +
@@ -17,7 +18,7 @@ mods$dmfc_L.lfp_R <- lme(
   
 )
 
-summary(mods$dmfc_L.lfp_R)
+summary(dmfc_L.lfp_R)
 
 W.full <- rbind(
   "Btarg(I-C)-Bincon(I-C)|lfp"         = c(0, 0, 0, 0, 0, 0, 1, -1, 0, 0),  ## 3-way interaction within lfp
@@ -25,42 +26,13 @@ W.full <- rbind(
   "[Btarg(I-C)-Bincon(I-C)](lfp-dmfc)" = c(0, 0, 0, 0, 0, 0, 1, -1, -1, 1)  ## 4-way interaction
 )
 
-(contrast.dmfc_L.lfp_R <- summary(glht(mods$dmfc_L.lfp_R, W.full), test = adjusted("none")))
+(contrast.dmfc_L.lfp_R <- summary(glht(dmfc_L.lfp_R, W.full), test = adjusted("none")))
+#+
 
-## suppression?
 
+### suppression?
 
-## plot
-
-## refit model to get level-2 residuals sans mfc_L_target:
-# 
-# mods$sans.mfc.targ <- update(mods$dmfc_L.lfp_R, . ~ . - trial.type * dmfc_L_target)
-# 
-# resids <- data.frame(
-# 
-#   stroop = w.super %>% filter(is.analysis.group) %>% .$stroop,
-# 
-#   stroop.resid = ranef(mods.lme$sans.mfc.targ)[, 2],
-# 
-#   mfc_L_targ.resid = lm(
-#     mfc_L_target ~
-#       lfp_R_target + lfp_R_incongruency + mfc_L_incongruency,
-#     w.super %>% filter(is.analysis.group)
-#     )$residuals,
-# 
-#   mfc_L_targ = w.super %>% filter(is.analysis.group) %>% .$mfc_L_target
-# 
-# )
-# 
-# cor(resids)
-# 
-# resids %>%
-# 
-#   ggplot(., aes(mfc_L_targ.resid, stroop.resid)) +
-#   stat_boot_ci(n = 1E4, alpha = 0.3, fill = colors.model["target"]) +
-#   geom_point(color = "white", shape = 21, size = 4, fill = colors.model["target"]) +
-# 
-#   labs(title = "partial correlation: stroop~MFC_L_target")
+#+
 
 ## get OLS estimates:
 
@@ -95,22 +67,13 @@ r2.delta <- r2.plus - r2.bivar[names(r2.plus)]
 
 r2.delta.pev <- r2.delta / r2.bivar["dmfc_L_target"]  ## ~20-fold increase in variance explained....
 
+#+
 
-## save results ----
+### save results
 
-indiv.mod.objs <- list(
-  mods = mods, 
-  sep.p = pvals, 
-  contrasts.3way = list(
-    dmfc_L = contrast.dmfc_L, 
-    lppc_R = contrast.lppc_R,
-    dlpfc_R = contrast.dlpfc_R
-  ),
-  contrasts.4way = contrast.dmfc_L.lfp_R
-)
-saveRDS(indiv.mod.objs, here("out", "indiv", "indiv.RDS"))
+#+
 
-# indiv.mod.objs.sep <- readRDS(here("out", "indiv", "indiv_separate.RDS"))
-# mods <- indiv.mod.objs.sep$mods
+saveRDS(dmfc_L.lfp_R, "mod_dmfc_L.lfp_R.R")
+saveRDS(contrast.dmfc_L.lfp_R, "contrast.dmfc_L.lfp_R")
 
 #+ 

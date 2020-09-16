@@ -54,15 +54,40 @@ plot(density(cor.perm.super, na.rm = TRUE))
 abline(v = cor.obs.super, col = "firebrick", lwd = 3)
 
 sum(is.na(cor.perm.super))  ## num models with no predictors
+#+
 
+#' #### predictive power of DMFC target versus incongruency
 
-## variable importance
-# glmnet.elnet <- function(alpha = 0.5, ...) glmnet.lasso(..., alpha = alpha)
-# 
-# stabs.super <- stabsel(
-#   x = X.super, y = strooprt, q = 10, cutoff = 0.6, 
-#   fitfun = "glmnet.elnet"
-# )
-# stabs.super
-# plot(stabs.super)
+#+ model-selection_dmfc
+## DMFC target vs incongruency ----
+
+regs <- c("lppc_R_target", "dlpfc_R_target", "vvis_L_incongruency", "dlpfc_L_distractor")
+X.super.dmfctarg <- as.data.frame(X.super[, c(regs, "dmfc_L_target")])
+X.super.dmfcincon <- as.data.frame(X.super[, c(regs, "dmfc_L_incongruency")])
+
+lm.dmfc.target <- lm(strooprt ~ ., X.super.dmfctarg)
+lm.dmfc.incongruency <- lm(strooprt ~ ., X.super.dmfcincon)
+
+yhat.dmfc.target <- predict(lm.dmfc.target, newdata = as.data.frame(X.super_vset))
+yhat.dmfc.incongruency <- predict(lm.dmfc.incongruency, newdata = as.data.frame(X.super_vset))
+
+r.dmfc.valid <- c(
+  target = cor(yhat.dmfc.target, strooprt_vset), 
+  incongruency = cor(yhat.dmfc.incongruency, strooprt_vset)
+  )
+
+r.dmfc.valid
+
+(r.diff.dmfc.valid <- tanh(diff(atanh(r.dmfc.valid))))
+#+
+
+#+ model-selection_save
+## save ----
+
+saveRDS(net.super, here("out", "indiv", "selected_model.RDS"))
+saveRDS(
+  list(ys.super = ys.super, p.super = p.super, r.diff.dmfc.valid = r.diff.dmfc.valid), 
+  here("out", "indiv", "selected_model_validation.RDS")
+  )
+
 #+

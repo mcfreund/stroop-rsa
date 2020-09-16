@@ -39,10 +39,24 @@ t_start <- Sys.time()
 
 `r spin_child('full_model.R')`
 
+## within-region interactions (contrasts on slopes): alternate ROI definitions
+
+`r spin_child('wn_roi_contrast_alt.R')`
+
 
 # model selection analysis
 
+## superparcel ROIs
+
 `r spin_child('model_selection.R')`
+
+## alternate ROI definitions
+
+`r spin_child('model_selection_alt.R')`
+
+## exploratory whole-cortex analysis
+
+`r spin_child('model_selection_explor.R')`
 
 
 # arrange figure
