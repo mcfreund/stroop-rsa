@@ -6,6 +6,10 @@
 #'    * table-indiv-hyp-all
 
 
+#+ include = FALSE
+if (interactive()) source(here::here("code", "indiv", "setup.R"))
+#+
+
 #+ bivar-superparcel_correlate
 
 set.seed(0)
@@ -52,10 +56,7 @@ fwrite(cors, here("out", "indiv", "hyp_bivariate.txt"))
 
 p.allcors <- d.super %>%
   
-  mutate(
-    hemi   = gsub("(.*)_(L|R)", "\\2", roi),
-    region = gsub("(.*)_(L|R)", "\\1", roi) %>% toupper
-  ) %>%
+  mutate(region = toupper(roi)) %>%
   
   filter(region %in% c("DLPFC", "DMFC", "LPPC"), param %in% c("target", "incongruency")) %>%
   

@@ -44,22 +44,22 @@
    </DataFile>
    <DataFile Structure="All"
              DataFileType="CONNECTIVITY_PARCEL_SCALAR"
-             Selected="false">
+             Selected="true">
       ..\group/group_target.pscalar.nii
    </DataFile>
    <DataFile Structure="All"
              DataFileType="CONNECTIVITY_PARCEL_SCALAR"
-             Selected="false">
+             Selected="true">
       ..\group/group_incongruency.pscalar.nii
    </DataFile>
    <DataFile Structure="All"
              DataFileType="CONNECTIVITY_PARCEL_SCALAR"
-             Selected="false">
+             Selected="true">
       ..\group/group_distractor.pscalar.nii
    </DataFile>
    <DataFile Structure="All"
              DataFileType="CONNECTIVITY_PARCEL_SCALAR"
-             Selected="false">
+             Selected="true">
       ..\group/conjunction.pscalar.nii
    </DataFile>
    <DataFile Structure="All"
@@ -78,6 +78,16 @@
       ..\masks/gordon.pscalar.nii
    </DataFile>
    <DataFile Structure="All"
+             DataFileType="CONNECTIVITY_PARCEL_SCALAR"
+             Selected="true">
+      ..\explor/group_target.pscalar.nii
+   </DataFile>
+   <DataFile Structure="All"
+             DataFileType="CONNECTIVITY_PARCEL_SCALAR"
+             Selected="true">
+      ..\explor/group_incongruency.pscalar.nii
+   </DataFile>
+   <DataFile Structure="All"
              DataFileType="SCENE"
              Selected="false">
       ms_v1.scene
@@ -86,5 +96,10 @@
              DataFileType="SCENE"
              Selected="false">
       ms_v1_superparcels.scene
+   </DataFile>
+   <DataFile Structure="All"
+             DataFileType="SCENE"
+             Selected="true">
+      ms_v1_explor.scene
    </DataFile>
 </CaretSpecFile>

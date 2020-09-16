@@ -29,7 +29,7 @@ p.fdr.tvi.dmfc.super.alt <-
 
 table.group.alt <- data.frame(
   contrast = table.group.contrast,
-  type = table.group.type,
+  # type = table.group.type,
   b        = glht.super.all.alt$test$coefficients,
   se       = glht.super.all.alt$test$sigma,
   t        = glht.super.all.alt$test$tstat,
