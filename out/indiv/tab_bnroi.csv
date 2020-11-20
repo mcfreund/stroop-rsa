@@ -1,0 +1,5 @@
+roi,b,se,t,p,model,contrast
+incon_dmfc_dlpfc,22.8520787425775,52.9198433728301,0.431824383560252,0.665869056111667,incon.,\beta_\text{DMFC (L)}-\beta_\text{DLPFC (R)}\times\text{stroop}
+incon_dmfc_lppc,134.192142988265,49.8496026411098,2.69194007331164,0.00710377084658753,incon.,\beta_\text{DMFC (L)}-\beta_\text{LPPC (R)}\times\text{stroop}
+target_dmfc_dlpfc,500.631571145358,139.142235660518,3.59798424086564,0.000320693044930431,target,\beta_\text{DMFC (L)}-\beta_\text{DLPFC (R)}\times\text{stroop}
+target_dmfc_lppc,468.994410532826,137.457187865021,3.41193078235649,0.000645044902854997,target,\beta_\text{DMFC (L)}-\beta_\text{LPPC (R)}\times\text{stroop}

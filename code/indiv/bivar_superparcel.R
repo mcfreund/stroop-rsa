@@ -56,6 +56,8 @@ fwrite(cors, here("out", "indiv", "hyp_bivariate.txt"))
 
 p.allcors <- d.super %>%
   
+  filter(is.analysis.group, id %in% hyps) %>%
+  
   mutate(region = toupper(roi)) %>%
   
   filter(region %in% c("DLPFC", "DMFC", "LPPC"), param %in% c("target", "incongruency")) %>%
@@ -120,7 +122,9 @@ w.super %>%
 
 
 cors.lfp <- w.super %>%
+  
   filter(is.analysis.group) %>% 
+  
   summarize(
     r_target = cor(dlpfc_R_target, lppc_R_target), 
     r_incongruency = cor(dlpfc_R_incongruency, lppc_R_incongruency)
@@ -135,12 +139,12 @@ fwrite(cors.lfp, here("out", "indiv", "cors_lfp.txt"))
 
 #+ bivar-superparcel_combine
 
-w.super$lfp_R_target <- (w.super$dlpfc_R_target + w.super$lppc_R_target) / 2
-w.super$lfp_R_incongruency <- (w.super$dlpfc_R_incongruency + w.super$lppc_R_incongruency) / 2
+w.super$lfp_R_target <- (w.super$dlpfc_R_target)# + w.super$lppc_R_target) / 2
+w.super$lfp_R_incongruency <- (w.super$dlpfc_R_incongruency)# + w.super$lppc_R_incongruency) / 2
 
 
-d.dissoc.hlm$lfp_R_target <- (d.dissoc.hlm$dlpfc_R_target + d.dissoc.hlm$lppc_R_target) / 2
-d.dissoc.hlm$lfp_R_incongruency <- (d.dissoc.hlm$dlpfc_R_incongruency + d.dissoc.hlm$lppc_R_incongruency) / 2
+d.dissoc.hlm$lfp_R_target <- (d.dissoc.hlm$dlpfc_R_target)# + d.dissoc.hlm$lppc_R_target) / 2
+d.dissoc.hlm$lfp_R_incongruency <- (d.dissoc.hlm$dlpfc_R_incongruency)# + d.dissoc.hlm$lppc_R_incongruency) / 2
 
 d.super %<>%
   
@@ -160,38 +164,28 @@ d.super %<>%
 #+
 
 #+ plot-panel-a
-
+w.super.agroup <- w.super %>% filter(is.analysis.group)
 set.seed(0)
-cor.dmfc.l.incongruency <- cor_ci(w.super[c("dmfc_L_incongruency", "stroop")], R = 1E4)
-cor.lfp.r.target <- cor_ci(w.super[c("lfp_R_target", "stroop")], R = 1E4)
-cor.dmfc.l.incongruency.rank <- w.super[c("dmfc_L_incongruency", "stroop")] %>% mutate_all(rank) %>% cor_ci(R = 1E4)
-cor.lfp.r.target.rank <- w.super[c("lfp_R_target", "stroop")] %>% mutate_all(rank) %>% cor_ci(R = 1E4)
+cor.dmfc.l.incongruency <- cor_ci(w.super.agroup[c("dmfc_L_incongruency", "stroop")], R = 1E4)
+cor.lfp.r.target <- cor_ci(w.super.agroup[c("lfp_R_target", "stroop")], R = 1E4)
+cor.dmfc.l.incongruency.rank <- w.super.agroup[c("dmfc_L_incongruency", "stroop")] %>% mutate_all(rank) %>% cor_ci(R = 1E4)
+cor.lfp.r.target.rank <- w.super.agroup[c("lfp_R_target", "stroop")] %>% mutate_all(rank) %>% cor_ci(R = 1E4)
 
-w.super %>%
-  
-  filter(is.analysis.group) %>%
+w.super.agroup %>%
   
   ggplot() +
-  
-  stat_boot_ci(aes(lfp_R_target, stroop), n = 1E4, alpha = 0.3, fill = colors.model["target"]) +
-  stat_smooth(aes(lfp_R_target, stroop), method = "lm", color = colors.model["target"], se = FALSE) +
   
   stat_boot_ci(aes(dmfc_L_incongruency, stroop), n = 1E4, alpha = 0.3, fill = colors.model["incongruency"]) +
   stat_smooth(aes(dmfc_L_incongruency, stroop), method = "lm", color = colors.model["incongruency"], se = FALSE) +
   
-  geom_point(
-    aes(lfp_R_target, stroop), 
-    fill = colors.model["target"], color = "white", shape = 21, size = geom.point.size*2
-  ) +
-  geom_point(
-    aes(dmfc_L_incongruency, stroop),
-    fill = colors.model["incongruency"], color = "white", shape = 21, size = geom.point.size*2
-  ) +
+  stat_boot_ci(aes(lfp_R_target, stroop), n = 1E4, alpha = 0.3, fill = colors.model["target"]) +
+  stat_smooth(aes(lfp_R_target, stroop), method = "lm", color = colors.model["target"], se = FALSE) +
+  
   
   annotate(
     geom = "text", x = 0.3, y = 40, 
     label = paste0(
-      "MFC incon.:\nr = ", 
+      "DMFC (L) incon.:\nr = ", 
       round(cor.dmfc.l.incongruency$t0, 2), ", [", 
       round(cor.dmfc.l.incongruency$lower, 2), ", ", 
       round(cor.dmfc.l.incongruency$upper, 2), "]\n\U03C1 = ",
@@ -209,7 +203,7 @@ w.super %>%
   annotate(
     geom = "text", x = -0.35, y = 140, 
     label = paste0(
-      "LFP target:\nr = ", 
+      "DLPFC (R) target:\nr = ", 
       round(cor.lfp.r.target$t0, 2), ", [", 
       round(cor.lfp.r.target$lower, 2), ", ", 
       round(cor.lfp.r.target$upper, 2), "]\n\U03C1 = ",
@@ -222,6 +216,15 @@ w.super %>%
     hjust = 0,
     fontface = "italic",
     color = colors.model["target"]
+  ) +
+  
+  geom_point(
+    aes(dmfc_L_incongruency, stroop),
+    fill = colors.model["incongruency"], color = "white", shape = 21, size = geom.point.size*1.5
+  ) +
+  geom_point(
+    aes(lfp_R_target, stroop), 
+    fill = colors.model["target"], color = "white", shape = 21, size = geom.point.size*1.5
   ) +
   
   theme_bw(base_size = 8) +

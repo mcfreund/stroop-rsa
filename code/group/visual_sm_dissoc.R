@@ -67,22 +67,22 @@ p.means.prelim <- means.prelim %>%
   
   annotate(
     geom = "text", x = 0.5, y = 0.12, label = "ventral S1/M1", color = "#2166ac",
-    hjust = 0, vjust = 1, size = label.size*1.5, fontface = "bold"
+    hjust = 0, vjust = 1, size = label.size*1.25, fontface = "bold"
   ) +
   annotate(
     geom = "text", x = 0.5, y = 0.09, label = "V1", color = "#b2182b",
-    hjust = 0, vjust = 1, size = label.size*1.5, fontface = "bold"
+    hjust = 0, vjust = 1, size = label.size*1.25, fontface = "bold"
   ) +
   
   annotate(
-    geom = "text", x = 0.5, y = 0.08,
+    geom = "text", x = 0.5, y = 0.075,
     label = paste0("p(distr.-targt.)>0 = ", format.pval(glht.prelim$test$pvalues["distractor-target|V1"])),
     color = "#b2182b",
     hjust = 0, vjust = 1, size = label.size, fontface = "bold"
   ) +
   
   annotate(
-    geom = "text", x = 0.5, y = 0.11,
+    geom = "text", x = 0.5, y = 0.105,
     label = paste("p(targt.-distr.)>0 ", format.pval(glht.prelim$test$pvalues["target-distractor|smmouth"])),
     color = "#2166ac",
     hjust = 0, vjust = 1, size = label.size, fontface = "bold"
@@ -104,5 +104,5 @@ p.means.prelim <- means.prelim %>%
 
 p.means.prelim
 
-ggsave(here("out", "group", "prelim.pdf"), p.means.prelim, device = "pdf", width = figwidth, height = 3)
+ggsave(here("out", "group", "prelim.pdf"), p.means.prelim, device = "pdf", width = figwidth, height = 2.75)
 

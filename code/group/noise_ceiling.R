@@ -256,3 +256,4 @@ p.means.ceilings <- means.ceilings.rois %>%
 p.means.ceilings
 
 fwrite(p.ceilings.contr.rois, here("out", "group", "ceilings.txt"))
+fwrite(means.ceilings.contr.rois, here("out", "group", "ceilings_means.txt"))

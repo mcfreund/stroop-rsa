@@ -1,48 +1,52 @@
+#+ wn-roi-contrasts_setup, include = FALSE
+if (interactive()) source(here::here("code", "indiv", "bivar_superparcel.R"))
+#+
+
 #+ wn-roi-contrasts_model
 
-d.dissoc.hlm %<>% group_by(subj) %>% mutate(rt.s = c(scale(rt)))
+## fit (only if RDS object doesn't already exist... skip time-consuming step)
 
-mods <- list(
-  dlpfc_L_targ = update(fit1.het.trim, rt.s ~ . + trial.type * dlpfc_L_target, data = d.dissoc.hlm),
-  dlpfc_R_targ = update(fit1.het.trim, rt.s ~ . + trial.type * dlpfc_R_target, data = d.dissoc.hlm),
-  lppc_L_targ  = update(fit1.het.trim, rt.s ~ . + trial.type * lppc_L_target, data = d.dissoc.hlm),
-  lppc_R_targ  = update(fit1.het.trim, rt.s ~ . + trial.type * lppc_R_target, data = d.dissoc.hlm),
-  dmfc_L_incon  = update(fit1.het.trim, rt.s ~ . + trial.type * dmfc_L_incongruency, data = d.dissoc.hlm),
-  dmfc_R_incon  = update(fit1.het.trim, rt.s ~ . + trial.type * dmfc_R_incongruency, data = d.dissoc.hlm)
-) 
-sums <- lapply(mods, summary)
-pvals <- lapply(sums, function(.) coef(.)[4, "p-value"])
-pvals <- reshape2::melt(bind_rows(pvals), value.name = "p", variable = "id")
-pvals$group  <- rep(1:3, each = 2)
-pvals %<>% group_by(group) %>% mutate(p.fdr = p.adjust(p, method = "fdr"))
+fname.mods.wnroi <- here("out", "indiv", "mods_wnroi.RDS")
 
-lapply(sums, coef)  ## print results
-pvals  ## p values (corrected)
+if (file.exists(fname.mods.wnroi)) {
+  
+  mods.wnroi <- readRDS(here("out", "indiv", "mods_wnroi.RDS"))
+  
+} else {
+  
+  mods.wnroi <- list(
+    
+    dlpfc_R  = update(fit1.het.trim, rt ~ . + trial.type * dlpfc_R_target + trial.type * dlpfc_R_incongruency, data = d.dissoc.hlm),
+    lppc_R   = update(fit1.het.trim, rt ~ . + trial.type * lppc_R_target + trial.type * lppc_R_incongruency, data = d.dissoc.hlm),
+    dmfc_L   = update(fit1.het.trim, rt ~ . + trial.type * dmfc_L_target + trial.type * dmfc_L_incongruency, data = d.dissoc.hlm)
+    
+  )
+  
+  saveRDS(mods.wnroi, here("out", "indiv", "mods_wnroi.RDS"))
+  
+}
 
 
-## now for within-region dissociations:
+lapply(mods.wnroi, summary) %>% lapply(coef)
 
-mods$dlpfc_R <- update(mods$dlpfc_R_targ, . ~ . + trial.type * dlpfc_R_incongruency)
-mods$lppc_R <- update(mods$lppc_R_targ, . ~ . + trial.type * lppc_R_incongruency)
-mods$dmfc_L <- update(mods$dmfc_L_incon, . ~ . + trial.type * dmfc_L_target)
+## get contrasts
 
-W.single <- rbind("[Btarg(I-C)-Bincon(I-C)]" = c(0, 0, 0, 0, 1, -1))
+W.single <- rbind(c(0, 0, 0, 0, 1, -1))
+contrasts.wnroi <- lapply(mods.wnroi, glht, linfct = W.single) %>% lapply(summary, test = adjusted("none"))
+tab.wnroi <- contrasts.wnroi %>% map("test") %>% map_df(~ .[c("coefficients", "sigma", "tstat", "pvalues")], .id = "roi")
 
-summary(mods$dlpfc_R)
-(contrast.dlpfc_R <- summary(glht(mods$dlpfc_R, W.single), test = adjusted("none")))  ## predicted: negative
+tab.wnroi %<>% 
+  rename(b = coefficients, se = sigma, t = tstat, p = pvalues) %>%
+  mutate(
+    model = c("DLPFC (R)", "LPPC (R)", "DMFC (L)")
+    # contrast = "\\beta_\\text{target}-\\beta_\\text{incon.}\\times\\text{stroop}"
+    )
 
-summary(mods$lppc_R)
-(contrast.lppc_R <- summary(glht(mods$lppc_R, W.single), test = adjusted("none")))  ## predicted: negative
+kable(tab.wnroi, escape = FALSE)
+  
 
-summary(mods$dmfc_L)
-(contrast.dmfc_L <- summary(glht(mods$dmfc_L, W.single), test = adjusted("none")))  ## predicted: positive
+saveRDS(contrasts.wnroi, here("out", "indiv", "contrasts_wnroi.RDS"))
+fwrite(tab.wnroi, here("out", "indiv", "tab_wnroi.csv"))
 
-## save
-
-saveRDS(mods, here("out", "indiv", "mods_wnroi.RDS"))
-saveRDS(pvals, here("out", "indiv", "pvals_wnroi.RDS"))
-saveRDS(contrast.dlpfc_R, here("out", "indiv", "contrast.dlpfc_R.RDS"))
-saveRDS(contrast.lppc_R, here("out", "indiv", "contrast.lppc_R.RDS"))
-saveRDS(contrast.dmfc_L, here("out", "indiv", "contrast.dmfc_L.RDS"))
 
 #+ 

@@ -1,11 +1,12 @@
 #+ arrange-fig
 set.seed(0)
-cor.vvis.l.incongruency <- cor_ci(w.super[c("vvis_L_incongruency", "stroop")], R = 1E4)
-cor.vvis.l.incongruency.rank <- w.super[c("vvis_L_incongruency", "stroop")] %>% mutate_all(rank) %>% cor_ci(R = 1E4)
-cor.dlpfc.l.distractor <- cor_ci(w.super[c("dlpfc_L_distractor", "stroop")], R = 1E4)
-cor.dlpfc.l.distractor.rank <- w.super[c("dlpfc_R_target", "stroop")] %>% mutate_all(rank) %>% cor_ci(R = 1E4)
+w.super.agroup <- w.super %>% filter(is.analysis.group)
+cor.vvis.l.incongruency <- cor_ci(w.super.agroup[c("vvis_L_incongruency", "stroop")], R = 1E4)
+cor.vvis.l.incongruency.rank <- w.super.agroup[c("vvis_L_incongruency", "stroop")] %>% mutate_all(rank) %>% cor_ci(R = 1E4)
+cor.dlpfc.l.distractor <- cor_ci(w.super.agroup[c("dlpfc_L_distractor", "stroop")], R = 1E4)
+cor.dlpfc.l.distractor.rank <- w.super.agroup[c("dlpfc_R_target", "stroop")] %>% mutate_all(rank) %>% cor_ci(R = 1E4)
 
-w.super %>%
+w.super.agroup %>%
   
   filter(is.analysis.group) %>%
   
@@ -13,6 +14,7 @@ w.super %>%
   
   stat_boot_ci(aes(vvis_L_incongruency, stroop), n = 1E4, alpha = 0.3, fill = colors.model["incongruency"]) +
   stat_smooth(aes(vvis_L_incongruency, stroop), color = colors.model["incongruency"], method = "lm", se = FALSE) +
+  
   geom_point(
     aes(vvis_L_incongruency, stroop), 
     fill = colors.model["incongruency"], color = "white", shape = 21, size = geom.point.size
@@ -21,7 +23,7 @@ w.super %>%
   coord_capped_cart(left = "both", bottom = "both") +
   
   annotate(
-    geom = "text", x = 0.1, y = 140, 
+    geom = "text", x = -0.175, y = 140, 
     label = paste0(
       "r = ", 
       round(cor.vvis.l.incongruency$t0, 2), ", [", 
@@ -32,7 +34,7 @@ w.super %>%
       round(cor.vvis.l.incongruency.rank$lower, 2), ", ", 
       round(cor.vvis.l.incongruency.rank$upper, 2), "]"
     ),
-    size = label.size/2,
+    size = label.size/1.33,
     hjust = 0,
     fontface = "italic",
     color = colors.model["incongruency"]
@@ -54,7 +56,8 @@ w.super %>%
 
 p.vvis <- last_plot()
 
-w.super %>%
+
+w.super.agroup %>%
   
   filter(is.analysis.group) %>%
   
@@ -73,7 +76,7 @@ w.super %>%
   
   
   annotate(
-    geom = "text", x = -0.135, y = 35, 
+    geom = "text", x = -0.1, y = 140, 
     label = paste0(
       "r = ", 
       round(cor.dlpfc.l.distractor$t0, 2), ", [", 
@@ -84,7 +87,7 @@ w.super %>%
       round(cor.dlpfc.l.distractor.rank$lower, 2), ", ", 
       round(cor.dlpfc.l.distractor.rank$upper, 2), "]"
     ),
-    size = label.size/2,
+    size = label.size/1.33,
     hjust = 0,
     fontface = "italic",
     # nudge_x = -0.1,

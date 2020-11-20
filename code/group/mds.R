@@ -37,14 +37,14 @@ mds.lines <- list(
     mds.line("whiteBLUE", "blueBLUE"),
     mds.line("redBLUE", "whiteBLUE"),
     ## WHITE
-    mds.line("purpleWHITE", "whiteWHITE"),
-    mds.line("purpleWHITE", "blueWHITE"),
-    mds.line("redWHITE", "blueWHITE"),
-    mds.line("whiteWHITE", "redWHITE"), 
+    mds.line("redWHITE", "whiteWHITE"),
+    mds.line("purpleWHITE", "redWHITE"),
+    mds.line("whiteWHITE", "blueWHITE"),
+    mds.line("purpleWHITE", "blueWHITE"), 
     ## RED
-    mds.line("blueRED", "whiteRED"),
+    mds.line("purpleRED", "whiteRED"),
     mds.line("whiteRED", "redRED"),
-    mds.line("purpleRED", "redRED"),
+    mds.line("blueRED", "redRED"),
     mds.line("purpleRED", "blueRED"),
     ## PURPLE
     mds.line("bluePURPLE", "redPURPLE"),
@@ -110,7 +110,7 @@ grobs <- list(
 
 ## create layout
 
-radius.rel <- 1.2  ## relative size of each MDS circle (used to build positions of circle centers)
+radius.rel <- 1.35  ## relative size of each MDS circle (used to build positions of circle centers)
 radius.abs <- unit(figwidth/4.5, "cm")  ## absolute size of circle
 a <- 0.2  ## scale factor of coordinates (controls distances among MDS circles)
 b <- 2  ## scale factor of MDS embedding
@@ -124,7 +124,11 @@ x.center <- 0.5
 y.center <- 0.575
 coordinates <- coordinates * a
 coordinates <- sweep(scale(coordinates, scale = FALSE), 2, c(x.center, y.center), "+") %>% as.data.frame
-
+coordinates.new <- coordinates
+coordinates.new[1, 2] <- coordinates[2, 2] 
+coordinates.new[3, 2] <- coordinates[2, 2] 
+coordinates.new[2, 2] <- coordinates[1, 2] 
+coordinates <- coordinates.new
 ## order everything
 mds.order <- c("target", "incongruency", "distractor")
 colors.profs <- colors.model[mds.order]
@@ -137,10 +141,10 @@ cairo_pdf(
   height = h, width = h
 )
 
-grid.circle(
-  coordinates$x, coordinates$y, 
-  r = radius.abs, gp = gpar(lwd = 3, fill = "transparent", col = colors.profs)
-)
+# grid.circle(
+#   coordinates$x, coordinates$y, 
+#   r = radius.abs, gp = gpar(lwd = 3, fill = "transparent", col = colors.profs)
+# )
 
 vps <- vector("list", length(grobs))
 for (ii in seq_along(grobs)) {

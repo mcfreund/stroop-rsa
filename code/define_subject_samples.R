@@ -14,11 +14,13 @@ library(purrr)
 ## read sheets ----
 
 subj_sum <- read.csv(
-  "C:/Users/mcf/Box/global/wustl/proj/cross-task-rsa/sheets/dmcc2_all-runs-summary.csv",
+  "C:/Users/mcf/Box/global/proj/cross-task-rsa/sheets/dmcc2_all-runs-summary.csv",
+  # "C:/Users/mcf/Box/global/wustl/proj/cross-task-rsa/sheets/dmcc2_all-runs-summary.csv",
   stringsAsFactors = FALSE
 )
 stroop <- read.csv(
-  "C:/Users/mcf/Box/global/wustl/proj/cross-task-rsa/sheets/dmcc2_behavior-and-events-stroop.csv",
+  "C:/Users/mcf/Box/global/proj/cross-task-rsa/sheets/dmcc2_behavior-and-events-stroop.csv",
+  # "C:/Users/mcf/Box/global/wustl/proj/cross-task-rsa/sheets/dmcc2_behavior-and-events-stroop.csv",
   stringsAsFactors = FALSE
 )
 stroop.rt <- stroop %>% filter(acc == 1, !is.na(rt))
@@ -28,7 +30,8 @@ stroop.er <- stroop %>% filter(!is.na(acc)) %>% mutate(error = 1 - acc)
 sample.pro.str <- subj_sum %>% filter(session == "pro", task == "str", mb == "four")
 (missing.nii <- unique(filter(sample.pro.str, num.nii < 1)$subj))  ## 6 subjs missing images
 sample.pro.str <- sample.pro.str %>% filter(!subj %in% missing.nii)
-missing.acc <- unique(filter(sample.pro.str, per.missing > 0)$subj)  ## 5 subj missing accuracy coding
+missing.acc <- unique(filter(sample.pro.str, missing.rows)$subj)  ## 5 subj missing accuracy coding
+# missing.acc <- unique(filter(sample.pro.str, per.missing > 0)$subj)  ## 5 subj missing accuracy coding
 sample.pro.str <- sample.pro.str %>% filter(!subj %in% missing.acc)
 
 ## look at their behavioral data:
@@ -39,8 +42,9 @@ updated.sample <- unique(sample.pro.str$subj)
 ## these subjs should be good to go to fit fMRI GLMs.
 ## but, first compare to previous analysis group:
 prior.sample <- read.csv(
-  "C:/Users/mcf/Box/global/wustl/proj/stroop-rsa/sheets/subj-sample_group_201812.csv",
-  stringsAsFactors = FALSE, header = FALSE
+  "C:/Users/mcf/Box/global/proj/stroop-rsa/old/wustl_proj_stroop-rsa/sheets/subj-sample_group-201812.csv",
+  # "C:/Users/mcf/Box/global/wustl/proj/stroop-rsa/sheets/subj-sample_group_201812.csv",
+  stringsAsFactors = FALSE, header = TRUE
 )[[1]]
 
 setdiff(prior.sample, updated.sample)  ## subjs NOT in new sample that were in old (should be character(0)---and is!)
@@ -83,12 +87,14 @@ source(here("r", "group-201902", "_get_misc_vars.R"))
 
 ## read subject summary / overview sheet:
 subj.summary <- read.csv(
-  file.path(dir.box.crosstask.sheets, "dmcc2_all-runs-summary.csv"),
+  "C:/Users/mcf/Box/global/proj/cross-task-rsa/sheets/dmcc2_all-runs-summary.csv",
+  # file.path(dir.box.crosstask.sheets, "dmcc2_all-runs-summary.csv"),
   stringsAsFactors = FALSE
 )
 subj.summary.pro <- filter(subj.summary, session == "pro", task == "str")
 stroop <- read.csv(
-  file.path(dir.box.crosstask.sheets, "dmcc2_behavior-and-events-stroop.csv"),
+  "C:/Users/mcf/Box/global/proj/cross-task-rsa/sheets/dmcc2_behavior-and-events-stroop.csv",
+  # file.path(dir.box.crosstask.sheets, "dmcc2_behavior-and-events-stroop.csv"),
   stringsAsFactors = FALSE
 )
 stroop.pro <- filter(stroop, session == "pro")
@@ -96,14 +102,16 @@ stroop.pro <- filter(stroop, session == "pro")
 ## read previous subject list:
 ## ( a totally unrelated group of subjs)
 group201812 <- read.csv(
-  file.path(dir.box.stroop.sheets, "subj-sample_group-201812.csv"),
+  "C:/Users/mcf/Box/global/proj/stroop-rsa/old/wustl_proj_stroop-rsa/sheets/subj-sample_group-201812.csv",
+  # file.path(dir.box.stroop.sheets, "subj-sample_group-201812.csv"),
   stringsAsFactors = FALSE
 )[, 1]
 # subj.summary.pro %>% filter(subj %in% group201812, run == 1, !is.na(twin.pair)) %>% .$twin.pair %>% duplicated %>% sum
 ## and current subject list---i.e., all pepople with GLMs fit:
 ## (contains twins!)
 group201902 <- read.csv(
-  file.path(dir.box.stroop.sheets, "subj-sample_group-201902.csv"),
+    "C:/Users/mcf/Box/global/proj/stroop-rsa/old/wustl_proj_stroop-rsa/sheets/subj-sample_group-201902.csv",
+    # file.path(dir.box.stroop.sheets, "subj-sample_group-201902.csv"),
   stringsAsFactors = FALSE
 )[, 1]
 # subj.summary.pro %>% filter(subj %in% group201902, run == 1, !is.na(twin.pair)) %>% .$twin.pair %>% duplicated %>% sum

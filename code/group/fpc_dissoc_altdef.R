@@ -13,40 +13,48 @@ fit.super.alt <- update(
 )
 summary(fit.super.alt)
 
-glht.super.all.alt <- summary(glht(fit.super.alt, contrasts.super.all), test = adjusted("none"))
+glht.super.alt <- summary(glht(fit.super.alt, contrasts.super), test = adjusted("none"))
 
-p.fdr.tvi.dlpfc.super.alt <- 
-  glht.super.all.alt$test$pvalues[grep("dlpfc_", rownames(contrasts.super))] %>% 
-  p.adjust(method = "fdr")
-p.fdr.tvi.lppc.super.alt <- 
-  glht.super.all.alt$test$pvalues[grep("lppc_", rownames(contrasts.super))] %>% 
-  p.adjust(method = "fdr")
-p.fdr.tvi.dmfc.super.alt <- 
-  glht.super.all.alt$test$pvalues[grep("dmfc_", rownames(contrasts.super))] %>% 
-  p.adjust(method = "fdr")
+
+glht.super.alt$test$pvalues.fdr <- glht.super$test$pvalues
+for (contr.i in seq_along(contrs2correct)) {
+  
+  p <- glht.super.alt$test$pvalues[grep(contrs2correct[contr.i], names(glht.super.alt$test$pvalues))]
+  glht.super.alt$test$pvalues.fdr[grep(contrs2correct[contr.i], names(glht.super.alt$test$pvalues.fdr))] <- p.adjust(p, "fdr")
+  
+}
 
 ## table
 
+
 table.group.alt <- data.frame(
   contrast = table.group.contrast,
-  # type = table.group.type,
-  b        = glht.super.all.alt$test$coefficients,
-  se       = glht.super.all.alt$test$sigma,
-  t        = glht.super.all.alt$test$tstat,
-  p        = glht.super.all.alt$test$pvalues
+  b  = glht.super.alt$test$coefficients,
+  se = glht.super.alt$test$sigma,
+  t  = glht.super.alt$test$tstat,
+  p  = glht.super.alt$test$pvalues.fdr
 )
-table.group.alt$p.raw <- table.group.alt$p
-table.group.alt[
-  table.group.alt$contrast %in% 
-    c(names(p.fdr.tvi.dlpfc.super.alt), names(p.fdr.tvi.lppc.super.alt), names(p.fdr.tvi.dmfc.super.alt)),
-  "p"
-  ] <- c(p.fdr.tvi.dlpfc.super.alt, p.fdr.tvi.lppc.super.alt, p.fdr.tvi.dmfc.super.alt)
+table.group.alt <- table.group.alt[grep("DLPFC|DMFC", table.group.alt$contrast), ]  ## subset important rows
 rownames(table.group.alt) <- NULL
 
-table.group.alt <- table.group.alt[grep("DLPFC|DMFC", table.group.alt$contrast), ]  ## subset important rows
 kable(table.group.alt)
 
 fwrite(table.group.alt, here("out", "group", "superparcels_alt.txt"))
+
+# table.group.alt.means <- table.group.alt[1:12, ]
+# table.group.alt.wnregion <- table.group.alt[13:30, ]
+# table.group.alt.bnregion <- table.group.alt[31:51, ]
+# 
+# kable(table.group.alt.means)
+# kable(table.group.alt.wnregion)
+# kable(table.group.alt.bnregion)
+# 
+# fwrite(table.group.alt.means, here("out", "group", "superparcels_alt_means.txt"))
+# fwrite(table.group.alt.wnregion, here("out", "group", "superparcels_alt_wnregion.txt"))
+# fwrite(table.group.alt.bnregion, here("out", "group", "superparcels_alt_bnregion.txt"))
+
+
+
 
 #+ 
 

@@ -25,6 +25,7 @@
 # 
 
 fnames <- list.files(here::here("out", "masks"), pattern = "\\.nii")
+fnames <- fnames[-grep("pscalar", fnames)]
 
 masks <- lapply(
   fnames, 
@@ -33,3 +34,5 @@ masks <- lapply(
 )
 
 names(masks) <- gsub("\\.nii.*$", "", fnames)
+
+# sum(masks$vwfa@.Data)
