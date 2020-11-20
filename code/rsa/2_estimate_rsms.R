@@ -2,24 +2,19 @@
 ## 
 ## reads in afni images (beta estimates from GLM) into a list.
 ## this list contains one element per subject per parcel per hemisphere.
-## given a parcellation atlas or mask, similarity measures are then calculated from this list, and saved as
+## given a  mask, similarity measures are then calculated, and saved as
 ##  .RDS files to stroop-rsa/out/rsa/.
 ## additionaly saved are mean values for conducting a univariate analysis.
 ## 
 ## mike freund, 2019-12-24
 
 
-do.atlas <- TRUE
-do.masks <- TRUE
-do.univa <- TRUE
-
-if (all(!do.atlas, !do.masks, !do.univa)) stop(paste0("you must do something!"))
-
 ## setup ----
 
+source(here::here("code", "packages.R"))
 source(here::here("code", "strings.R"))
-if (do.atlas | do.univa) source(here::here("code", "read_atlases.R"))
-if (do.masks) source(here::here("code", "read_masks.R"))
+source(here::here("code", "read_atlases.R"))
+source(here::here("code", "read_masks.R"))
 
 ## paths, vars
 
@@ -35,21 +30,16 @@ n.regs <- length(regs)
 n.subj <- length(fit.subjs)
 n.bias.items <- length(bias.items)
 
-## this variable defines the outermost loop.
-## each iteration collates RSMs into a single array, and saves it as a single .rds file.
-sets.of.rois <- character(0)
-if (do.atlas) sets.of.rois <- c(sets.of.rois, names(atlas))
-if (do.masks) sets.of.rois <- c(sets.of.rois, "masks")
-
 
 ## loop over sets of ROIs ----
+## each iteration collates RSMs into a single array, and saves it as a single .rds file.
 
 for (set.i in sets.of.rois) {
   # set.i = "mmp"
   
   ## get numbers and create storage objects
   
-  if (set.i != "masks") {
+  if (set.i == "mmp") {
     n.roi <- nrow(atlas.key[[set.i]])
     roi.names <- atlas.key[[set.i]]$roi
   } else {
@@ -73,11 +63,9 @@ for (set.i in sets.of.rois) {
   dimnames(voxels.silent) <- list(roi = roi.names, subj = fit.subjs)
   voxels.number <- numeric(n.roi)  ## for total number of voxels / roi
   
-  if (do.univa) {  ### for saving unvariate stats (means)
-    roi.means <- matrix(NA, nrow = n.roi, ncol = n.regs)
-    dimnames(roi.means) <- list(roi = roi.names, reg = regs)
-  }
-  
+  roi.means <- matrix(NA, nrow = n.roi, ncol = n.regs)
+  dimnames(roi.means) <- list(roi = roi.names, reg = regs)
+
   ## loop over subjs and rois ----
   
   for (subj.i in seq_along(fit.subjs)) {
@@ -133,7 +121,7 @@ for (set.i in sets.of.rois) {
       
       ## get and apply mask for roi.i
       
-      if (set.i != "masks") {
+      if (set.i == "mmp") {
         mask.i <- atlas[[set.i]] == roi.i 
       } else {
         mask.i <- masks[[roi.i]] == 1
@@ -157,7 +145,7 @@ for (set.i in sets.of.rois) {
       
       ## get univariate stats (across-voxel means)
       
-      if (do.univa) roi.means[roi.i, ] <- apply(roi.betas, "reg", mean)
+      roi.means[roi.i, ] <- apply(roi.betas, "reg", mean)
     
     }
     
@@ -177,18 +165,14 @@ for (set.i in sets.of.rois) {
   
   ## univariate results
   
-  if (do.univa) {
-
-    saveRDS(
-      roi.means, 
-      here::here(
-        "out", "rsa", "obsv",  ## not an RSA, but save in ./out/rsa/ for consistency...
-        paste0("roi-means_pro_bias_acc-only_", set.i, ".rds")
-      )
+  saveRDS(
+    roi.means, 
+    here::here(
+      "out", "rsa", "obsv",  ## not an RSA, but save in ./out/rsa/ for consistency...
+      paste0("roi-means_pro_bias_acc-only_", set.i, ".rds")
     )
-    
-  }
-  
+  )
+
   ## voxel information
   
   voxels.silent <- data.table::as.data.table(voxels.silent)

@@ -45,3 +45,5 @@ subjs.analysis <-
   unique(data.table::fread(here::here("in", "behavior-and-events_group201902.csv"))[is.analysis.group == TRUE]$subj)
 subjs.validation <- 
   unique(data.table::fread(here::here("in", "behavior-and-events_group201902.csv"))[is.analysis.group == FALSE]$subj)
+
+sets.of.rois <- c("masks", "mmp")

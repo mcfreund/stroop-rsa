@@ -8,18 +8,10 @@
 
 ## setup ----
 
-library(here)
-library(mikeutils)
-library(dplyr)
-library(purrr)
-library(magrittr)
-library(data.table)
+source(here::here("code", "packages.R"))
 source(here("code", "strings.R"))
 source(here("code", "read_atlases.R"))
 source(here("code", "read_masks.R"))
-
-sets.of.rois <- c("mmp", "gordon", "masks")
-# sets.of.rois <- "masks"
 
 
 ## analysis group:

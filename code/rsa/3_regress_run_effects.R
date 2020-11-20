@@ -8,16 +8,11 @@
 
 ## setup ----
 
-library(here)
-library(mikeutils)
-library(dplyr)
-library(data.table)
-library(purrr)
+source(here::here("code", "packages.R"))
 source(here("code", "strings.R"))
 source(here("code", "read_atlases.R"))
 source(here("code", "read_masks.R"))
 
-sets.of.rois <- c("mmp", "gordon", "masks")
 is.lower.tri <- lower.tri(diag(length(bias.items)))
 run.rsm <- as.matrix(fread(here("out", "rsa", "mods", "rsm_pro_bias_run.csv")), rownames = 1)
 run.rsv <- mat2vec(run.rsm, value.name = "run.model")  ## unwrap run model to lower-tri vector

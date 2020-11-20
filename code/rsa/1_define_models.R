@@ -16,7 +16,7 @@ library(dplyr)
 source(here("code", "strings.R"))
 
 
-## categorical models ----
+## define models ----
 
 rsm.empty <- matrix(0, ncol = 16, nrow = 16, dimnames = list(bias.items, bias.items))
 rsm.target <- rsm.empty

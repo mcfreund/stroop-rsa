@@ -1,5 +1,8 @@
 ## about ----
 ## 
+## writes masks, .nii files, that define ROIs
+## 
+## warning: this script is spagett
 
 library(here)
 library(mikeutils)

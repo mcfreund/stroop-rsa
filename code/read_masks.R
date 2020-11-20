@@ -1,28 +1,8 @@
 ## about ----
 ## 
-## reads .nii files that are masks for 'user-specified' ROIs.
-## these ROIs were specified on the basis of neuroanatomy (e.g., VWFA) and on function (results from RSA).
+## reads .nii files that are masks for ROIs.
 ## 
 ## mike freund, 2019-01-10
-
-## TODO
-## create masks.key file with definitions (same structure as atlas.key)
-## embed reading in of masks in loop
-
-## initialize ----
-
-# mask.names <- c(
-#   "vwfa"
-# )
-# 
-# masks <- setNames(vector("list", length(mask.names)), mask.names)
-# rm(mask.names)
-# 
-# 
-# ## vwfa ----
-# 
-# masks$vwfa <- oro.nifti::readNIfTI(here::here("out", "masks", "vwfa.nii.gz"), reorient = FALSE)
-# 
 
 fnames <- list.files(here::here("out", "masks"), pattern = "\\.nii")
 fnames <- fnames[-grep("pscalar", fnames)]
@@ -35,4 +15,4 @@ masks <- lapply(
 
 names(masks) <- gsub("\\.nii.*$", "", fnames)
 
-# sum(masks$vwfa@.Data)
+# sum(masks$vwfa@.Data)  ## nvox in VWFA mask
