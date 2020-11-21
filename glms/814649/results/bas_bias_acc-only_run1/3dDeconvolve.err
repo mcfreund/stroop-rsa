@@ -1,7 +1,0 @@
-*+ WARNING: '-stim_times 4' didn't read any good times from file '/data/nil-external/ccp/freund/stroop-rsa/glms/814649/input/bas/814649_bas_whiteBLUE_acc-only_run1.txt'
-*+ WARNING: '-stim_times 5' didn't read any good times from file '/data/nil-external/ccp/freund/stroop-rsa/glms/814649/input/bas/814649_bas_bluePURPLE_acc-only_run1.txt'
-*+ WARNING: '-stim_times 9' didn't read any good times from file '/data/nil-external/ccp/freund/stroop-rsa/glms/814649/input/bas/814649_bas_blueRED_acc-only_run1.txt'
-*+ WARNING: '-stim_times 10' didn't read any good times from file '/data/nil-external/ccp/freund/stroop-rsa/glms/814649/input/bas/814649_bas_purpleRED_acc-only_run1.txt'
-*+ WARNING: '-stim_times 14' didn't read any good times from file '/data/nil-external/ccp/freund/stroop-rsa/glms/814649/input/bas/814649_bas_purpleWHITE_acc-only_run1.txt'
-*+ WARNING: '-stim_times 15' didn't read any good times from file '/data/nil-external/ccp/freund/stroop-rsa/glms/814649/input/bas/814649_bas_redWHITE_acc-only_run1.txt'
-** FATAL ERROR: 3dDeconvolve: -ortvec can't read file '/data/nil-external/ccp/freund/stroop-rsa/glms/814649/input/bas/motion_demean_baseline_run1.1D'
