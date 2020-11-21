@@ -27,13 +27,12 @@ script | ./out/ | manuscript | purpose |
 
 script | manuscript | purpose | 
 -------|------------|---------|
-prelim_behavioral_models.R | Method::Selection of Behavioral Measures for Individual-Level Analyses | models behavioral data of 'primary analysis set'
-microphone_comparison.R | Method::Selection of Behavioral Measures for Individual-Level Analyses | estimates impact of microphone change on RT measures
-prelim_behavioral_models_validation_set.R | Method::Selection of Behavioral Measures for Individual-Level Analyses | models RT data of 'validation set'
+prelim_behavioral_models.R | Method::Selection of Behavioral Measures... | models behavioral data of 'primary analysis set'
+microphone_comparison.R | Method::Selection of Behavioral Measures... | estimates impact of microphone change on RT measures
+prelim_behavioral_models_validation_set.R | Method::Selection of Behavioral Measures... | models RT data of 'validation set'
 
 
 ### Group-level analyses
-
 
  * scripts in **./code/group/**
  * master file: **\_group.rmd** (this sources all scripts in order and generates report)
@@ -52,7 +51,28 @@ noise_ceiling_tost.R | Results::Group::Sensitivity and control analyses, stats i
 
 ### Individual (Difference) analyses
 
-scripts in ./code/indiv/ subdirectory
+ * scripts in **./code/indiv/**
+ * master file: **\_indiv.rmd** (this sources all scripts in order and generates report)
+ * view report: **\_indiv.html**
+
+script | manuscript | purpose | 
+-------|------------|---------|
+bivar_superparcel.R | Figure 3A; Figure A3; | create bivariate scatterplots Stroop ~ coding strength
+single_roi.R |  Results::Individual::Better-performing...; Table A5 | test stroop\*coding-strength relationship in each ROI\*coding-scheme separately
+wn_roi_contrast.R | Results::Individual::Better-performing...; Table A6 | contrast stroop\*coding-strength relationship between coding schemes (incongr., target), within-ROI
+bn_roi_contrast.R | Results::Individual::Better-performing...;  Table A7 | contrast stroop\*coding-strength relationship between ROIs, within coding schemes (incongr., target)
+model_selection.R | Results::Individual::Model selection...; Figure 3B,C | elastic net model selection and validation-set prediction
+bivar_allcorrs_table.R | Results::Individual::Model selection...; Table A9 | largest 20% of stroop~coding-scheme correlations observed across all superparcels
+
+
+### Exploratory whole-cortex analyses
+
+ * scripts in **./code/explor/**
+
+script | manuscript | purpose | 
+-------|------------|---------|
+explor.rmd | Results::Exploratory; Figure 4, Table A10--12, Figure A6 | test group-level coding of each scheme (target, distr, incongr.) in each MMP parcel
+movregs_rsa.rmd | Results::Exploratory; Table A13 | negative control: are coding schemes 'encoded' within movement regressors?
 
 
 ### other scripts
