@@ -1,11 +1,15 @@
 # RSA of color-word Stroop
 
 Repository for manuscript
+
 Submitted for publication, 2020-10-21
+
+---
 
 ## PIPELINE SUMMMARY
 
-For each section of the manuscript, these tables summarize relevant info regarding analysis code: file name (script), output (./out/), corresponding figures/tables/sections of manuscript, and purpose.
+This section is broken down by section of the manuscript.
+The tables here connect analysis scripts to parts of the manuscript (Figures, Tables, text sections).
 
 ### Estimating Coding Strength \beta
 
@@ -23,7 +27,7 @@ script | ./out/ | manuscript | purpose |
 
  * scripts in **./code/behav/**
  * master file: **\_behav.rmd** (this sources all scripts in order and generates report)
- * view report: **\_behav.html**
+ * view report: [**\_behav.html**](https://htmlpreview.github.io/?https://github.com/mcfreund/stroop-rsa/blob/ms_v1/code/behav/_behav.html)
 
 script | manuscript | purpose | 
 -------|------------|---------|
@@ -36,7 +40,7 @@ prelim_behavioral_models_validation_set.R | Method::Selection of Behavioral Meas
 
  * scripts in **./code/group/**
  * master file: **\_group.rmd** (this sources all scripts in order and generates report)
- * view report: **\_group.html**
+ * view report: [**\_group.html**](https://htmlpreview.github.io/?https://github.com/mcfreund/stroop-rsa/blob/ms_v1/code/group/_group.html)
 
 script | manuscript | purpose | 
 -------|------------|---------|
@@ -53,7 +57,7 @@ noise_ceiling_tost.R | Results::Group::Sensitivity and control analyses, stats i
 
  * scripts in **./code/indiv/**
  * master file: **\_indiv.rmd** (this sources all scripts in order and generates report)
- * view report: **\_indiv.html**
+ * view report: [**\_indiv.html**](https://htmlpreview.github.io/?https://github.com/mcfreund/stroop-rsa/blob/ms_v1/code/indiv/_indiv.html)
 
 script | manuscript | purpose | 
 -------|------------|---------|
@@ -87,7 +91,7 @@ scripts that set up initial things
 
 #### misc
 
-
+---
 
 ## MORE ABOUT REPO
 
