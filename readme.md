@@ -1,14 +1,14 @@
 # RSA of color-word Stroop
 
-Repository for manuscript
+Repository for manuscript XXXXXX
 
-Submitted for publication, 2020-10-21
+Submitted for publication, 2020-10-2X
 
 ---
 
 ## PIPELINE SUMMMARY
 
-This section is broken down by section of the manuscript.
+This summary is broken down by section of the manuscript.
 The tables here connect analysis scripts to parts of the manuscript (Figures, Tables, text sections).
 
 ### Estimating Coding Strength \beta
