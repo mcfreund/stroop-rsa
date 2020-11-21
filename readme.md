@@ -1,8 +1,8 @@
 # RSA of color-word Stroop
 
-Repository for manuscript
+Repository for manuscript XXXXXX
 
-Submitted for publication, 2020-10-21
+Submitted for publication, 2020-10-2X
 
 ---
 
