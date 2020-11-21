@@ -1,8 +1,11 @@
 # RSA of color-word Stroop
 
+Repository for manuscript
+Submitted for publication, 2020-10-21
+
 ## PIPELINE SUMMMARY
 
-For each analysis script, summarizes input (./in/), output (./out/), name (script), corresponding figures/tables/sections of manuscript, and purpose.
+For each section of the manuscript, these tables summarize relevant info regarding analysis code: file name (script), output (./out/), corresponding figures/tables/sections of manuscript, and purpose.
 
 ### Estimating Coding Strength \beta
 
@@ -22,11 +25,11 @@ script | ./out/ | manuscript | purpose |
  * master file: **\_behav.rmd** (this sources all scripts in order and generates report)
  * view report: **\_behav.html**
 
-script | ./out/ | manuscript | purpose | 
--------|--------|------------|---------|
-prelim_behavioral_models.R | .csv files in behav/ | Method::Selection of Behavioral Measures for Individual-Level Analyses | models behavioral data of 'primary analysis set'
-microphone_comparison.R | behav/mod_objs_mic.RDS | Method::Selection of Behavioral Measures for Individual-Level Analyses | estimates impact of microphone change on RT measures
-prelim_behavioral_models_validation_set.R |csv file in behav/ with suffix tag \_validation | Method::Selection of Behavioral Measures for Individual-Level Analyses | models RT data of 'validation set'
+script | manuscript | purpose | 
+-------|------------|---------|
+prelim_behavioral_models.R | Method::Selection of Behavioral Measures for Individual-Level Analyses | models behavioral data of 'primary analysis set'
+microphone_comparison.R | Method::Selection of Behavioral Measures for Individual-Level Analyses | estimates impact of microphone change on RT measures
+prelim_behavioral_models_validation_set.R | Method::Selection of Behavioral Measures for Individual-Level Analyses | models RT data of 'validation set'
 
 
 ### Group-level analyses
@@ -36,11 +39,15 @@ prelim_behavioral_models_validation_set.R |csv file in behav/ with suffix tag \_
  * master file: **\_group.rmd** (this sources all scripts in order and generates report)
  * view report: **\_group.html**
 
-script | ./out/ | manuscript | purpose | 
--------|--------|------------|---------|
-prelim_behavioral_models.R | .csv files in behav/ | Method::Selection of Behavioral Measures for Individual-Level Analyses | models behavioral data of 'primary analysis set'
-microphone_comparison.R | behav/mod_objs_mic.RDS | Method::Selection of Behavioral Measures for Individual-Level Analyses | estimates impact of microphone change on RT measures
-prelim_behavioral_models_validation_set.R |csv file in behav/ with suffix tag \_validation | Method::Selection of Behavioral Measures for Individual-Level Analyses | models RT data of 'validation set'
+script | manuscript | purpose | 
+-------|------------|---------|
+fpc_dissoc.R |  Results::Group::Dorsolateral prefrontal and dorsomedial frontal cortex exhibit distinct coding profiles; Figure 2A; Tables A1--A3 | tests hypotheses regarding group-level coding dissociations
+mds.R | Figure 2B | dimensionality reduction to visualize DMFC (L), V1, and SomMot--Mouth geometries
+visual_sm_dissoc.R | Results::Group::Sensitivity and control analyses; Figure A1 | test SomMot--mouth and V1 coding for positive control analysis
+fpc_dissoc_parcel.R | Results::Group::Sensitivity and control analyses; Figure A2 | sensitivity test for group-level analysis (parcel-level)
+fpc_dissoc_altdef.R | Results::Group::Sensitivity and control analyses; Table A4 | sensitivity test for group-level analysis (alternate ROI definitions for DMFC and DLPFC)
+noise_ceiling.R | Results::Group::Sensitivity and control analyses, stats inline | estimate noise ceilings per ROI
+noise_ceiling_tost.R | Results::Group::Sensitivity and control analyses, stats inline | contrast noise ceiling estimates across ROIs, provide two one-sided test for equivalence
 
 
 ### Individual (Difference) analyses
