@@ -87,7 +87,7 @@ scripts for sourcing, all located in ./code
 
 #### 'prelim scripts'
 scripts that set up initial things
- * define_behav_subjects.R (depends:), write_atlases.R (depends: ), write_masks.R (depends: )
+ * write_atlases.R (depends: ), write_masks.R (depends: )
 
 #### misc
 
