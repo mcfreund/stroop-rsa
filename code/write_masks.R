@@ -4,12 +4,7 @@
 ## 
 ## warning: this script is spagett
 
-library(here)
-library(mikeutils)
-library(magrittr)
-library(dplyr)
-library(data.table)
-library(oro.nifti)
+source(here::here("code", "packages.R"))
 source(here("code", "strings.R"))
 source(here("code", "read_atlases.R"))
 source(here("code", "funs.R"))
