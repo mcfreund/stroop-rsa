@@ -1,11 +1,82 @@
-# directory for project involving RSA of color-word Stroop
+# RSA of color-word Stroop
 
-## ./in
+Repository for manuscript
+Submitted for publication, 2020-10-21
+
+## PIPELINE SUMMMARY
+
+For each section of the manuscript, these tables summarize relevant info regarding analysis code: file name (script), output (./out/), corresponding figures/tables/sections of manuscript, and purpose.
+
+### Estimating Coding Strength \beta
+
+ * scripts in **./code/behav/**
+
+script | ./out/ | manuscript | purpose | 
+--------|-------|------------|---------|
+1_define_models.R | .csv files in rsa/mods/ | Figure 1 | creates model similarity matrices
+2_estimate_rsms.R | .rds files in rsa/obsv | Method::Estimating Coding Strength \beta | estimates empirical similarity matrices per ROI
+3_regress_run_effects.R |.rds files in rsa/obsv with suffix tag \_residual | Method::Estimating Coding Strength \beta | prewhitens empirical similarity matrices with "run-bias" model
+4_model_rsms.R | .csv files in rsa\stats | Method::Estimating Coding Strength \beta | fits RSA models (RSA regression)
+
+
+### Behavioral analyses
+
+ * scripts in **./code/behav/**
+ * master file: **\_behav.rmd** (this sources all scripts in order and generates report)
+ * view report: **\_behav.html**
+
+script | manuscript | purpose | 
+-------|------------|---------|
+prelim_behavioral_models.R | Method::Selection of Behavioral Measures for Individual-Level Analyses | models behavioral data of 'primary analysis set'
+microphone_comparison.R | Method::Selection of Behavioral Measures for Individual-Level Analyses | estimates impact of microphone change on RT measures
+prelim_behavioral_models_validation_set.R | Method::Selection of Behavioral Measures for Individual-Level Analyses | models RT data of 'validation set'
+
+
+### Group-level analyses
+
+
+ * scripts in **./code/group/**
+ * master file: **\_group.rmd** (this sources all scripts in order and generates report)
+ * view report: **\_group.html**
+
+script | manuscript | purpose | 
+-------|------------|---------|
+fpc_dissoc.R |  Results::Group::Dorsolateral prefrontal and dorsomedial frontal cortex exhibit distinct coding profiles; Figure 2A; Tables A1--A3 | tests hypotheses regarding group-level coding dissociations
+mds.R | Figure 2B | dimensionality reduction to visualize DMFC (L), V1, and SomMot--Mouth geometries
+visual_sm_dissoc.R | Results::Group::Sensitivity and control analyses; Figure A1 | test SomMot--mouth and V1 coding for positive control analysis
+fpc_dissoc_parcel.R | Results::Group::Sensitivity and control analyses; Figure A2 | sensitivity test for group-level analysis (parcel-level)
+fpc_dissoc_altdef.R | Results::Group::Sensitivity and control analyses; Table A4 | sensitivity test for group-level analysis (alternate ROI definitions for DMFC and DLPFC)
+noise_ceiling.R | Results::Group::Sensitivity and control analyses, stats inline | estimate noise ceilings per ROI
+noise_ceiling_tost.R | Results::Group::Sensitivity and control analyses, stats inline | contrast noise ceiling estimates across ROIs, provide two one-sided test for equivalence
+
+
+### Individual (Difference) analyses
+
+scripts in ./code/indiv/ subdirectory
+
+
+### other scripts
+
+#### 'helpers'
+scripts for sourcing, all located in ./code
+ * packages.R, strings.R, funs.R, read_atlases.R (depends: write_atlases.R), read_masks.R (depends: write_masks.R)
+
+#### 'prelim scripts'
+scripts that set up initial things
+ * define_behav_subjects.R (depends:), write_atlases.R (depends: ), write_masks.R (depends: )
+
+#### misc
+
+
+
+## MORE ABOUT REPO
+
+### ./in
 * contains behavioral data assembled by stroop-rsa/write_behav_stroop_rsa.R.
 * no other script writes to this directory.
 * underlay surfaces downloaded from BALSA: https://balsa.wustl.edu/sceneFile/show/7qP5m
 
-## ./code
+### ./code
 * primary analysis pipeline (bash, .R scripts)
 * dynamic reports (.rmd files)
 * reads from ./data, nil-bluearc (for 3D+t images), ./out
@@ -14,7 +85,7 @@
 * __./group__: scripts / reports for generating group-level analyses
 * __./indiv__: scripts / reports for generating individual difference analyses (brain~behavior)
 
-## ./out
+### ./out
 * all output of scripts are directed to this directory
 * the one exeption is output related to fMRI GLMs, which is saved within __./glms__
 * __./rsa__
@@ -27,7 +98,7 @@
 * __./group__: output of group-level analyses
 * __./indiv__: output of individual difference analyses (brain~behavior)
 
-## ./glms
+### ./glms
 * contains AFNI GLM input (e.g., stimtime and movreg files), shell scripts, and output (e.g., .nii brick files)
 * 3D+t images read from nil-bluearc
 * GLMs fit on ccplinux1, and results merged with local directory via rsync
