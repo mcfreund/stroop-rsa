@@ -8,8 +8,12 @@ lambdas.super <- tune_lambda(X.super, strooprt, alpha = 0.5, selection_crit = fu
 hist(lambdas.super, breaks = 50, col = "grey50")
 lambda.best.super <- min(Mode(lambdas.super))
 
-net.super <- glmnet(x = X.super, y = strooprt, lambda = lambda.best.super, alpha = 0.5)
-coef(net.super)
+## seq lambdas b/c warm start:
+net.super <- glmnet(x = X.super, y = strooprt, lambda = seq(0, lambda.best.super, 1), alpha = 0.5)
+coef(net.super, s = lambda.best.super)
+
+
+
 
 
 ## estimate test error ----
@@ -20,10 +24,13 @@ X.super_vset <- m.super[!ids$is.analysis.group, -rm.these]  ## 'held out' / vali
 
 ys.super <- cbind(
   y = c(strooprt_vset),
-  yhat = c(predict(net.super, newx = X.super_vset))
+  yhat = c(predict(net.super, newx = X.super_vset, s = lambda.best.super))
 )
 
 (cor.obs.super <- cor(ys.super)["y", "yhat"])
+
+
+
 
 ys.super %>%
   as.data.frame %>%
@@ -41,9 +48,9 @@ cor.perm.super <- foreach(ii = seq_len(nresamps), .inorder = FALSE, .combine = "
   
   yperm <- strooprt[sample.int(length(strooprt))]
   
-  fit.ii <- glmnet(x = X.super, y = yperm, lambda = lambda.best.super, alpha = 0.5)
+  fit.ii <- glmnet(x = X.super, y = yperm, lambda = seq(0, lambda.best.super, 1), alpha = 0.5)
   
-  cor(strooprt_vset, predict(fit.ii, newx = X.super_vset))
+  cor(strooprt_vset, predict(fit.ii, newx = X.super_vset, s = lambda.best.super))
   
 }
 stopCluster(cl)
@@ -56,30 +63,6 @@ abline(v = cor.obs.super, col = "firebrick", lwd = 3)
 sum(is.na(cor.perm.super))  ## num models with no predictors
 #+
 
-#' #### predictive power of DMFC target versus incongruency
-
-#+ model-selection_dmfc
-## DMFC target vs incongruency ----
-
-regs <- c("lppc_R_target", "dlpfc_R_target", "vvis_L_incongruency", "dlpfc_L_distractor")
-X.super.dmfctarg <- as.data.frame(X.super[, c(regs, "dmfc_L_target")])
-X.super.dmfcincon <- as.data.frame(X.super[, c(regs, "dmfc_L_incongruency")])
-
-lm.dmfc.target <- lm(strooprt ~ ., X.super.dmfctarg)
-lm.dmfc.incongruency <- lm(strooprt ~ ., X.super.dmfcincon)
-
-yhat.dmfc.target <- predict(lm.dmfc.target, newdata = as.data.frame(X.super_vset))
-yhat.dmfc.incongruency <- predict(lm.dmfc.incongruency, newdata = as.data.frame(X.super_vset))
-
-r.dmfc.valid <- c(
-  target = cor(yhat.dmfc.target, strooprt_vset), 
-  incongruency = cor(yhat.dmfc.incongruency, strooprt_vset)
-  )
-
-r.dmfc.valid
-
-(r.diff.dmfc.valid <- tanh(diff(atanh(r.dmfc.valid))))
-#+
 
 #+ model-selection_save
 ## save ----

@@ -49,7 +49,7 @@ rsarray.rank <- read_simil_mats(tfrm = "residual-rank")  ## for noise ceiling
 
 `r spin_child('mds.R')`
 
-# MFC/DLPFC/LPPC dissociation analyses
+# DMFC/DLPFC/LPPC dissociation analyses
 
 ## primary analysis
   * suerparcel level

@@ -30,12 +30,6 @@ stats.subjs <- bind_rows(
       ) %>% 
     mutate(roi.hemi = roi, roi = gsub("_L$|_R$", "", roi)),
   superparcel = read_subj_stats(subjs = c(subjs.analysis, subjs.validation)),
-  gordon      =     
-    read_subj_stats(
-      subjs = c(subjs.analysis, subjs.validation), 
-      roi.set = "gordon"
-    ) %>% 
-    mutate(roi.hemi = roi, roi = gsub("_L$|_R$", "", roi)),
   .id = "scheme"
   )
 
@@ -50,7 +44,6 @@ stats.subjs %<>% group_by(scheme, id) %>% mutate(beta.s = c(scale(beta)))  ## sc
 
 d.mmp <- stats.subjs %>% filter(scheme == "mmp")
 d.super <- stats.subjs %>% filter(scheme == "superparcel")
-d.gordon <- stats.subjs %>% filter(scheme == "gordon")
 
 ## to wide-form matrix
 
@@ -69,17 +62,8 @@ w.super <- stats.subjs %>%
   dplyr::select(subj, is.analysis.group, congr, stroop, beta, id) %>%
   pivot_wider(names_from = "id", values_from = "beta")
 
-w.gordon <- stats.subjs %>% 
-  
-  filter(scheme == "gordon") %>%
-  
-  dplyr::select(subj, is.analysis.group, congr, stroop, beta, id) %>%
-  pivot_wider(names_from = "id", values_from = "beta")
-
 
 are.identical <- identical(w.mmp[c("subj", "is.analysis.group")], w.super[c("subj", "is.analysis.group")])
-are.identical <- 
-  are.identical && identical(w.mmp[c("subj", "is.analysis.group")], w.gordon[c("subj", "is.analysis.group")])
 if (!are.identical) {
   stop("something wrong")
 } else {
@@ -88,8 +72,7 @@ if (!are.identical) {
   
   m.mmp    <- w.mmp %>% ungroup %>% dplyr::select(-subj, -is.analysis.group, -scheme) %>% as.matrix
   m.super  <- w.super %>% ungroup %>%  dplyr::select(-subj, -is.analysis.group, -scheme) %>% as.matrix
-  m.gordon <- w.gordon %>% ungroup %>%  dplyr::select(-subj, -is.analysis.group, -scheme) %>% as.matrix
-  
+
 }
 
 ## response variables
