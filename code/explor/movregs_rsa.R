@@ -123,7 +123,7 @@ stats.subjs.movregs %>%
   geom_boxplot(width = 0.1) +
   scale_color_grey()
 
-fwrite(group.subjs.movregs, here("out", "group", "movregs_rsa_vs0.csv"))
-fwrite(group.subjs.movregs.delta, here("out", "group", "movregs_rsa_delta.csv"))
+fwrite(group.subjs.movregs, here("out", "explor", "movregs_rsa_vs0.csv"))
+fwrite(group.subjs.movregs.delta, here("out", "explor", "movregs_rsa_delta.csv"))
 
 
