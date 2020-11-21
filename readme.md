@@ -15,8 +15,8 @@ The tables here connect analysis scripts to parts of the manuscript (Figures, Ta
 
  * scripts in **./code/behav/**
 
-script | ./out/ | manuscript | purpose | 
---------|-------|------------|---------|
+script  | manuscript | purpose | 
+--------|------------|---------|
 1_define_models.R | .csv files in rsa/mods/ | Figure 1 | creates model similarity matrices
 2_estimate_rsms.R | .rds files in rsa/obsv | Method::Estimating Coding Strength \beta | estimates empirical similarity matrices per ROI
 3_regress_run_effects.R |.rds files in rsa/obsv with suffix tag \_residual | Method::Estimating Coding Strength \beta | prewhitens empirical similarity matrices with "run-bias" model
@@ -44,7 +44,7 @@ prelim_behavioral_models_validation_set.R | Method::Selection of Behavioral Meas
 
 script | manuscript | purpose | 
 -------|------------|---------|
-fpc_dissoc.R |  Results::Group::Dorsolateral prefrontal and dorsomedial frontal cortex exhibit distinct coding profiles; Figure 2A; Tables A1--A3 | tests hypotheses regarding group-level coding dissociations
+fpc_dissoc.R |  Results::Group::Dorsolateral...; Figure 2A; Tables A1--A3 | tests hypotheses regarding group-level coding dissociations
 mds.R | Figure 2B | dimensionality reduction to visualize DMFC (L), V1, and SomMot--Mouth geometries
 visual_sm_dissoc.R | Results::Group::Sensitivity and control analyses; Figure A1 | test SomMot--mouth and V1 coding for positive control analysis
 fpc_dissoc_parcel.R | Results::Group::Sensitivity and control analyses; Figure A2 | sensitivity test for group-level analysis (parcel-level)
