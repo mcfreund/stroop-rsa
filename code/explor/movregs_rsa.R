@@ -16,6 +16,12 @@ lt <- lower.tri(diag(16))
 X_rsa <- fread(here("out", "rsa", "mods", "rsv_bias_lower-triangles.csv"))
 X_rsa <- scale(as.matrix(X_rsa[, c("target", "distractor", "incongruency")]))
 
+run.rsm <- as.matrix(fread(here("out", "rsa", "mods", "rsm_pro_bias_run.csv")), rownames = 1)
+run.rsv <- mat2vec(run.rsm, value.name = "run.model")  ## unwrap run model to lower-tri vector
+U <- cbind(1, run.rsv$run.model)  ## model: intercept, run regressor
+
+
+
 X_glm <- setNames(vector("list", length(subjs)), subjs)
 B_glm <- X_glm
 R <- array(NA, dim = c(16, 16, length(subjs), 2))
@@ -53,7 +59,6 @@ for (subj.i in seq_along(subjs)) {
       )
     )[-(1:2), ]  ## remove intercepts
   
-  
   ## rsa
   
   R06 <- cor(t(B_glm[, 1:6]))
@@ -62,9 +67,13 @@ for (subj.i in seq_along(subjs)) {
   R[, , subj.i, 1] <- R06
   R[, , subj.i, 2] <- R12
   
-  Y <- scale(cbind(R06[lt], R12[lt]))
+  Y <- scale(cbind(rank(R06[lt]), rank(R12[lt])))  ## rank transform and z-score normalize
   
-  B_rsa <- coef(.lm.fit(X_rsa, Y))
+  fits <- .lm.fit(U, Y)  ## regress run component from rsv
+  B1 <- coef(fits)[2, ]  ## slopes
+  Y_prw <- Y - U[, 2] %*% t(B1)    ## unscaled RSA response vectors
+  
+  B_rsa <- coef(.lm.fit(X_rsa, Y_prw))
   dimnames(B_rsa) <- list(model = c("target", "distractor", "incongruency"), nmovregs = c("m06", "m12"))
   stats.subjs.movregs[[subj.i]] <- reshape2::melt(B_rsa)
   
@@ -73,6 +82,7 @@ for (subj.i in seq_along(subjs)) {
 
 stats.subjs.movregs <- bind_rows(stats.subjs.movregs, .id = "subj")
 
+
 ## inferential stats ----
 
 group.subjs.movregs <- stats.subjs.movregs %>%
@@ -80,8 +90,8 @@ group.subjs.movregs <- stats.subjs.movregs %>%
   group_by(model, nmovregs) %>%
   
   summarize(
-    p = wilcox.test(value, alternative = "greater")$p.value,
-    b = mean(value)
+    b = mean(value),
+    p = wilcox.test(value, alternative = "greater")$p.value
     )
 
 
@@ -90,8 +100,8 @@ group.subjs.movregs.delta <- stats.subjs.movregs %>%
   pivot_wider(names_from = nmovregs, values_from = value) %>%
   group_by(model) %>%
   summarize(
-    p = wilcox.test(m06, m12, paired = TRUE)$p.value,
-    b = mean(m06 - m12)
+    b = mean(m12 - m06),
+    p = wilcox.test(m06, m12, paired = TRUE)$p.value
   )
 
 group.subjs.movregs
