@@ -29,20 +29,32 @@ t_start <- Sys.time()
 
 ## bivariate associations
 
+### correlations
+
 `r spin_child('bivar_superparcel.R')`
 
-## within-region interactions (contrasts on slopes)
+### regressions: single coding-scheme models
+
+`r spin_child('single_roi.R')`
+
+## within-region interactions
 
 `r spin_child('wn_roi_contrast.R')`
 
+## between-region interactions
 
-## within-region interactions (contrasts on slopes): alternate ROI definitions
+`r spin_child('bn_roi_contrast.R')`
 
-`r spin_child('wn_roi_contrast_alt.R')`
 
 # model selection analysis
 
+## model
+
 `r spin_child('model_selection.R')`
+
+## top 20 correlations
+
+`r spin_child('bivar_allcorrs_table.R')`
 
 
 # arrange figure

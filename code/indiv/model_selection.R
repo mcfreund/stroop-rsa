@@ -69,7 +69,7 @@ sum(is.na(cor.perm.super))  ## num models with no predictors
 
 saveRDS(net.super, here("out", "indiv", "selected_model.RDS"))
 saveRDS(
-  list(ys.super = ys.super, p.super = p.super, r.diff.dmfc.valid = r.diff.dmfc.valid), 
+  list(ys.super = ys.super, p.super = p.super), 
   here("out", "indiv", "selected_model_validation.RDS")
   )
 

@@ -1,9 +1,6 @@
 #' * create bivariate scatterplots:
-#'    * fig-indiv panel A
-#'    * fig-indiv-hyp-bivar
-#' * create table of stats
-#'    * table-indiv-hyp-sep
-#'    * table-indiv-hyp-all
+#'      * fig-indiv panel A
+#'      * fig-indiv-hyp-bivar
 
 
 #+ include = FALSE
@@ -135,41 +132,14 @@ cors.lfp <- w.super %>%
 fwrite(cors.lfp, here("out", "indiv", "cors_lfp.txt"))
 #+
 
-#' ### make LFP variable
-
-#+ bivar-superparcel_combine
-
-w.super$lfp_R_target <- (w.super$dlpfc_R_target)# + w.super$lppc_R_target) / 2
-w.super$lfp_R_incongruency <- (w.super$dlpfc_R_incongruency)# + w.super$lppc_R_incongruency) / 2
-
-
-d.dissoc.hlm$lfp_R_target <- (d.dissoc.hlm$dlpfc_R_target)# + d.dissoc.hlm$lppc_R_target) / 2
-d.dissoc.hlm$lfp_R_incongruency <- (d.dissoc.hlm$dlpfc_R_incongruency)# + d.dissoc.hlm$lppc_R_incongruency) / 2
-
-d.super %<>%
-  
-  {
-    bind_rows(
-      .,
-      filter(., roi %in% c("dlpfc_R", "lppc_R"), param %in% c("target", "incongruency")) %>%
-        group_by(subj, scheme, is.analysis.group, param) %>%
-        summarize(
-          congr = unique(congr), stroop = unique(stroop), 
-          beta = mean(beta), beta.s = mean(beta.s)
-        ) %>%
-        ungroup %>%
-        mutate(roi = "lfp_R", id = paste0(roi, "_", param))
-    )
-  }
-#+
 
 #+ plot-panel-a
 w.super.agroup <- w.super %>% filter(is.analysis.group)
 set.seed(0)
 cor.dmfc.l.incongruency <- cor_ci(w.super.agroup[c("dmfc_L_incongruency", "stroop")], R = 1E4)
-cor.lfp.r.target <- cor_ci(w.super.agroup[c("lfp_R_target", "stroop")], R = 1E4)
+cor.dlpfc.r.target <- cor_ci(w.super.agroup[c("dlpfc_R_target", "stroop")], R = 1E4)
 cor.dmfc.l.incongruency.rank <- w.super.agroup[c("dmfc_L_incongruency", "stroop")] %>% mutate_all(rank) %>% cor_ci(R = 1E4)
-cor.lfp.r.target.rank <- w.super.agroup[c("lfp_R_target", "stroop")] %>% mutate_all(rank) %>% cor_ci(R = 1E4)
+cor.dlpfc.r.target.rank <- w.super.agroup[c("dlpfc_R_target", "stroop")] %>% mutate_all(rank) %>% cor_ci(R = 1E4)
 
 w.super.agroup %>%
   
@@ -178,14 +148,14 @@ w.super.agroup %>%
   stat_boot_ci(aes(dmfc_L_incongruency, stroop), n = 1E4, alpha = 0.3, fill = colors.model["incongruency"]) +
   stat_smooth(aes(dmfc_L_incongruency, stroop), method = "lm", color = colors.model["incongruency"], se = FALSE) +
   
-  stat_boot_ci(aes(lfp_R_target, stroop), n = 1E4, alpha = 0.3, fill = colors.model["target"]) +
-  stat_smooth(aes(lfp_R_target, stroop), method = "lm", color = colors.model["target"], se = FALSE) +
+  stat_boot_ci(aes(dlpfc_R_target, stroop), n = 1E4, alpha = 0.3, fill = colors.model["target"]) +
+  stat_smooth(aes(dlpfc_R_target, stroop), method = "lm", color = colors.model["target"], se = FALSE) +
   
   
   annotate(
     geom = "text", x = 0.3, y = 40, 
     label = paste0(
-      "DMFC (L) incon.:\nr = ", 
+      "DMFC (L) incongr.:\nr = ", 
       round(cor.dmfc.l.incongruency$t0, 2), ", [", 
       round(cor.dmfc.l.incongruency$lower, 2), ", ", 
       round(cor.dmfc.l.incongruency$upper, 2), "]\n\U03C1 = ",
@@ -204,13 +174,13 @@ w.super.agroup %>%
     geom = "text", x = -0.35, y = 140, 
     label = paste0(
       "DLPFC (R) target:\nr = ", 
-      round(cor.lfp.r.target$t0, 2), ", [", 
-      round(cor.lfp.r.target$lower, 2), ", ", 
-      round(cor.lfp.r.target$upper, 2), "]\n\U03C1 = ",
+      round(cor.dlpfc.r.target$t0, 2), ", [", 
+      round(cor.dlpfc.r.target$lower, 2), ", ", 
+      round(cor.dlpfc.r.target$upper, 2), "]\n\U03C1 = ",
       
-      round(cor.lfp.r.target.rank$t0, 2), ", [", 
-      round(cor.lfp.r.target.rank$lower, 2), ", ", 
-      round(cor.lfp.r.target.rank$upper, 2), "]"
+      round(cor.dlpfc.r.target.rank$t0, 2), ", [", 
+      round(cor.dlpfc.r.target.rank$lower, 2), ", ", 
+      round(cor.dlpfc.r.target.rank$upper, 2), "]"
     ),
     size = label.size,
     hjust = 0,
@@ -223,7 +193,7 @@ w.super.agroup %>%
     fill = colors.model["incongruency"], color = "white", shape = 21, size = geom.point.size*1.5
   ) +
   geom_point(
-    aes(lfp_R_target, stroop), 
+    aes(dlpfc_R_target, stroop), 
     fill = colors.model["target"], color = "white", shape = 21, size = geom.point.size*1.5
   ) +
   
