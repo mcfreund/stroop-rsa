@@ -89,7 +89,6 @@ scripts for sourcing, all located in ./code
 scripts that set up initial things
  * write_atlases.R (depends: ), write_masks.R (depends: )
 
-#### misc
 
 ---
 
