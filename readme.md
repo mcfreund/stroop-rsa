@@ -1,4 +1,4 @@
-# RSA of color-word Stroop
+# A representational similarity analysis of cognitive control in color-word Stroop
 
 Repository for manuscript ......
 
