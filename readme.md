@@ -1,6 +1,6 @@
 # A representational similarity analysis of cognitive control in color-word Stroop
 
-Repository for manuscript DOI: [10.1101/2020.11.22.392704](https://www.biorxiv.org/content/10.1101/2020.11.22.392704v1)
+Repository for manuscript [10.1101/2020.11.22.392704](https://www.biorxiv.org/content/10.1101/2020.11.22.392704v1)
 
 Submitted for publication, 2020-10-21
 
