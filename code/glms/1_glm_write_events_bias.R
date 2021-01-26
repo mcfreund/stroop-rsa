@@ -23,8 +23,8 @@ library(purrr)
 source(here("code", "strings.R"))
 
 
-stroop <- fread(here("data", "behavior-and-events_group201902.csv"))
-subj_sum <- fread(here("data", "summary_group201902.csv"))
+stroop <- fread(here("in", "behavior-and-events_group201902.csv"))
+subj_sum <- fread(here("in", "summary_group201902.csv"))
 stroop.pro <- subset(stroop, session == "pro")
 stroop.bas <- subset(stroop, session == "bas")
 
