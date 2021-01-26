@@ -268,153 +268,72 @@ write.csv(summary.movregs, here("out", "summaries", "moveregs_group201902.csv"))
 
 
 
-
-
-
-
-
-
-## use (baseline) ----
-
-## make grouping.var:
-is.nuisance <- stroop.bas$acc.final %in% c("0", "no.response", "unintelligible")
-stroop.bas <- stroop.bas %>%
-  ungroup %>%
-  mutate(
-    reg = item,
-    reg = ifelse(pc == "pc50", paste0("pc50_", trial.type), reg),
-    reg = ifelse(is.nuisance, "nuisance", reg)
-  )
-unique(stroop.bas$reg)
-sum(is.na(stroop.bas$reg))
+## use (proactive, runwise) ----
 
 ## NB: write events checks for "run1" and "run2" text in column "run"!!!
-if (any(unique(stroop.bas$run) %in% 1:2)) stroop.bas$run <- ifelse(stroop.bas$run == 1, "run1", "run2")
+if (any(unique(stroop.pro$run) %in% 1:2)) stroop.pro$run <- ifelse(stroop.pro$run == 1, "run1", "run2")
+
+## make grouping.var:
+is.nuisance <- stroop.pro$acc.final %in% c("0", "no.response", "unintelligible")
+stroop.pro <- stroop.pro %>%
+  ungroup %>%
+  mutate(
+    reg.run = item,
+    reg.run = ifelse(pc == "pc50", paste0("pc50_", trial.type), reg.run),
+    reg.run = ifelse(is.nuisance, "nuisance", reg.run),
+    reg.run = paste0(reg.run, "_", run)
+  )
+unique(stroop.pro$reg.run)
+sum(is.na(stroop.pro$reg.run))
+
 
 dir.to.write.in <- here("glms")
 
 ## first, check:
-## should be length 1, of value 216:
+stroop.pro %>% split(list(.$subj, .$session)) %>% map_dbl(nrow) %>% unique  ## should be length 1, of value 216
+head(stroop.pro[, grep("time.block", names(stroop.pro))])
+stroop.pro[, grep("time.block", names(stroop.pro))] %>% range
 
-stroop.bas.subj.nums <- stroop.bas %>% split(list(.$subj, .$session)) %>% map_dbl(nrow)
-stroop.bas.subjs <- names(stroop.bas.subj.nums)[stroop.bas.subj.nums == 216] %>% gsub(".bas", "", .)
-stroop.bas %<>% filter(subj %in% stroop.bas.subjs)
-
-stroop.bas %>% split(list(.$subj, .$session)) %>% map_dbl(nrow) %>% unique  ## should be length 1, of value 216
-head(stroop.bas[, grep("time.block", names(stroop.bas))])
-stroop.bas[, grep("time.block", names(stroop.bas))] %>% range
 
 ## write events
-
-num.events.written <- stroop.bas %>% 
+num.events.written <- stroop.pro %>% 
   split(list(.$subj, .$session)) %>%
   map(
     write.events, 
-    grouping.var.name   = "reg",
-    grouping.var.values = unique(stroop.bas$reg),
+    grouping.var.name   = "reg.run",
+    grouping.var.values = unique(stroop.pro$reg.run),
     dir.analysis        = dir.to.write.in,
     onset.var.name      = "time.target.onset",
     reg.suffix          = "acc-only"
   )
 
-## write blocks
-stroop.bas %>% write.blocks(dir.analysis = dir.to.write.in)  ## runs silently
 
-## copy movregs
-summary.movregs <- copy.movregs(.dir.analysis = dir.to.write.in)
+## now for proactive, runwise, split pc50
 
-
-## write summaries ----
-
-## event files
-df.num.events.written <- matrix(unlist(num.events.written), nrow = length(stroop.bas.subjs), byrow = TRUE)
-df.num.events.written <- data.frame(stroop.bas.subjs, df.num.events.written)
-names(df.num.events.written) <- c("subj", unique(stroop.bas$reg))
-write.csv(df.num.events.written, here("out", "summaries", "event-files_bas_group201902.csv"))
-
-## movregs
-summary.movregs <- summary.movregs %>% filter(session == "bas")
-write.csv(summary.movregs, here("out", "summaries", "moveregs_bas_group201902.csv"))
-
-
-
-## downsampling congruent items ----
-
-subjs <- list.dirs(dir.to.write.in, recursive = FALSE, full.names = FALSE)
-
-dirs.input <- file.path(dir.to.write.in, subjs, "input", "bas")
-dirs.input <- dirs.input[dir.exists(dirs.input)]
-
-
-for (dir.i in seq_along(dirs.input)) {
-  # dir.i = 1
-  
-  name.dir.i <- dirs.input[dir.i]
-  
-  fnames.i <- list.files(name.dir.i)
-  
-  items.congruent <- c("redRED", "blueBLUE", "whiteWHITE", "purplePURPLE")
-  items.congruent1 <- c("blueBLUE", "purplePURPLE")
-  # items.congruent2 <- c("blueBLUE", "purplePURPLE")
-  
-  fnames.i <- fnames.i[grep(paste(items.congruent, collapse = "|"), fnames.i)]
-  fnames.i <- fnames.i[grep("acc-only\\.txt$", fnames.i)]  ## discard run-wise times
-  
-  if (length(fnames.i) != 4) stop("bad length")
-  
-  modeled.out <- vector("list", length = 2)
-  
-  for (stimtime.i in seq_along(fnames.i)) {
-    # stimtime.i <- 1
-    
-    name.stimtime.i <- fnames.i[stimtime.i]
-    
-    fname.i <- file.path(name.dir.i, name.stimtime.i)
-    
-    # run1 <- readLines(fname.i, 1)
-    # run2 <- readLines(fname.i, 2)
-    
-    stimtimes <- readChar(fname.i, file.info(fname.i)$size)
-    stimtimes <- strsplit(stimtimes, split = "\n")[[1]]
-    
-    stimtimes1 <- as.numeric(strsplit(stimtimes[1], " ")[[1]])
-    stimtimes2 <- as.numeric(strsplit(stimtimes[2], " ")[[1]])
-    
-    is.run1.item <- grepl(paste0(items.congruent1, collapse = "|"), name.stimtime.i)
-    
-    if (is.run1.item) {
-      
-      keep <- sample.int(length(stimtimes1), 3)
-      stimtimes.keep <- stimtimes1[keep]
-      stimtimes.burn1 <- stimtimes1[-keep]
-      stimtimes.burn2 <- stimtimes2
-      onsets.keep <- paste0(onsets4afni(sort(stimtimes.keep)), "*\n")  ## star in second row (run)
-      
-    } else {
-      
-      keep <- sample.int(length(stimtimes2), 3)
-      stimtimes.keep <- stimtimes2[keep]
-      stimtimes.burn2 <- stimtimes2[-keep]
-      stimtimes.burn1 <- stimtimes1
-      onsets.keep <- paste0("*\n", onsets4afni(sort(stimtimes.keep)))  ## star in first row (run)
-      
-    }
-    
-    
-    modeled.out[[1]] <- c(stimtimes.burn1, modeled.out[[1]])  ## run 1
-    modeled.out[[2]] <- c(stimtimes.burn2, modeled.out[[2]])  ## run 2
-    
-    onsets2file(onsets.keep, paste0(gsub(".txt", "", fname.i), "_downsamp"))
-    
-  }
-  
-  burn <- c(
-    onsets4afni(sort(modeled.out[[1]])),
-    onsets4afni(sort(modeled.out[[2]]))
+## make grouping.var:
+stroop.pro <- stroop.pro %>%
+  ungroup %>%
+  mutate(
+    reg.run.pc50 = item,
+    reg.run.pc50 = ifelse(is.nuisance, "nuisance", reg.run.pc50),
+    reg.run.pc50 = paste0(reg.run.pc50, "_", run)
   )
+unique(stroop.pro$reg.run.pc50)
+sum(is.na(stroop.pro$reg.run.pc50))
+stroop.pro %>% filter(pc == "pc50", !is.nuisance) %>% pull(reg.run.pc50) %>% unique
+
+
+## write events
+num.events.written.pc50 <- stroop.pro %>% 
+  filter(pc == "pc50", !is.nuisance) %>%
+  split(list(.$subj, .$session)) %>%
+  map(
+    write.events, 
+    grouping.var.name   = "reg.run.pc50",
+    grouping.var.values = stroop.pro %>% filter(pc == "pc50", !is.nuisance) %>% pull(reg.run.pc50) %>% unique,
+    dir.analysis        = dir.to.write.in,
+    onset.var.name      = "time.target.onset",
+    reg.suffix          = "acc-only"
+  )
+
   
-  
-  
-  onsets2file(burn, gsub("(.*_bas_).*$", "\\1congr_modelout_acc-only", fname.i))
-  
-}
