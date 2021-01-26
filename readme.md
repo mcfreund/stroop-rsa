@@ -1,8 +1,8 @@
-# RSA of color-word Stroop
+# A representational similarity analysis of cognitive control in color-word Stroop
 
-Repository for manuscript XXXXXX
+Repository for manuscript [10.1101/2020.11.22.392704](https://www.biorxiv.org/content/10.1101/2020.11.22.392704v1)
 
-Submitted for publication, 2020-10-2X
+Submitted for publication, 2020-10-21
 
 ---
 
@@ -87,9 +87,8 @@ scripts for sourcing, all located in ./code
 
 #### 'prelim scripts'
 scripts that set up initial things
- * define_behav_subjects.R (depends:), write_atlases.R (depends: ), write_masks.R (depends: )
+ * write_atlases.R (depends: ), write_masks.R (depends: )
 
-#### misc
 
 ---
 
