@@ -6,8 +6,7 @@ wd=$(pwd)
 ## define paths and names
 dir_stimts=${stimts}${subject}/input/pro
 dir_out=${out}${subject}/results/${glm}
-name_img_run1=${img}${subject}/INPUT_DATA/Stroop/proactive/lpi_scale_blur4_tfMRI_StroopPro1_AP.nii.gz
-name_img_run2=${img}${subject}/INPUT_DATA/Stroop/proactive/lpi_scale_blur4_tfMRI_StroopPro2_PA.nii.gz
+name_img=${img}${subject}/INPUT_DATA/Stroop/proactive/lpi_scale_blur4_tfMRI_StroopPro1_AP.nii.gz ${img}${subject}/INPUT_DATA/Stroop/proactive/lpi_scale_blur4_tfMRI_StroopPro2_PA.nii.gz
 
 ## make result dir
 mkdir -p ${dir_out}
