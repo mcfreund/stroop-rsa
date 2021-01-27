@@ -5,7 +5,7 @@ wd=$(pwd)
 
 ## define paths and names
 dir_stimts=${stimts}${subject}/input/pro
-dir_out=${out}${subject}/results/${glm}_${runs[$run_i]}
+dir_out=${out}${subject}/results/${glm}
 name_img_run1=${img}${subject}/INPUT_DATA/Stroop/proactive/lpi_scale_blur4_tfMRI_StroopPro1_AP.nii.gz
 name_img_run2=${img}${subject}/INPUT_DATA/Stroop/proactive/lpi_scale_blur4_tfMRI_StroopPro2_PA.nii.gz
 
@@ -18,7 +18,7 @@ cd ${dir_out}
 -local_times \
 -x1D_stop \
 -allzero_OK \
--input ${name_img_run1} ${name_img_run2} \	
+-input ${img}${subject}/INPUT_DATA/Stroop/proactive/lpi_scale_blur4_tfMRI_StroopPro1_AP.nii.gz ${img}${subject}/INPUT_DATA/Stroop/proactive/lpi_scale_blur4_tfMRI_StroopPro2_PA.nii.gz \	
 -polort A \
 -float \
 -censor ${dir_stimts}/movregs_FD_mask.txt \	
