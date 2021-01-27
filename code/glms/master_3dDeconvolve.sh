@@ -2,11 +2,16 @@
 
 ## get vars
 
-glm_names=(pro_bias_acc-only_fmriprep pro_bias_acc-only_fmriprep pro_allstim_acc-only_fmriprep)
-suffix_runwise=("" _runwise _runwise)
+#glm_names=(pro_bias_acc-only_fmriprep pro_bias_acc-only_fmriprep pro_allstim_acc-only_fmriprep)
+#suffix_runwise=("" _runwise _runwise)
+
+glm=(pro_bias_acc-only_fmriprep)
+suffix_runwise=(_runwise)
+
+
 #filename="/data/nil-external/ccp/freund/ub55/in/ub55_subjects.txt"
 #mapfile -t subjects < $filename
-subjects=102008
+subject=107321
 runs=(1 2)
 encoding_dir=(AP PA)
 
@@ -27,7 +32,7 @@ for subject in ${subjects[@]}; do
 	
 	for glm in ${glm_names[@]}; do
 	
-		source 3dDeconvolve_${glm}${suffix_runwise}.sh
+		source ${scripts}3dDeconvolve_${glm}${suffix_runwise}.sh
 
 	done
 
