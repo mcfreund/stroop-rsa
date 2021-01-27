@@ -18,10 +18,10 @@ cd ${dir_out}
 -local_times \
 -x1D_stop \
 -allzero_OK \
--input "${name_img_run1} ${name_img_run2}" \	
+-input "${name_img_run1} ${name_img_run2}" \
 -polort A \
 -float \
--censor ${dir_stimts}/movregs_FD_mask.txt \	
+-censor ${dir_stimts}/movregs_FD_mask.txt \
 -num_stimts 21 \
 -stim_times 1 ${dir_stimts}/${subject}_pro_blueBLUE_acc-only.txt 'BLOCK(1,1)'  -stim_label 1 blueBLUE \
 -stim_times 2 ${dir_stimts}/${subject}_pro_purpleBLUE_acc-only.txt 'BLOCK(1,1)'  -stim_label 2 purpleBLUE \
