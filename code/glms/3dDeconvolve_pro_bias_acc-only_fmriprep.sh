@@ -5,7 +5,7 @@ wd=$(pwd)
 
 ## define paths and names
 dir_stimts=${stimts}${subject}/input/pro
-dir_out=${out}${subject}/results/${glm}_${runs[$run_i]}.sh
+dir_out=${out}${subject}/results/${glm}_${runs[$run_i]}
 name_img_run1=${img}${subject}/INPUT_DATA/Stroop/proactive/lpi_scale_blur4_tfMRI_StroopPro1_AP.nii.gz
 name_img_run2=${img}${subject}/INPUT_DATA/Stroop/proactive/lpi_scale_blur4_tfMRI_StroopPro2_PA.nii.gz
 
