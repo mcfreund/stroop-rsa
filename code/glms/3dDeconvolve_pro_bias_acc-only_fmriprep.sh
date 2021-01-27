@@ -44,7 +44,7 @@ cd ${dir_out}
 -stim_times 19 ${dir_stimts}/${subject}_pro_nuisance_acc-only.txt 'BLOCK(1,1)'  -stim_label 19 nuisance \
 -stim_times_AM1 20 ${dir_stimts}/${subject}_pro_sustained.txt 'dmBLOCK(1)'  -stim_label 20 sustained \
 -stim_times 21 ${dir_stimts}/${subject}_pro_transient.txt 'TENTzero(0,16.8,8)'  -stim_label 21 transient \
--ortvec ${dir_stimts}motion_demean_proactive.1D movregs \
+-ortvec ${dir_stimts}/motion_demean_proactive.1D movregs \
 -x1D ${dir_out}/X.xmat.1D \
 -xjpeg ${dir_out}/X.jpg \
 -nobucket
