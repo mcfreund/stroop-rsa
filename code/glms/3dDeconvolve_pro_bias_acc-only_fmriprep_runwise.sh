@@ -39,8 +39,8 @@ for run_i in ${!runs[@]}; do
 	-stim_times 14 ${dir_stimts}/${subject}_pro_purpleWHITE_run${runs[$run_i]}_acc-only.txt 'BLOCK(1,1)'  -stim_label 14 purpleWHITE \
 	-stim_times 15 ${dir_stimts}/${subject}_pro_redWHITE_run${runs[$run_i]}_acc-only.txt 'BLOCK(1,1)'  -stim_label 15 redWHITE \
 	-stim_times 16 ${dir_stimts}/${subject}_pro_whiteWHITE_run${runs[$run_i]}_acc-only.txt 'BLOCK(1,1)'  -stim_label 16 whiteWHITE \
-	-stim_times 17 ${dir_stimts}/${subject}_pro_pc50_i_run${runs[$run_i]}_acc-only.txt 'BLOCK(1,1)'  -stim_label 17 pc50_i \
-	-stim_times 18 ${dir_stimts}/${subject}_pro_pc50_c_run${runs[$run_i]}_acc-only.txt 'BLOCK(1,1)'  -stim_label 18 pc50_c \
+	-stim_times 17 ${dir_stimts}/${subject}_pro_pc50_incon_run${runs[$run_i]}_acc-only.txt 'BLOCK(1,1)'  -stim_label 17 pc50_i \
+	-stim_times 18 ${dir_stimts}/${subject}_pro_pc50_congr_run${runs[$run_i]}_acc-only.txt 'BLOCK(1,1)'  -stim_label 18 pc50_c \
 	-stim_times 19 ${dir_stimts}/${subject}_pro_nuisance_run${runs[$run_i]}_acc-only.txt 'BLOCK(1,1)'  -stim_label 19 nuisance \
 	-stim_times_AM1 20 ${dir_stimts}/${subject}_pro_sustained_run${runs[$run_i]}.txt 'dmBLOCK(1)'  -stim_label 20 sustained \
 	-stim_times 21 ${dir_stimts}/${subject}_pro_transient_run${runs[$run_i]}.txt 'TENTzero(0,16.8,8)'  -stim_label 21 transient \
