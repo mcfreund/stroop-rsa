@@ -27,11 +27,10 @@ for subject in ${subjects[@]}; do
 
 	echo ${subject}
 	
-	for glm in ${glm_names[@]}; do
+	for glm_i in ${!glm_names[@]}; do
 	
-		source ${scripts}3dDeconvolve_${glm}${suffix_runwise}.sh
+		source ${scripts}3dDeconvolve_${glm_names[$glm_i]}${suffix_runwise[$glm_i]}.sh
 
 	done
 
 done
-
