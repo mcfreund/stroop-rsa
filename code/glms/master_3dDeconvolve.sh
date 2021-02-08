@@ -6,9 +6,9 @@ glm_names=(pro_bias_acc-only_fmriprep pro_bias_acc-only_fmriprep pro_allstim_acc
 suffix_runwise=("" _runwise _runwise)
 
 
-#filename="/data/nil-external/ccp/freund/ub55/in/ub55_subjects.txt"
-#mapfile -t subjects < $filename
-subject=107321
+filename="/data/nil-external/ccp/freund/stroop-rsa/in/subjects.txt"
+mapfile -t subjects < $filename
+#subject=107321
 runs=(1 2)
 encoding_dir=(AP PA)
 
