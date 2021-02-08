@@ -74,7 +74,8 @@ write.events <- function(
   grouping.var.name,
   grouping.var.values,  ## NULL if each subject should have ONLY events that they have stim times for
   onset.var.name,
-  reg.suffix
+  reg.suffix,
+  whichrun = "both"
 ) {
   ## this function should operate on a df that contains data from single subject and
   ## single session. best used when called from lapply on a list of many such
@@ -97,7 +98,14 @@ write.events <- function(
     df.ii    <- df[df$grouping.var == value.ii, ]
     onsets1  <- df.ii[df.ii$run == "run1", onset.var.name] %>% sort %>% onsets4afni
     onsets2  <- df.ii[df.ii$run == "run2", onset.var.name] %>% sort %>% onsets4afni
-    onsets   <- paste0(onsets1, onsets2, collapse = "")
+    if (whichrun == "both") {
+      onsets   <- paste0(onsets1, onsets2, collapse = "")  
+    } else if (whichrun == "1") {
+      onsets   <- onsets1
+    } else if (whichrun == "2") {
+      onsets   <- onsets2
+    }
+    
     onsets2file(
       onsets, .fname = file.path(dir.input, paste0(subj, "_", session, "_", value.ii, "_", reg.suffix))
     )
@@ -270,22 +278,20 @@ write.csv(summary.movregs, here("out", "summaries", "moveregs_group201902.csv"))
 
 ## use (proactive, runwise) ----
 
-## NB: write events checks for "run1" and "run2" text in column "run"!!!
-if (any(unique(stroop.pro$run) %in% 1:2)) stroop.pro$run <- ifelse(stroop.pro$run == 1, "run1", "run2")
-
 ## make grouping.var:
 is.nuisance <- stroop.pro$acc.final %in% c("0", "no.response", "unintelligible")
 stroop.pro <- stroop.pro %>%
   ungroup %>%
   mutate(
-    reg.run = item,
-    reg.run = ifelse(pc == "pc50", paste0("pc50_", trial.type), reg.run),
-    reg.run = ifelse(is.nuisance, "nuisance", reg.run),
-    reg.run = paste0(reg.run, "_", run)
+    reg = item,
+    reg = ifelse(pc == "pc50", paste0("pc50_", trial.type), reg),
+    reg = ifelse(is.nuisance, "nuisance", reg)
   )
-unique(stroop.pro$reg.run)
-sum(is.na(stroop.pro$reg.run))
+unique(stroop.pro$reg)
+sum(is.na(stroop.pro$reg))
 
+## NB: write events checks for "run1" and "run2" text in column "run"!!!
+if (any(unique(stroop.pro$run) %in% 1:2)) stroop.pro$run <- ifelse(stroop.pro$run == 1, "run1", "run2")
 
 dir.to.write.in <- here("glms")
 
@@ -296,16 +302,34 @@ stroop.pro[, grep("time.block", names(stroop.pro))] %>% range
 
 
 ## write events
-num.events.written <- stroop.pro %>% 
+num.events.written.run1 <- stroop.pro %>% 
+  filter(run == "run1") %>% 
   split(list(.$subj, .$session)) %>%
   map(
     write.events, 
-    grouping.var.name   = "reg.run",
-    grouping.var.values = unique(stroop.pro$reg.run),
+    grouping.var.name   = "reg",
+    grouping.var.values = unique(stroop.pro$reg),
     dir.analysis        = dir.to.write.in,
     onset.var.name      = "time.target.onset",
-    reg.suffix          = "acc-only"
+    reg.suffix          = "run1_acc-only",
+    whichrun = "1"
   )
+
+
+num.events.written.run2 <- stroop.pro %>% 
+  filter(run == "run2") %>% 
+  split(list(.$subj, .$session)) %>%
+  map(
+    write.events, 
+    grouping.var.name   = "reg",
+    grouping.var.values = unique(stroop.pro$reg),
+    dir.analysis        = dir.to.write.in,
+    onset.var.name      = "time.target.onset",
+    reg.suffix          = "run2_acc-only",
+    whichrun = "2"
+  )
+
+
 
 
 ## now for proactive, runwise, split pc50
@@ -314,26 +338,44 @@ num.events.written <- stroop.pro %>%
 stroop.pro <- stroop.pro %>%
   ungroup %>%
   mutate(
-    reg.run.pc50 = item,
-    reg.run.pc50 = ifelse(is.nuisance, "nuisance", reg.run.pc50),
-    reg.run.pc50 = paste0(reg.run.pc50, "_", run)
+    reg.pc50 = item,
+    reg.pc50 = ifelse(is.nuisance, "nuisance", reg.pc50)
   )
-unique(stroop.pro$reg.run.pc50)
-sum(is.na(stroop.pro$reg.run.pc50))
-stroop.pro %>% filter(pc == "pc50", !is.nuisance) %>% pull(reg.run.pc50) %>% unique
+unique(stroop.pro$reg.pc50)
+sum(is.na(stroop.pro$reg.pc50))
+stroop.pro %>% filter(pc == "pc50", !is.nuisance) %>% pull(reg.pc50) %>% unique
 
 
 ## write events
-num.events.written.pc50 <- stroop.pro %>% 
-  filter(pc == "pc50", !is.nuisance) %>%
+
+num.events.written.pc50.run1 <- stroop.pro %>% 
+  filter(run == "run1", pc == "pc50", !is.nuisance) %>%
   split(list(.$subj, .$session)) %>%
   map(
     write.events, 
-    grouping.var.name   = "reg.run.pc50",
-    grouping.var.values = stroop.pro %>% filter(pc == "pc50", !is.nuisance) %>% pull(reg.run.pc50) %>% unique,
+    grouping.var.name   = "reg.pc50",
+    grouping.var.values = stroop.pro %>% filter(pc == "pc50", !is.nuisance) %>% pull(reg.pc50) %>% unique,
     dir.analysis        = dir.to.write.in,
     onset.var.name      = "time.target.onset",
-    reg.suffix          = "acc-only"
+    reg.suffix          = "run1_acc-only",
+    whichrun = "1"
   )
 
-  
+
+
+
+
+num.events.written.pc50.run2 <- stroop.pro %>% 
+  filter(run == "run2", pc == "pc50", !is.nuisance) %>%
+  split(list(.$subj, .$session)) %>%
+  map(
+    write.events, 
+    grouping.var.name   = "reg.pc50",
+    grouping.var.values = stroop.pro %>% filter(pc == "pc50", !is.nuisance) %>% pull(reg.pc50) %>% unique,
+    dir.analysis        = dir.to.write.in,
+    onset.var.name      = "time.target.onset",
+    reg.suffix          = "run2_acc-only",
+    whichrun = "2"
+  )
+
+
