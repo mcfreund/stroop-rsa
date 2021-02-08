@@ -2,8 +2,9 @@
 
 ## get vars
 
-glm_names=(pro_bias_acc-only_fmriprep pro_bias_acc-only_fmriprep pro_allstim_acc-only_fmriprep)
-suffix_runwise=("" _runwise _runwise)
+#glm_names=(pro_bias_acc-only_fmriprep pro_bias_acc-only_fmriprep pro_allstim_acc-only_fmriprep)
+glm_names=(pro_bias_acc-only_fmriprep pro_allstim_acc-only_fmriprep)
+suffix_runwise=(_runwise _runwise)
 
 
 filename="/data/nil-external/ccp/freund/stroop-rsa/in/subjects.txt"
