@@ -354,14 +354,12 @@ num.events.written.pc50.run1 <- stroop.pro %>%
   map(
     write.events, 
     grouping.var.name   = "reg.pc50",
-    grouping.var.values = stroop.pro %>% filter(pc == "pc50", !is.nuisance) %>% pull(reg.pc50) %>% unique,
+    grouping.var.values = stroop.pro %>% filter(pc == "pc50") %>% pull(reg.pc50) %>% unique,
     dir.analysis        = dir.to.write.in,
     onset.var.name      = "time.target.onset",
     reg.suffix          = "run1_acc-only",
     whichrun = "1"
   )
-
-
 
 
 
@@ -371,7 +369,7 @@ num.events.written.pc50.run2 <- stroop.pro %>%
   map(
     write.events, 
     grouping.var.name   = "reg.pc50",
-    grouping.var.values = stroop.pro %>% filter(pc == "pc50", !is.nuisance) %>% pull(reg.pc50) %>% unique,
+    grouping.var.values = stroop.pro %>% filter(pc == "pc50") %>% pull(reg.pc50) %>% unique,
     dir.analysis        = dir.to.write.in,
     onset.var.name      = "time.target.onset",
     reg.suffix          = "run2_acc-only",
