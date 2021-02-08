@@ -17,3 +17,7 @@ fwrite(subj_sum, here("in", "summary_group201902.csv"))
 
 ## glm subdirectories
 
+file.rename(here("glms", "DMCC4854075"), here("glms", "562345"))
+"DMCC4854075" %in% list.files(here("glms"))
+"562345" %in% list.files(here("glms"))
+
