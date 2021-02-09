@@ -66,7 +66,7 @@ for subject in ${subjects[@]}; do
 		
 		## run
 		
-		source 3dREMLfit${suffix}_parallel.sh
+		source 3dREMLfit${suffix}_par.sh
 
 	done
 
