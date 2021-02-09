@@ -27,7 +27,7 @@ function remlfit {
 }
 
 
-logpath=${out}${subject}/results/${glm}${suffix}
+logpath=${out}${subject}/results/${glm}
 
 #echo ${logpath}
 
