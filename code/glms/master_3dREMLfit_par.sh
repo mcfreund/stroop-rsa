@@ -8,11 +8,6 @@ glm_names=(pro_bias_acc-only_fmriprep pro_bias_acc-only_fmriprep_run1 pro_bias_a
 subjects=132017
 #filename="/data/nil-external/ccp/freund/stroop-rsa/in/subjects.txt"
 #mapfile -t subjects < $filename
-task=Stroop
-sess=Pro
-runs=(1 2)
-encoding_dir=(AP PA)
-#hemis=(L R)
 
 ## directories
 
@@ -43,9 +38,9 @@ for subject in ${subjects[@]}; do
 		dir_stimts=${stimts}${subject}/input/pro
 		dir_out=${out}${subject}/results/${glm}
 		
-		if [["$glm" == *"_run"*]]; then
+		if [[ "$glm" == *"_run"* ]]; then
 					
-			if [["$glm" == *"_run1"]]; then
+			if [[ "$glm" == *"_run1" ]]; then
 			
 				suffix=_run1
 				encoding_dir=1_AP
