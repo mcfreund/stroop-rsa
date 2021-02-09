@@ -6,7 +6,7 @@ for run_i in ${!runs[@]}; do
 
 	## define paths and names
 	dir_stimts=${stimts}${subject}/input/pro
-	dir_out=${out}${subject}/results/${glm}_run${runs[$run_i]}
+	dir_out=${out}${subject}/results/${glm_names[$glm_i]}_run${runs[$run_i]}
 	name_img=${img}${subject}/INPUT_DATA/Stroop/proactive/lpi_scale_blur4_tfMRI_StroopPro${runs[$run_i]}_${encoding_dir[$run_i]}.nii.gz
 
 	## make result dir
