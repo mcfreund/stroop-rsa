@@ -12,7 +12,7 @@ function remlfit {
 
 	/usr/local/pkg/afni_18/3dREMLfit \
 	-matrix ${dir_out}/${xmat} \
-	-input ${name_img} \
+	-input "${name_img}" \
 	-Rvar ${dir_out}/stats_var_${subject}${suffix}.nii.gz \
 	-Rbuck ${dir_out}/stats_${subject}${suffix}.nii.gz \
 	-rwherr ${dir_out}/wherr_${subject}${suffix}.nii.gz \
