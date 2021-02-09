@@ -44,13 +44,13 @@ for subject in ${subjects[@]}; do
 			
 				suffix=_run1
 				encoding_dir=1_AP
-				xmat=X_run1.xmat.1D
+				xmat=X_1.xmat.1D
 				
 			else
 				
 				suffix=_run2
 				encoding_dir=2_PA
-				xmat=X_run2.xmat.1D
+				xmat=X_2.xmat.1D
 				
 			fi
 			

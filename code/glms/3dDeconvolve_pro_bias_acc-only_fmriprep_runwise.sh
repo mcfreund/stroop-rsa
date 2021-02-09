@@ -45,7 +45,7 @@ for run_i in ${!runs[@]}; do
 	-stim_times_AM1 20 ${dir_stimts}/${subject}_pro_sustained_run${runs[$run_i]}.txt 'dmBLOCK(1)'  -stim_label 20 sustained \
 	-stim_times 21 ${dir_stimts}/${subject}_pro_transient_run${runs[$run_i]}.txt 'TENTzero(0,16.8,8)'  -stim_label 21 transient \
 	-ortvec ${dir_stimts}/Movement_Regressors_StroopPro${runs[$run_i]}_${encoding_dir[$run_i]}.1D movregs \
-	-x1D ${dir_out}/X_run${runs[$run_i]}.xmat.1D \
+	-x1D ${dir_out}/X_${runs[$run_i]}.xmat.1D \
 	-xjpeg ${dir_out}/X_run${runs[$run_i]}.jpg \
 	-nobucket
 	
