@@ -36,7 +36,7 @@ function remlfit {
 
 for run_i in ${!runs[@]}; do
 
-	logpath=${out}${subject}/results/${glm}
+	logpath=${out}${subject}/results/${glm}${suffix}
 
 	#echo ${logpath}
 

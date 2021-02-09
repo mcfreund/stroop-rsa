@@ -6,27 +6,32 @@
 
 wd=$(pwd)
 
-## define paths and names
-dir_stimts=${stimts}${subject}/input/pro
-dir_out=${out}${subject}/results/${glm}
-name_img_run1=${img}${subject}/INPUT_DATA/Stroop/proactive/lpi_scale_blur4_tfMRI_StroopPro1_AP.nii.gz
-name_img_run2=${img}${subject}/INPUT_DATA/Stroop/proactive/lpi_scale_blur4_tfMRI_StroopPro2_PA.nii.gz
+function remlfit {
+	
+	cd ${dir_out}	
 
-cd ${dir_out}	
+	/usr/local/pkg/afni_18/3dREMLfit \
+	-matrix ${dir_out}/X.xmat.1D \
+	-input ${name_img} \
+	-Rvar ${dir_out}/stats_var_${subject}${suffix}.nii.gz \
+	-Rbuck ${dir_out}/stats_${subject}${suffix}.nii.gz \
+	-rwherr ${dir_out}/wherr_${subject}${suffix}.nii.gz \
+	-rerrts ${dir_out}/errts_${subject}${suffix}.nii.gz \
+	-GOFORIT \
+	-fout \
+	-tout \
+	-nobout \
+	-noFDR \
+	-verb
 
-/usr/local/pkg/afni_18/3dREMLfit \
--matrix ${dir_out}/X.xmat.1D \
--input ${name_img_run1}" "${name_img_run2} \
--Rvar ${dir_out}/stats_var_${subject}.nii.gz \
--Rbuck ${dir_out}/stats_${subject}.nii.gz \
--rwherr ${dir_out}/wherr_${subject}.nii.gz \
--rerrts ${dir_out}/errts_${subject}.nii.gz \
--GOFORIT \
--fout \
--tout \
--nobout \
--noFDR \
--verb
+}
+
+
+logpath=${out}${subject}/results/${glm}${suffix}
+
+#echo ${logpath}
+
+remlfit < /dev/null > ${logpath}/runtime.log 2>&1 &
 
 
 cd ${wd}
