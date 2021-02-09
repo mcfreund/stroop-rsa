@@ -9,7 +9,7 @@ suffix_runwise=("" _runwise _runwise)
 
 #filename="/data/nil-external/ccp/freund/stroop-rsa/in/subjects.txt"
 #mapfile -t subjects < $filename
-subject=107321
+subjects=107321
 
 runs=(1 2)
 encoding_dir=(AP PA)
