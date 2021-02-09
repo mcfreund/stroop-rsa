@@ -31,10 +31,8 @@ for subject in ${subjects[@]}; do
 	
 	for glm_i in ${!glm_names[@]}; do
 	
-		source ${scripts}3dDeconvolve_${glm_names[$glm_i]}${suffix_runwise[$glm_i]}.sh &
+		source ${scripts}3dDeconvolve_${glm_names[$glm_i]}${suffix_runwise[$glm_i]}.sh
 
 	done
-	
-	wait
 
 done
