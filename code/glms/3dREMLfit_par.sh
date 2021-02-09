@@ -11,7 +11,7 @@ function remlfit {
 	cd ${dir_out}	
 
 	/usr/local/pkg/afni_18/3dREMLfit \
-	-matrix ${dir_out}/X.xmat.1D \
+	-matrix ${dir_out}/${xmat} \
 	-input ${name_img} \
 	-Rvar ${dir_out}/stats_var_${subject}${suffix}.nii.gz \
 	-Rbuck ${dir_out}/stats_${subject}${suffix}.nii.gz \
