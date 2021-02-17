@@ -63,6 +63,56 @@ stats.group.mmp <- as.data.table(stats.group.mmp)
 ```
 
 
+<!-- # various alpha threhsolds -->
+
+<!-- ```{r} -->
+
+<!-- alphas <- seq(0.00001, 1, by = 0.0001) -->
+<!-- counts  <- data.frame( -->
+<!--   alpha = alphas, -->
+<!--   targt = 0, -->
+<!--   distr = 0, -->
+<!--   incon = 0, -->
+<!--   n.obsv = 0 -->
+<!--   ) %>% as.data.table -->
+
+<!-- for (a.i in seq_along(alphas)) { -->
+<!--   # a.i = 1000 -->
+
+<!--   a <- alphas[a.i] -->
+
+<!--   ## baseline -->
+
+<!--   observed <- stats.group.mmp[p < a]$param -->
+<!--   tab <- table(observed) -->
+
+<!--   counts[alpha == a, "n.obsv"] <- sum(tab) -->
+
+<!--   if ("distractor" %in% names(tab))   counts[alpha == a, "distr"] <- tab["distractor"] -->
+<!--   if ("target" %in% names(tab))       counts[alpha == a, "targt"] <- tab["target"] -->
+<!--   if ("incongruency" %in% names(tab)) counts[alpha == a, "incon"] <- tab["incongruency"] -->
+
+<!-- } -->
+
+
+<!-- counts <- counts %>%  -->
+<!--   melt( -->
+<!--     id.vars = c("alpha", "n.obsv"),  -->
+<!--     measure.vars = c("targt", "distr", "incon"), -->
+<!--     variable.name = "param", value.name = "freq" -->
+<!--   ) -->
+
+<!-- counts$prop <- counts$freq / counts$n.obsv  -->
+
+<!-- counts %>% -->
+<!--   ggplot(aes(alpha, prop, fill = param)) + -->
+<!--   geom_area() + -->
+<!--   scale_fill_brewer(type = "qual", palette = 2) + -->
+<!--   theme_bw(base_size = 12) -->
+
+<!-- ``` -->
+
+
 # make overlays for workbench
 
 ```{r workbench-figs}

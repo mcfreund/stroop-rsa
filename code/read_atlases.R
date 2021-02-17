@@ -43,10 +43,17 @@ if (!file.exists(fname.pscalar.mmp)) cifti.parcellate(name.atlas = "glasser", di
 
 ## add network and MD info ----
 
-coleanticevic <- RCurl::getURL(
-  "https://raw.githubusercontent.com/ColeLab/ColeAnticevicNetPartition/master/CortexSubcortex_ColeAnticevic_NetPartition_wSubcorGSR_parcels_LR_LabelKey.txt"
-)
-coleanticevic <- fread(text = coleanticevic)
+# coleanticevic <- RCurl::getURL(
+#   "https://raw.githubusercontent.com/ColeLab/ColeAnticevicNetPartition/master/CortexSubcortex_ColeAnticevic_NetPartition_wSubcorGSR_parcels_LR_LabelKey.txt"
+# )
+# coleanticevic <- fread(text = coleanticevic)
+
+
+coleanticevic <- read.table(
+  url("https://raw.githubusercontent.com/ColeLab/ColeAnticevicNetPartition/master/CortexSubcortex_ColeAnticevic_NetPartition_wSubcorGSR_parcels_LR_LabelKey.txt"),
+  header = TRUE
+  )
+coleanticevic <- as.data.table(coleanticevic)
 coleanticevic <- coleanticevic[!is.na(GLASSERLABELNAME), c("NETWORK", "GLASSERLABELNAME")]
 coleanticevic$GLASSERLABELNAME <- gsub("(^.)_(.*)_ROI", "\\2_\\1", coleanticevic$GLASSERLABELNAME)
 coleanticevic %<>% rename(roi = GLASSERLABELNAME, network = NETWORK)
