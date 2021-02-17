@@ -3,13 +3,13 @@
 
 ## get vars
 
-glm_names=(pro_bias_acc-only_fmriprep pro_bias_acc-only_fmriprep_run1 pro_bias_acc-only_fmriprep_run2 pro_allstim_acc-only_fmriprep_run1 pro_allstim_acc-only_fmriprep_run2)
-#glm_names=(pro_bias_acc-only_fmriprep)
+#glm_names=(pro_bias_acc-only_fmriprep pro_bias_acc-only_fmriprep_run1 pro_bias_acc-only_fmriprep_run2 pro_allstim_acc-only_fmriprep_run1 pro_allstim_acc-only_fmriprep_run2)
+glm_names=(pro_bias_acc-only_fmriprep_im_run1 pro_bias_acc-only_fmriprep_im_run2)
 
 
-filename="/data/nil-external/ccp/freund/stroop-rsa/in/subjects.txt"
-mapfile -t subjects < $filename
-#subjects=132017
+#filename="/data/nil-external/ccp/freund/stroop-rsa/in/subjects.txt"
+#mapfile -t subjects < $filename
+subjects=107321
 
 
 ## directories
