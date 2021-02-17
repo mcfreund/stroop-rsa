@@ -160,12 +160,10 @@ for (set.i in sets.of.rois) {
       B1 <- B[bias.items, , 1]
       B2 <- B[bias.items, , 2]
       
-      # D             <- distance_cv(B1, B2, cmat, regressors)
-      # D_prewh       <- distance_cv(B1 %*% W1, B2 %*% W2, cmat, regressors)
-      D_stand       <- distance_cv(t(scale(t(B1))), t(scale(t(B2))), cmat, bias.items)
-      # D_stand_prewh <- distance_cv(t(scale(t(B1))) %*% W1, t(scale(t(B2))) %*% W2, cmat, regressors)
+      D             <- distance_cv(B1, B2, cmat, bias.items)
+      # D       <- distance_cv(t(scale(t(B1))), t(scale(t(B2))), cmat, bias.items)
       
-      rsarray[, , subj.i, roi.i] <- D_stand
+      rsarray[, , subj.i, roi.i] <- D
 
     }
     
@@ -182,7 +180,7 @@ for (set.i in sets.of.rois) {
     rsarray, 
     here::here(
       "out", "rsa", "obsv", 
-      paste0("rsarray_pro_bias_acc-only_fmriprep_runwise_cv-euclidean-stand_", set.i, ".rds")
+      paste0("rsarray_pro_bias_acc-only_fmriprep_runwise_cv-euclidean_", set.i, ".rds")
       )
     )
   

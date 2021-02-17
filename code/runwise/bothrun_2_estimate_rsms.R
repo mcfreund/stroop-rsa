@@ -20,8 +20,9 @@ source(here::here("code", "read_masks.R"))
 
 dir.analysis <- here::here("glms")
 files.dir.analysis <- list.files(dir.analysis, pattern = "stats_var", recursive = TRUE)  ## get fit.subjs
-files.dir.analysis <- files.dir.analysis[grep("pro_bias_acc-only_fmriprep/", files.dir.analysis)]
+files.dir.analysis <- files.dir.analysis[grep("pro_bias_acc-only_downsamp/", files.dir.analysis)]
 fit.subjs <- unique(gsub("/results/.*", "", files.dir.analysis))
+fit.subjs <- fit.subjs[-grep("562345", fit.subjs)]
 
 ## regs will be used to pull out (via string match) the statistic from the afni brick;
 ## thus must have the reg.suffix
@@ -73,7 +74,7 @@ for (set.i in sets.of.rois) {
     
     ## get afni images
     
-    dir.glms <- file.path(dir.analysis, fit.subjs[subj.i], "results", "pro_bias_acc-only_fmriprep")
+    dir.glms <- file.path(dir.analysis, fit.subjs[subj.i], "results", "pro_bias_acc-only_downsamp")
     fname.nii <- file.path(dir.glms, paste0("stats_", fit.subjs[subj.i], ".nii.gz"))
     
     if (file.exists(fname.nii)) {
@@ -160,7 +161,7 @@ for (set.i in sets.of.rois) {
   
   saveRDS(
     rsarray, 
-    here::here("out", "rsa", "obsv", paste0("rsarray_pro_bias_acc-only_fmriprep_", set.i, ".rds"))
+    here::here("out", "rsa", "obsv", paste0("rsarray_pro_bias_acc-only_downsamp_", set.i, ".rds"))
     )
   
   ## univariate results
@@ -169,7 +170,7 @@ for (set.i in sets.of.rois) {
     roi.means, 
     here::here(
       "out", "rsa", "obsv",  ## not an RSA, but save in ./out/rsa/ for consistency...
-      paste0("roi-means_pro_bias_acc-only_fmriprep_", set.i, ".rds")
+      paste0("roi-means_pro_bias_acc-only_downsamp_", set.i, ".rds")
     )
   )
 
@@ -181,14 +182,14 @@ for (set.i in sets.of.rois) {
   data.table::fwrite(
     voxels.silent,
     here::here(
-      "out", "summaries", paste0("voxel-counts_unresponsive_", set.i, "_pro_bias_acc-only_fmriprep.csv")
+      "out", "summaries", paste0("voxel-counts_unresponsive_", set.i, "_pro_bias_acc-only_downsamp.csv")
     )
   )
   
   data.table::fwrite(
     data.table::data.table(roi = roi.names, n.total = voxels.number),
     here::here(
-      "out", "summaries", paste0("voxel-counts_total_", set.i, "_pro_bias_acc-only_fmriprep.csv")
+      "out", "summaries", paste0("voxel-counts_total_", set.i, "_pro_bias_acc-only_downsamp.csv")
     )
   )
   

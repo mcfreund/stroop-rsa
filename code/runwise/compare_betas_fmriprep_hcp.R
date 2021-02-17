@@ -81,7 +81,9 @@ read_betas <- function(fname.nii, .regs = regs) {
 
 
 
-r <- numeric(fit.subjs.intersect)
+r <- numeric(length(fit.subjs.intersect))
+
+is.brain <- c(atlas$mmp > 0)
 
 for (subj.i in seq_along(fit.subjs.intersect)) {
   # subj.i <- 1
@@ -98,11 +100,11 @@ for (subj.i in seq_along(fit.subjs.intersect)) {
   image.betas      <- read_betas(fname, regs)
   image.betas.orig <- read_betas(fname.orig, regs)
   
-  image.betas.v <- array(image.betas, dim = c(75*90*75, 21))
-  image.betas.orig.v <- array(image.betas.orig, dim = c(75*90*75, 21))
+  image.betas.v <- array(image.betas, dim = c(75*90*75, 21))[is.brain, ]
+  image.betas.orig.v <- array(image.betas.orig, dim = c(75*90*75, 21))[is.brain, ]
   
+  # qcor(cor(image.betas.v, image.betas.orig.v))
   r[subj.i] <- tanh(mean(atanh(diag(cor(image.betas.v, image.betas.orig.v)))))
-  
 
   print(paste0(subj.i, ": subj ", fit.subjs.intersect[subj.i], " done!"), quote = FALSE)
   

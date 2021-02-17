@@ -27,7 +27,7 @@ for (set.i in sets.of.rois) {
   
   ## reprisimil matrix
   
-  rsarray <- readRDS(here("out", "rsa", "obsv", paste0("rsarray_pro_bias_acc-only_fmriprep_", set.i, ".rds")))
+  rsarray <- readRDS(here("out", "rsa", "obsv", paste0("rsarray_pro_bias_acc-only_downsamp_", set.i, ".rds")))
   
   
   ## regress ----
@@ -69,7 +69,7 @@ for (set.i in sets.of.rois) {
     rsarray.resid.rank, 
     here(
       "out", "rsa", "obsv", 
-      paste0("rsarray_pro_bias_acc-only_fmriprep_", set.i, "_residual-rank.rds")
+      paste0("rsarray_pro_bias_acc-only_downsamp_", set.i, "_residual-rank.rds")
     )
   )
   
@@ -77,7 +77,7 @@ for (set.i in sets.of.rois) {
     rsarray.resid.line, 
     here(
       "out", "rsa", "obsv", 
-      paste0("rsarray_pro_bias_acc-only_fmriprep_", set.i, "_residual-line.rds")
+      paste0("rsarray_pro_bias_acc-only_downsamp_", set.i, "_residual-line.rds")
     )
   )
   

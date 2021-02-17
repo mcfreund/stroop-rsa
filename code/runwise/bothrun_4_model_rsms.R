@@ -24,11 +24,10 @@ is.lower.tri <- lower.tri(diag(n.dim))
 # subjs <- unique(stroop$subj)
 
 
-## read models, convert to distances
+## read models
 
 rsv.models.ltri <- fread(here("out", "rsa", "mods", "rsv_bias_lower-triangles.csv"), data.table = FALSE)
-rsv.models.ltri[c("target", "distractor", "congruency", "incongruency")] <- 
-  1 - rsv.models.ltri[c("target", "distractor", "congruency", "incongruency")]
+
 
 ## create design matrices
 
@@ -38,22 +37,20 @@ X <- scale(as.matrix(rsv.models.ltri[sapply(rsv.models.ltri, is.numeric)]))
 ## loop over sets of ROIs ----
 
 for (set.i in sets.of.rois) {
-  # set.i = "mmp"
+  # set.i = "masks"
   
   ## read observed similarity matrices (arrays)
   
   rsarray <- readRDS(
     here(
       "out", "rsa", "obsv",
-      paste0("rsarray_pro_bias_acc-only_fmriprep_runwise_cv-euclidean-stand_", set.i, ".rds")
+      # paste0("rsarray_pro_bias_acc-only_", set.i, ".rds")
+      paste0("rsarray_pro_bias_acc-only_downsamp_", set.i, ".rds")
     )
   )
-  sds <- apply(rsarray, c("subj", "roi"), function(x) sd(x[lower.tri(x)]))
-  rsarray <- sweep(rsarray, MARGIN = 3:4, STATS = sds, FUN = "/")  ## scale distances by off-diagonal standard dev.
   
-
   subjs <- dimnames(rsarray)$subj
-  
+
   
   ## prepare similarity matrices for regression ----
   
@@ -105,7 +102,7 @@ for (set.i in sets.of.rois) {
   stats.subjs <- bind_cols(
     betas,
     reshape2::colsplit(betas$id, pattern = "_", names = c("subj", "roi"))
-  )
+    )
   
   stats.subjs$is.analysis.group <- stats.subjs$subj %in% sample.analysis  ## add is.analysis.group col
   
@@ -114,11 +111,11 @@ for (set.i in sets.of.rois) {
   stats.subjs %<>% select(subj, is.analysis.group, roi, param, beta)
   
   ## write ----
-  
+
   fwrite(
     stats.subjs,
-    here("out", "rsa", "stats",  paste0("subjs_pro_bias_acc-only_fmriprep_runwise_cv-euclidean-stand_", set.i, ".csv"))
-  )
+    here("out", "rsa", "stats",  paste0("subjs_pro_bias_acc-only_downsamp_", set.i, ".csv"))
+    )
   
   
 }
