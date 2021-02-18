@@ -7,9 +7,9 @@
 glm_names=(pro_bias_acc-only_fmriprep_im_run1 pro_bias_acc-only_fmriprep_im_run2)
 
 
-#filename="/data/nil-external/ccp/freund/stroop-rsa/in/subjects.txt"
-#mapfile -t subjects < $filename
-subjects=107321
+filename="/data/nil-external/ccp/freund/stroop-rsa/in/subjects.txt"
+mapfile -t subjects < $filename
+#subjects=107321
 
 
 ## directories
