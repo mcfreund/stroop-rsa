@@ -4,6 +4,8 @@
 
 #+ fpc-dissoc_plot-all
 
+stats.subjs.super <- d.super[[measure]]
+
 stats.subjs.super %>%
   
   filter(param %in% params.interest, roi %in% c("dlpfc", "dmfc", "lppc")) %>%
@@ -283,47 +285,47 @@ p.means.super <-
     scale_color_manual(values = colors.model) +
     lemon::coord_capped_cart(left = "both") +
     scale_x_discrete(labels = c("DMFC (L)", "DLPFC", "LPPC")) +
-    scale_y_continuous(breaks = c(0, 0.1, 0.2)) +
+    scale_y_continuous(breaks = c(0, 0.2, 0.2)) +
     
-    annotate(
-      geom = "text", x = 1.5, y = 0.14, label = "target", color = colors.model["target"],
-      hjust = 0, vjust = 1, size = label.size, fontface = "bold"
-    ) +
-    annotate(
-      geom = "text", x = 1.5, y = 0.16, label = "incon.", color = colors.model["incongruency"],
-      hjust = 0, vjust = 1, size = label.size, fontface = "bold"
-    ) +
-    annotate(
-      geom = "text", x = 1.5, y = 0.12, label = "distr.", color = colors.model["distractor"],
-      hjust = 0, vjust = 1, size = label.size, fontface = "bold"
-    ) +
-    
-    annotate(
-      geom = "segment", color = "grey40", size = geom.line.size/2,
-      y = ymax, yend = ymax,
-      x = 0.825 + 1, xend = 1.175 + 1
-    ) +
-    annotate(
-      geom = "segment", color = "grey40", size = geom.line.size/2,
-      y = ymax - 0.005, yend = ymax - 0.005,
-      x = 1 + 1, xend = 1.175 + 1
-    ) +
-    
-    annotate(
-      geom = "segment", color = "grey40", size = geom.line.size/2, 
-      y = ymax, yend = ymax,
-      x = 0.825, xend = 1.175
-    ) +
-    annotate(
-      geom = "segment", color = "grey40", size = geom.line.size/2, 
-      y = ymax - 0.005, yend = ymax - 0.005,
-      x = 1, xend = 1.175
-    ) +
-    annotate(
-      geom = "segment", color = "grey40", size = geom.line.size/2, 
-      y = ymax - 0.01, yend = ymax - 0.01,
-      x = 0.825, xend = 1
-    ) +
+    # annotate(
+    #   geom = "text", x = 1.5, y = 0.14, label = "target", color = colors.model["target"],
+    #   hjust = 0, vjust = 1, size = label.size, fontface = "bold"
+    # ) +
+    # annotate(
+    #   geom = "text", x = 1.5, y = 0.16, label = "incon.", color = colors.model["incongruency"],
+    #   hjust = 0, vjust = 1, size = label.size, fontface = "bold"
+    # ) +
+    # annotate(
+    #   geom = "text", x = 1.5, y = 0.12, label = "distr.", color = colors.model["distractor"],
+    #   hjust = 0, vjust = 1, size = label.size, fontface = "bold"
+    # ) +
+    # 
+    # annotate(
+    #   geom = "segment", color = "grey40", size = geom.line.size/2,
+    #   y = ymax, yend = ymax,
+    #   x = 0.825 + 1, xend = 1.175 + 1
+    # ) +
+    # annotate(
+    #   geom = "segment", color = "grey40", size = geom.line.size/2,
+    #   y = ymax - 0.005, yend = ymax - 0.005,
+    #   x = 1 + 1, xend = 1.175 + 1
+    # ) +
+    # 
+    # annotate(
+    #   geom = "segment", color = "grey40", size = geom.line.size/2, 
+    #   y = ymax, yend = ymax,
+    #   x = 0.825, xend = 1.175
+    # ) +
+    # annotate(
+    #   geom = "segment", color = "grey40", size = geom.line.size/2, 
+    #   y = ymax - 0.005, yend = ymax - 0.005,
+    #   x = 1, xend = 1.175
+    # ) +
+    # annotate(
+    #   geom = "segment", color = "grey40", size = geom.line.size/2, 
+    #   y = ymax - 0.01, yend = ymax - 0.01,
+    #   x = 0.825, xend = 1
+    # ) +
     
     # annotate(
     #   geom = "segment", color = "grey40", size = geom.line.size/2, 
@@ -352,6 +354,11 @@ p.means.super <-
 p.means.super
 # ggsave(here("out", "group", "crossplot_superparcels.pdf"), p.means.super, device = "pdf", width = 4, height = 3)
 
+
 #+
 
 
+#+
+rm(stats.subjs.super)
+rm(measure)
+#+

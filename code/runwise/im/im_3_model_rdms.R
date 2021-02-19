@@ -48,7 +48,7 @@ for (set.i in sets.of.rois) {
   rsarray <- readRDS(
     here(
       "out", "rsa", "obsv",
-      paste0("rsarray_", glm.name, "_", set.i, "_imcomplete.rds")
+      paste0("rsarray_", glm.name, "_", set.i, ".rds")
     )
   )
   
@@ -117,7 +117,7 @@ for (set.i in sets.of.rois) {
   
   fwrite(
     stats.subjs,
-    here("out", "rsa", "stats",  paste0("subjs", glm.name, "_", set.i, ".csv"))
+    here("out", "rsa", "stats",  paste0("subjs_", glm.name, "_", set.i, ".csv"))
   )
   
   

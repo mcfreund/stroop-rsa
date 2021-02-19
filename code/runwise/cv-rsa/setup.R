@@ -27,13 +27,15 @@ stats.subjs <- bind_rows(
     read_subj_stats(
       subjs = c(subjs.analysis, subjs.validation), 
       roi.set = "mmp",
-      glm.suffix = "fmriprep_runwise_cv-euclidean-stand_",
+      glm.suffix = "fmriprep_im_run_",
+      # glm.suffix = "fmriprep_runwise_cv-euclidean-stand_",
       suffix = ""
       ) %>% 
     mutate(roi.hemi = roi, roi = gsub("_L$|_R$", "", roi)),
   superparcel = read_subj_stats(
     subjs = c(subjs.analysis, subjs.validation),
-    glm.suffix = "fmriprep_runwise_cv-euclidean-stand_",
+    glm.suffix = "fmriprep_im_run_",
+    # glm.suffix = "fmriprep_runwise_cv-euclidean-stand_",
     suffix = ""
     ),
   .id = "scheme"
