@@ -24,21 +24,32 @@ source(here("code", "funs.R"))
 source(here("code", "plots.R"))
 source(here("code", "read_atlases.R"))
 
-# stats.subjs.mmp <- read_subj_stats(roi.set = "mmp")
+# type <- "orig"
+# type <- "crun"
+# type <- "both"
+type <- "wnrun"
+# type <- "cves"
 
+if (type == "orig") {
+  fname <- "subjs_pro_bias_acc-only_fmriprep_mmp_residual.csv"
+} else if (type == "crun") {
+  fname <- "subjs_pro_bias_acc-only_fmriprep_im_run_downsampled_crun_mmp.csv"
+} else if (type == "both") {
+  fname <- "subjs_pro_bias_acc-only_fmriprep_im_run_downsampled_both_mmp.csv"
+} else if (type == "wnrun") {
+  fname <- "subjs_pro_bias_acc-only_fmriprep_im_run_downsampled_wnrun_mmp.csv"
+} else if (type == "cves") {
+  fname <- "subjs_pro_bias_acc-only_fmriprep_runwise_cv-euclidean-stand_mmp.csv"
+}
 
-stats.subjs <- 
+stats.subjs <-
   data.table::fread(
     here(
-      "out", "rsa", "stats", 
-      "subjs_pro_bias_acc-only_fmriprep_im_run_mmp.csv"
-      # "subjs_pro_bias_acc-only_fmriprep_runwise_cv-euclidean-stand_mmp.csv"
+      "out", "rsa", "stats", fname
       )
     )
 stats.subjs <- stats.subjs[subj %in% subjs.analysis & param %in% c("target", "distractor", "incongruency"), ]
 stats.subjs %<>% dplyr::full_join(atlas.key$mmp, by = "roi")
-
-stats.subjs.mmp <- stats.subjs
 
 ```
 
@@ -47,7 +58,7 @@ stats.subjs.mmp <- stats.subjs
 
 ```{r get-stats}
 
-stats.group.mmp <- stats.subjs.mmp %>%
+stats.group.mmp <- stats.subjs %>%
   
   group_by(param, roi) %>%
   
@@ -63,17 +74,15 @@ stats.group.mmp <- stats.subjs.mmp %>%
 stats.group.mmp %<>% full_join(atlas.key$mmp, by = "roi")
 stats.group.mmp <- as.data.table(stats.group.mmp)
 
-(rois.targt <- stats.group.mmp[param == "target" & p < 0.05, roi])
-(rois.distr <- stats.group.mmp[param == "distractor" & p < 0.05, roi])
-(rois.incon <- stats.group.mmp[param == "incongruency" & p < 0.05, roi])
-
-
-# stats.group.mmp[param == "incongruency"] %>% View
-# 
+(rois.targt <- stats.group.mmp[param == "target" & p.fdr < 0.05, roi])
+(rois.distr <- stats.group.mmp[param == "distractor" & p.fdr < 0.05, roi])
+(rois.incon <- stats.group.mmp[param == "incongruency" & p.fdr < 0.05, roi])
 # (rois.targt <- stats.group.mmp[param == "target" & p < 0.05, roi])
-# (rois.distr <- stats.group.mmp[param == "distractor" & p < 0.01, roi])
+# (rois.distr <- stats.group.mmp[param == "distractor" & p < 0.05, roi])
 # (rois.incon <- stats.group.mmp[param == "incongruency" & p < 0.05, roi])
 
+
+# stats.group.mmp %>% filter(param == "incongruency") %>% View
 
 ## intersections
 
@@ -142,9 +151,9 @@ counts %>%
 ## read or write files for workbench ----
 
 fname.overlay.coding <- c(
-  here("out", "runwise", "target.png"), 
-  here("out", "runwise", "distractor.png"),
-  here("out", "runwise", "incongruency.png")
+  here("out", "runwise", "target_", type, ".png"), 
+  here("out", "runwise", "distractor_", type, ".png"),
+  here("out", "runwise", "incongruency_", type, ".png")
 )
 
 dir.atlas <- "C:/Users/mcf/Documents/atlases/"
@@ -166,13 +175,14 @@ if (all(file.exists(fname.overlay.coding))) {
   overlay.targt <- stats.group.mmp %>% 
     
     filter(param == "target") %>% 
-    dplyr::select(roi, num.roi, hemi, v, p, b) %>% 
-    mutate(val = ifelse(p < 0.05, v, 0)) %>%
+    dplyr::select(roi, num.roi, hemi, v, p, b, p.fdr) %>% 
+    # mutate(val = ifelse(p < 0.05, v, 0)) %>%
+    mutate(val = p.fdr) %>%
     arrange(num.roi)
   
   cifti.convert(
     path.wb = "C:/Program Files/workbench/bin_windows64",
-    fname.overlay  = "group_target_cves",
+    fname.overlay  = paste0("group_target_", type, "_pval"),
     dir.to.write   = here("out", "runwise"),
     values.overlay = overlay.targt$val,
     dir.template   = here("out", "wb"),
@@ -182,13 +192,14 @@ if (all(file.exists(fname.overlay.coding))) {
   overlay.distr <- stats.group.mmp %>% 
     
     filter(param == "distractor") %>% 
-    dplyr::select(roi, num.roi, hemi, v, p, b) %>% 
-    mutate(val = ifelse(p < 0.05, v, 0)) %>%
+    dplyr::select(roi, num.roi, hemi, v, p, b, p.fdr) %>% 
+    # mutate(val = ifelse(p < 0.05, v, 0)) %>%
+    mutate(val = p.fdr) %>%
     arrange(num.roi)
   
   cifti.convert(
     path.wb = "C:/Program Files/workbench/bin_windows64",
-    fname.overlay  = "group_distractor_cves",
+    fname.overlay  = paste0("group_distractor_", type, "_pval"),
     dir.to.write   = here("out", "runwise"),
     values.overlay = overlay.distr$val,
     dir.template   = here("out", "wb"),
@@ -198,13 +209,14 @@ if (all(file.exists(fname.overlay.coding))) {
   overlay.incon <- stats.group.mmp %>% 
     
     filter(param == "incongruency") %>% 
-    dplyr::select(roi, num.roi, hemi, v, p, b) %>% 
-    mutate(val = ifelse(p < 0.05, v, 0)) %>%
+    dplyr::select(roi, num.roi, hemi, v, p, b, p.fdr) %>% 
+    # mutate(val = ifelse(p < 0.05, v, 0)) %>%
+    mutate(val = p.fdr) %>%
     arrange(num.roi)
   
   cifti.convert(
     path.wb = "C:/Program Files/workbench/bin_windows64",
-    fname.overlay  = "group_incongruency_cves",
+    fname.overlay  = paste0("group_incongruency_", type, "_pval"),
     dir.to.write   = here("out", "runwise"),
     values.overlay = overlay.incon$val,
     dir.template   = here("out", "wb"),
@@ -223,7 +235,7 @@ if (all(file.exists(fname.overlay.coding))) {
 
 rois.top.targt <- stats.group.mmp %>% filter(param == "target", roi %in% rois.targt) %>% slice_max(v, prop = 0.1) %>% pull(roi)
 
-means.top.target <- stats.subjs.mmp %>%
+means.top.target <- stats.subjs %>%
   
   filter(roi %in% rois.top.targt, param %in% "target") %>%
   group_by(roi, community) %>%
@@ -263,7 +275,7 @@ p.top.target <-
 
 p.top.target
 
-ggsave(here("out", "explor", "top_target.pdf"), p.top.target, device = "pdf", width = 5, height = 3)
+# ggsave(here("out", "explor", "top_target.pdf"), p.top.target, device = "pdf", width = 5, height = 3)
 
 ```
 
@@ -289,9 +301,13 @@ table.group.mmp.distr <- table.group.mmp %>% filter(param == "distractor", roi %
 table.group.mmp.incon <- table.group.mmp %>% filter(param == "incongruency", roi %in% rois.incon) %>% select(-param, -roi) %>% arrange(-v)
 table.group.mmp.targt <- table.group.mmp %>% filter(param == "target", roi %in% rois.targt) %>% select(-param, -roi) %>% arrange(-v)
 
-fwrite(table.group.mmp.distr, here("out", "explor", "table_distractor.csv"), quote = TRUE)
-fwrite(table.group.mmp.incon, here("out", "explor", "table_incongruency.csv"), quote = TRUE)
-fwrite(table.group.mmp.targt, here("out", "explor", "table_target.csv"), quote = TRUE)
+table.group.mmp.targt
+table.group.mmp.incon
+table.group.mmp.distr
+
+# fwrite(table.group.mmp.distr, here("out", "explor", "table_distractor.csv"), quote = TRUE)
+# fwrite(table.group.mmp.incon, here("out", "explor", "table_incongruency.csv"), quote = TRUE)
+# fwrite(table.group.mmp.targt, here("out", "explor", "table_target.csv"), quote = TRUE)
 
 ```
 

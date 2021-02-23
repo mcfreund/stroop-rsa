@@ -14,7 +14,7 @@ source(here("code", "read_atlases.R"))
 source(here("code", "read_masks.R"))
 
 
-glm.name <- "pro_bias_acc-only_fmriprep_im_run"
+glm.name <- "pro_bias_acc-only_fmriprep_im_run_downsampled-glmagg_"
 
 
 ## analysis group:

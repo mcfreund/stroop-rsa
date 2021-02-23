@@ -48,8 +48,8 @@ for (set.i in sets.of.rois) {
       paste0("rsarray_pro_bias_acc-only_fmriprep_runwise_cv-euclidean_", set.i, ".rds")
     )
   )
-  sds <- apply(rsarray, c("subj", "roi"), function(x) sd(x[lower.tri(x)]))
-  rsarray <- sweep(rsarray, MARGIN = 3:4, STATS = sds, FUN = "/")  ## scale distances by off-diagonal standard dev.
+  # sds <- apply(rsarray, c("subj", "roi"), function(x) sd(x[lower.tri(x)]))
+  # rsarray <- sweep(rsarray, MARGIN = 3:4, STATS = sds, FUN = "/")  ## scale distances by off-diagonal standard dev.
   
 
   subjs <- dimnames(rsarray)$subj

@@ -28,14 +28,37 @@ source(here("code", "read_atlases.R"))
 
 d.super <- list(
   cval = read_subj_stats(glm.suffix = "fmriprep_runwise_cv-euclidean-stand_", suffix = ""),
-  crun = read_subj_stats(glm.suffix = "fmriprep_im_run_", suffix = "")
+  crun = read_subj_stats(glm.suffix = "fmriprep_im_run_", suffix = ""),
+  orig = read_subj_stats(glm.suffix = "fmriprep_", suffix = "_residual"),
+  down = read_subj_stats(glm.suffix = "fmriprep_im_run_downsampled-glmagg_", suffix = "")
 )
 
 d.mmp <- list(
   cval = read_subj_stats(glm.suffix = "fmriprep_runwise_cv-euclidean-stand_", suffix = "", roi.set = "mmp"),
-  crun = read_subj_stats(glm.suffix = "fmriprep_im_run_", suffix = "", roi.set = "mmp")
+  crun = read_subj_stats(glm.suffix = "fmriprep_im_run_", suffix = "", roi.set = "mmp"),
+  orig = read_subj_stats(glm.suffix = "fmriprep_", suffix = "_residual", roi.set = "mmp")
 )
 
+
+d <- full_join(
+  d.mmp$cval,
+  d.mmp$crun,
+  # d.mmp$orig,
+  by = c(
+    "subj", "is.analysis.group", "roi", "param", "num.roi", "hemi", "community", "community.short", "network", "md"
+    ),
+  suffix = c("_cval", "_crun")
+  )
+
+
+d %>%
+  group_by(roi, param) %>%
+  summarize(r = cor(beta_cval, beta_crun)) %>% 
+  
+  ggplot(aes(param, r)) +
+  geom_boxplot() +
+  # geom_point(position = "jitter") +
+  scale_y_continuous(limits = c(-0.5, 1), n.breaks = 5)
 
 
 ```
@@ -87,6 +110,7 @@ measure <- "cval"
 
 ```{r}
 measure <- "crun"
+measure <- "down"
 ```
 
 `r knitr::spin_child('fpc_dissoc.R')`
