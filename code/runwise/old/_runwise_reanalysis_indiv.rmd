@@ -1,0 +1,171 @@
+---
+title: "robustness analysis: runwise RSA, individual-level"
+author: "michael freund"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    theme: spacelab
+    highlight: zenburn
+---
+
+
+
+```{r setup, include = FALSE}
+
+knitr::opts_chunk$set(
+  fig.align = 'center', fig.width = 11.5, fig.fullwidth = TRUE, cache = TRUE
+)
+
+source(here::here("code", "packages.R"))
+source(here("code", "strings.R"))
+source(here("code", "funs.R"))
+source(here("code", "plots.R"))
+source(here("code", "read_atlases.R"))
+
+theme_set(theme_bw(base_size = 14))
+
+## read data ----
+
+hyps <- combo_paste(c("dlpfc", "lppc", "dmfc"), c("R", "L"), c("target", "incongruency"))
+hyps.alt <- combo_paste(c("dlpfc.alt", "lppc", "dmfc.alt"), c("R", "L"), c("target", "incongruency"))
+
+blups <- 
+  bind_rows(
+    read.csv(here("out", "behav", "stroop_blups_rt_group201902.csv"), stringsAsFactors = FALSE),
+    read.csv(here("out", "behav", "stroop_blups_rt_group201902_validation.csv"), stringsAsFactors = FALSE) 
+  )
+
+
+data.super <- list(
+  cval = read_subj_stats(glm.suffix = "fmriprep_runwise_cv-euclidean-stand_", suffix = ""),
+  # crun = read_subj_stats(glm.suffix = "fmriprep_im_run_", suffix = ""),
+  orig = read_subj_stats(glm.suffix = "fmriprep_", suffix = "_residual"),
+  # glma = read_subj_stats(glm.suffix = "fmriprep_im_run_glmagg_", suffix = "") %>% rename(beta = betas),
+  down_crun = read_subj_stats(glm.suffix = "fmriprep_im_run_downsampled_crun_", suffix = ""),
+  down_both = read_subj_stats(glm.suffix = "fmriprep_im_run_downsampled_both_", suffix = "")
+  # down_wnrun = read_subj_stats(glm.suffix = "fmriprep_im_run_downsampled_wnrun_", suffix = "")
+)
+
+# stats.subjs.wn <- 
+#   data.table::fread(
+#     here("out", "rsa", "stats", "subjs_pro_bias_acc-only_fmriprep_im_run_glmagg-wn_masks.csv")
+#     )
+# stats.subjs.wn <- stats.subjs.wn[subj %in% subjs.analysis & param %in% c("target", "distractor", "incongruency"), ]
+# stats.subjs.wn %<>% dplyr::mutate(
+#   roi.hemi = roi, 
+#   roi = gsub("_L|_R", "", roi), 
+#   hemi = ifelse(grepl("_L", roi.hemi), "L", "R")
+# )
+# # stats.subjs.wn$beta <- (stats.subjs.wn$betas1 + stats.subjs.wn$betas2) / 2
+# stats.subjs.wn$beta <- stats.subjs.wn$betas1
+# stats.subjs.wn %<>% select(-betas1, -betas2)
+# 
+# data.super$wn <- stats.subjs.wn
+
+```
+
+
+# a common plot
+
+```{r fig.height = 7, fig.width = 8}
+
+d <- rbindlist(data.super, idcol = "method")
+
+dat_text <- data.frame(
+  param = c("incongruency", "target", "distractor"),
+  hemi = "L",
+  roi = "dlpfc",
+  x = 1,
+  y = c(0.15, 0.125, 0.1)
+)
+
+d <- d[param %in% c("target", "distractor", "incongruency"), ]
+d <- full_join(blups, d, by = "subj")
+d %<>% ungroup %>% mutate(id = paste0(roi.hemi, "_", param))
+# d %<>% group_by(id) %>% mutate(beta.s = c(scale(beta)))  ## scale betas
+
+## to long-form data-frame
+
+d <- d[d$subj %in% subjs.analysis, ]
+
+facet_names <- c(
+  'dlpfc'="DLPFC target",
+  'dmfc'="DMFC incongruency",
+  'lppc'="LPPC target"
+)
+
+d %>%
+  
+  filter(
+    method %in% c("down_both", "down_crun", "cval"),
+    (roi %in% c("dlpfc", "lppc") & param == "target") | (roi == "dmfc" & param == "incongruency")
+    ) %>%
+  
+  group_by(roi, hemi, param, method) %>%
+  summarize(r = cor(beta, stroop)) %>%
+  
+  mutate(method = ordered(method, levels = c("down_both", "down_crun", "cval"))) %>%
+  
+  ggplot(aes(method, r, fill = param)) +
+  facet_grid(hemi ~ roi, labeller = labeller(roi = facet_names)) +
+
+  geom_hline(yintercept = 0) +
+  
+  geom_col() +
+  # geom_col(position = position_dodge()) +
+  
+  scale_fill_manual(values = colors.model) +
+  
+  scale_x_discrete(
+    labels = 
+        c("within-run\ndownsample", "cross-run\ndownsample", "cross-validated")
+    ) +
+  
+  scale_y_continuous(limits = c(-0.4, 0.4)) +
+  
+  theme(legend.position = "none") +
+  
+  labs(x = "RSA method", y = "cor(stroop RT, beta)")
+  
+  # coord_flip()
+  
+
+```
+
+
+# original (fmriprep)
+
+```{r, echo = FALSE}
+measure <- "orig"
+```
+
+`r knitr::spin_child('bivar_superparcel.R')`
+
+# downsampled (within+cross run)
+
+```{r, echo = FALSE}
+measure <- "down_both"
+```
+
+`r knitr::spin_child('bivar_superparcel.R')`
+
+
+# downsampled, cross-run
+
+```{r, echo = FALSE}
+measure <- "down_crun"
+```
+
+`r knitr::spin_child('bivar_superparcel.R')`
+
+
+# cross-validated
+
+```{r, echo = FALSE}
+measure <- "cval"
+```
+
+`r knitr::spin_child('bivar_superparcel.R')`

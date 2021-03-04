@@ -1,0 +1,247 @@
+' ---
+title: "robustness analysis: across-run RSA, downsampling"
+author: "michael freund"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+  toc: true
+    toc_depth: 3
+    number_sections: true
+    theme: spacelab
+    highlight: zenburn
+---
+  
+  
+  
+```{r setup, include = FALSE}
+
+knitr::opts_chunk$set(
+  fig.align = 'center', fig.width = 11.5, fig.fullwidth = TRUE
+)
+
+source(here::here("code", "packages.R"))
+source(here("code", "strings.R"))
+source(here("code", "funs.R"))
+source(here("code", "plots.R"))
+source(here("code", "read_atlases.R"))
+
+## read data ----
+
+d.super <- read_subj_stats() %>% filter(param == "incongruency")
+# d.super <- read_subj_stats(glm.suffix = "fmriprep_runwise_cv-euclidean-stand_", suffix = "") %>% filter(param == "incongruency")
+# d.super <- read_subj_stats(roi.set = "mmp", glm.suffix = "fmriprep_runwise_cv-euclidean-stand_", suffix = "") %>% filter(param == "incongruency")
+
+
+blups <- 
+  bind_rows(
+    read.csv(here("out", "behav", "stroop_blups_rt_group201902.csv"), stringsAsFactors = FALSE)
+  ) %>%
+  mutate(subj = ifelse(subj == "DMCC4854075", "562345", subj))
+
+means <- readRDS(here("out", "rsa", "obsv", "means_pro_bias_acc-only_masks.rds"))
+means <- as.data.table(reshape2::melt(means, value.name = "m"))
+means <- means[subj %in% subjs.analysis, ]
+means %<>% 
+  mutate(
+    roi.hemi = roi,
+    roi = gsub("(.*)_(.*)", "\\1", roi.hemi),
+    hemi = gsub("(.*)_(.*)", "\\2", roi.hemi)
+  )
+
+stats.subjs.rois <- means %>%
+  
+  filter(roi %in% c("dlpfc", "dmfc", "lppc")) %>%
+  
+  mutate(congruency = ifelse(cond %in% bias.items.con, "congr", "incon")) %>%
+  
+  group_by(roi, hemi, subj, congruency) %>%
+  summarize(m = mean(m)) %>%
+  
+  pivot_wider(names_from = "congruency", values_from = "m") %>%
+  mutate(m = incon - congr)
+
+
+d <- full_join(stats.subjs.rois %>% select(-congr, -incon), d.super)
+filter(d.super, subj == "562345")
+
+
+## mmp
+
+d.mmp <- read_subj_stats(roi.set = "mmp") %>% filter(param == "incongruency")
+
+
+means.mmp <- readRDS(here("out", "rsa", "obsv", "means_pro_bias_acc-only_mmp.rds"))
+means.mmp <- as.data.table(reshape2::melt(means.mmp, value.name = "m"))
+means.mmp <- means.mmp[subj %in% subjs.analysis, ]
+
+stats.subjs.mmp <- means.mmp %>%
+  
+  mutate(congruency = ifelse(cond %in% bias.items.con, "congr", "incon")) %>%
+  
+  group_by(roi, subj, congruency) %>%
+  summarize(m = mean(m)) %>%
+  
+  pivot_wider(names_from = "congruency", values_from = "m") %>%
+  mutate(m = incon - congr)
+
+
+d.mmp <- full_join(stats.subjs.mmp %>% select(-congr, -incon), d.mmp)
+
+
+```
+
+
+
+
+# intro
+
+
+# group-level analysis
+
+
+```{r}
+
+stats.group.rois <- stats.subjs.rois %>%
+  
+  group_by(roi, hemi) %>%
+  
+  summarize(
+    m_bar = mean(m),
+    p = wilcox.test(m, alternative = "greater")$p.value,
+    .groups = "drop_last"
+  )
+
+
+p_group <-
+  
+  stats.subjs.rois %>%
+  
+  ggplot(aes(toupper(paste0(roi, "_", hemi)), m)) +
+  
+  geom_hline(yintercept = 0, color = "grey80") +
+  
+  stat_summary(
+    fun.data = "mean_cl_boot", position = position_dodge(width = 0.25), size = 1.25,
+    fun.args = list(B = 1E4)
+    ) +
+  scale_y_continuous(breaks = c(-0.02, 0, 0.02)) +
+
+  coord_capped_cart(left = "both", bottom = "both") +
+  
+  theme(
+    panel.grid      = element_blank(),
+    panel.border    = element_blank(),
+    axis.line       = element_line(size = axis.line.size),
+    axis.text       = element_text(size = axis.text.size),
+    axis.ticks      = element_line(size = axis.line.size),
+    axis.title      = element_text(size = axis.title.size*1.5),
+    strip.background = element_blank(),
+    strip.text = element_text(size = axis.title.size),
+    legend.position = "none"
+  ) +
+  
+  labs(x = "ROI", y = "Stroop activation\n(univariate contrast)")
+
+p_group
+
+# ggsave(here("out", "univariate", "univariate_group.pdf"), p_group, width = 17.6, height = 17.6/2, units = "cm")
+
+```
+
+
+
+# individual differences analysis
+
+
+```{r}
+
+indiv_cors <- d %>%
+
+  filter(roi %in% c("dlpfc", "lppc", "dmfc")) %>%
+  group_by(roi.hemi) %>%
+  summarize(r = cor(m, beta, method = "spearman"))
+
+
+p_indiv <- d %>%
+  
+  filter(roi %in% c("dlpfc", "lppc", "dmfc")) %>%
+  
+  ggplot(aes(beta, m)) +
+  facet_grid(hemi ~ roi, labeller = labeller(roi = toupper)) +
+  
+  geom_hline(yintercept = 0, color = "grey80") +
+  geom_vline(xintercept = 0, color = "grey80") +
+  
+  stat_boot_ci(fill = "grey80", n = 1E4) +
+  geom_point(size = 2, fill = "black", color = "white", shape = 21) +
+  
+  scale_x_continuous(breaks = c(-0.2, 0, 0.2)) +
+  scale_y_continuous(breaks = c(-0.2, 0, 0.2)) +
+  coord_capped_cart(left = "both", bottom = "both") +
+  
+  theme(
+    panel.grid      = element_blank(),
+    panel.border    = element_blank(),
+    axis.line       = element_line(size = axis.line.size),
+    axis.text       = element_text(size = axis.text.size),
+    axis.ticks      = element_line(size = axis.line.size),
+    axis.title      = element_text(size = axis.title.size*1.5),
+    strip.background = element_blank(),
+    strip.text = element_text(size = axis.title.size),
+    legend.position = "none"
+  ) +
+  
+  labs(
+    x = bquote("Incongruency RSA model fit"~(beta)), 
+    y = "Stroop activation\n(univariate contrast)"
+    )
+
+p_indiv
+
+# ggsave(here("out", "runwise", "runwise_indiv.pdf"), p_indiv, width = 17.6, height = 17.6/2, units = "cm")
+
+```
+
+
+```{r}
+
+p <- plot_grid(
+  p_group, p_indiv, ncol = 1, rel_heights = c(2/3, 1),
+  labels = "AUTO"
+)
+
+ggsave(here("out", "univariate", "univariate.pdf"), p, width = 12, height = 11, units = "cm")
+
+
+
+```
+
+
+# exploratory whole-cortex RSA
+
+
+```{r results = "asis", warning = FALSE}
+
+stats.group.mmp <- d.mmp %>%
+  
+  group_by(roi, num.roi, hemi) %>%
+  
+  summarize(
+    m_bar = mean(m),
+    v = wilcox.test(m)$statistic,
+    p = wilcox.test(m)$p.value,
+    .groups = "drop_last"
+  ) %>%
+  
+  ungroup %>%
+  
+  mutate(p.fdr = p.adjust(p, method = "fdr"))
+
+stats.group.mmp %>% filter(p.fdr < 0.1, m_bar > 0)  ## p < 0.1 for alpha = 0.05 (1-tailed)
+stats.group.mmp %>% filter(p < 0.1, m_bar > 0)  ## p < 0.1 for alpha = 0.05
+
+
+
+```
+
+

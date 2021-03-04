@@ -54,3 +54,7 @@ vignettes/*.pdf
 .Rproj.user
 
 misc/*pptx
+
+old/
+
+code/misc/subjs.R
