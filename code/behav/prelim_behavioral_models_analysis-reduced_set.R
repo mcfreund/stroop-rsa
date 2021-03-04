@@ -23,7 +23,7 @@ if (interactive()) {
 
 ## initial fit
 
-behav.vset.rt <- behav %>% filter(acc == 1, !is.na(rt), rt < 3000, rt > 250, !is.analysis.group)
+behav.raset.rt <- behav %>% filter(acc == 1, !is.na(rt), rt < 3000, rt > 250, subj %in% subjs.analysis.red)
 
 fit.raset <- lme(
   rt ~ trial.type, 
