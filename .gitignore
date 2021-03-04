@@ -60,3 +60,7 @@ old/
 code/misc/subjs.R
 
 out/runwise/inkscape/fig_explor.pdf
+
+out/rsa/obsv/rsarray_pro_bias_acc-only_fmriprep_im_run_downsampled_mmp.rds
+out/runwise/simulation.rds      
+out/runwise/simulation_rsm.rds
