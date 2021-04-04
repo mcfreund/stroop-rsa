@@ -180,7 +180,7 @@ m <- rbind(c(0, 1, 0, 0), c(0, 1, 0, 1))  ## contrast matrix
 tau.trim <- getVarCov(fit1.het.run.trim)
 (tau.trim <- m %*% tau.trim %*% t(m))  ## covariance matrix
 (r.marginal.trim <- cov2cor(tau.trim)[1, 2])  ## correlation
-svd(getVarCov(fit1.het.trim), nv = 0L)$d  ## covmat not degenerate (eigvals > 0)
+svd(getVarCov(fit1.het.run.trim), nv = 0L)$d  ## covmat not degenerate (eigvals > 0)
 #+
 
 #' ## error analysis
