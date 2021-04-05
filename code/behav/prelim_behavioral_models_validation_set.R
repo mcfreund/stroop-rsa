@@ -19,7 +19,7 @@ if (interactive()) {
 
 #' ## model, plot, and write
 
-#+ model RT
+#+ model RT valid
 
 ## initial fit
 
