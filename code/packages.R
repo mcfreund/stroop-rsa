@@ -38,7 +38,7 @@ library(nlme)
 library(lme4)
 library(lmerTest)
 library(multcomp)
-
+library(mvnfast)
 
 ## wrangling
 

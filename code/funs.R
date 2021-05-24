@@ -1,11 +1,13 @@
 
 
-read_subj_stats <- function(subjs = subjs.analysis, roi.set = "masks") {
+read_subj_stats <- function(subjs = subjs.analysis, roi.set = "masks", glm.suffix = "", suffix = "_residual", params = c("target", "distractor", "incongruency")) {
   
   stats.subjs <- 
-    data.table::fread(here("out", "rsa", "stats", paste0("subjs_pro_bias_acc-only_", roi.set, "_residual.csv")))
+    data.table::fread(
+      here("out", "rsa", "stats", paste0("subjs_pro_bias_acc-only_", glm.suffix, roi.set, suffix, ".csv"))
+      )
   
-  stats.subjs <- stats.subjs[subj %in% subjs & param %in% c("target", "distractor", "incongruency"), ]
+  stats.subjs <- stats.subjs[subj %in% subjs & param %in% params, ]
   
   if (roi.set %in% c("mmp", "gordon")) {
     

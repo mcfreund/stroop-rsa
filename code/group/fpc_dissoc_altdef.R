@@ -16,7 +16,7 @@ summary(fit.super.alt)
 glht.super.alt <- summary(glht(fit.super.alt, contrasts.super), test = adjusted("none"))
 
 
-glht.super.alt$test$pvalues.fdr <- glht.super$test$pvalues
+glht.super.alt$test$pvalues.fdr <- glht.super.alt$test$pvalues
 for (contr.i in seq_along(contrs2correct)) {
   
   p <- glht.super.alt$test$pvalues[grep(contrs2correct[contr.i], names(glht.super.alt$test$pvalues))]

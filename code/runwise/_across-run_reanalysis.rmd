@@ -1,0 +1,493 @@
+---
+title: "robustness analysis: across-run RSA, downsampling"
+author: "michael freund"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    theme: spacelab
+    highlight: zenburn
+---
+
+
+
+```{r setup, include = FALSE}
+
+knitr::opts_chunk$set(
+  fig.align = 'center', fig.width = 11.5, fig.fullwidth = TRUE
+)
+
+source(here::here("code", "packages.R"))
+source(here("code", "strings.R"))
+source(here("code", "funs.R"))
+source(here("code", "plots.R"))
+source(here("code", "read_atlases.R"))
+
+library(kableExtra)
+
+## read data ----
+
+## superparcels
+
+d.super <- list(
+  down_both = read_subj_stats(glm.suffix = "fmriprep_im_run_downsampled_both_", suffix = ""),
+  down_crun = read_subj_stats(glm.suffix = "fmriprep_im_run_downsampled_crun_", suffix = ""),
+  cval = read_subj_stats(glm.suffix = "fmriprep_runwise_cv-euclidean-stand_", suffix = "")
+)
+
+d <- rbindlist(d.super, idcol = "method")
+d <- d[param %in% c("target", "distractor", "incongruency") & subj %in% subjs.analysis, ]
+
+blups <- 
+  bind_rows(
+    read.csv(here("out", "behav", "stroop_blups_rt_group201902.csv"), stringsAsFactors = FALSE)
+    # read.csv(here("out", "behav", "stroop_blups_rt_group201902_validation.csv"), stringsAsFactors = FALSE) 
+  )
+
+d <- full_join(blups, d, by = "subj")
+
+d %<>% mutate(method = ordered(method, levels = c("down_both", "down_crun", "cval")))
+
+
+## mmp
+
+
+d.mmp <- list(
+  down_both = read_subj_stats(glm.suffix = "fmriprep_im_run_downsampled_both_", roi.set = "mmp", suffix = ""),
+  down_crun = read_subj_stats(glm.suffix = "fmriprep_im_run_downsampled_crun_", roi.set = "mmp", suffix = ""),
+  cval = read_subj_stats(glm.suffix = "fmriprep_runwise_cv-euclidean-stand_", roi.set = "mmp", suffix = "")
+)
+d.mmp <- rbindlist(d.mmp, idcol = "method")
+
+d.mmp <- d.mmp[subj %in% subjs.analysis & param %in% c("target", "distractor", "incongruency"), ]
+d.mmp %<>% dplyr::full_join(atlas.key$mmp, by = "roi")
+
+
+```
+
+
+# intro
+
+
+# group-level analysis
+
+
+```{r}
+
+## mean greater than zero
+stats.group.rois.g0 <-
+  d %>%
+  
+  filter(roi %in% c("dlpfc", "dmfc", "lppc")) %>%
+  group_by(method, param, roi, roi.hemi) %>%
+  
+  summarize(
+    sd = sd(beta),
+    p = wilcox.test(beta, alternative = "greater")$p.value,
+    m = mean(beta),
+    .groups = "drop_last"
+  ) %>% 
+  ungroup
+
+## within region_hemi (between model):
+stats.group.rois.wrh <-  d %>%
+  
+  filter(roi %in% c("dlpfc", "dmfc", "lppc")) %>%
+  pivot_wider(names_from = "param", values_from = "beta") %>%
+  
+  group_by(method, roi.hemi) %>%
+  
+  summarize(
+    
+    m_ti = mean(target - incongruency),
+    m_td = mean(target - distractor),
+    m_id = mean(incongruency - distractor),
+    
+    sd_ti = sd(target - incongruency),
+    sd_td = sd(target - distractor),
+    sd_id = sd(incongruency - distractor),
+    
+    p_ti = wilcox.test(target, incongruency, paired = TRUE)$p.value,
+    p_td = wilcox.test(target, distractor, paired = TRUE)$p.value,
+    p_id = wilcox.test(incongruency, distractor, paired = TRUE)$p.value
+    
+  )  %>%
+  as.data.table %>%
+  melt(
+    id.vars = c("method", "roi.hemi"), 
+    measure.vars = patterns(m = "^m_", sd = "^sd_", p = "^p_", cols = names(.)),
+    variable.name = "contrast"
+    ) %>%
+  mutate(contrast = forcats::lvls_revalue(contrast, c("t_i","t_d", "i_d"))) %>% 
+  ungroup
+
+## within region (between model)
+stats.group.rois.wr <-  d %>%
+  
+  filter(roi %in% c("dlpfc", "dmfc", "lppc")) %>%
+  pivot_wider(names_from = "param", values_from = "beta") %>%
+  
+  group_by(method, roi) %>%
+  
+  summarize(
+    
+    m_ti = mean(target - incongruency),
+    m_td = mean(target - distractor),
+    m_id = mean(incongruency - distractor),
+    
+    sd_ti = sd(target - incongruency),
+    sd_td = sd(target - distractor),
+    sd_id = sd(incongruency - distractor),
+    
+    p_ti = wilcox.test(target, incongruency, paired = TRUE)$p.value,
+    p_td = wilcox.test(target, distractor, paired = TRUE)$p.value,
+    p_id = wilcox.test(incongruency, distractor, paired = TRUE)$p.value
+    
+  ) %>%
+  
+  as.data.table %>%
+  melt(
+    id.vars = c("method", "roi"), 
+    measure.vars = patterns(m = "^m_", sd = "^sd_", p = "^p_", cols = names(.)),
+    variable.name = "contrast"
+    ) %>%
+  mutate(contrast = forcats::lvls_revalue(contrast, c("t_i","t_d", "i_d"))) %>% 
+  ungroup
+
+
+## within model (between region):
+
+stats.group.rois.wm <-  d %>%
+  
+  filter(roi %in% c("dlpfc", "dmfc", "lppc")) %>%
+  pivot_wider(id_cols = c("subj", "method"), names_from = c("roi.hemi", "param"), values_from = "beta") %>%
+  
+  group_by(method) %>%
+  
+  mutate(
+    
+    dlpfc_target       = (dlpfc_L_target + dlpfc_R_target)/2,
+    lppc_target        = (lppc_L_target + lppc_R_target)/2,
+    
+    dlpfc_incongruency = (dlpfc_L_target + dlpfc_R_target)/2,
+    lppc_incongruency  = (lppc_L_incongruency + lppc_R_incongruency)/2,
+    
+    dmfc_dlpfc_i       = dmfc_L_incongruency - dlpfc_incongruency,
+    dmfc_lppc_i        = dmfc_L_incongruency - lppc_incongruency,
+    
+    dmfc_dlpfc_t       = dlpfc_target - dmfc_L_target,
+    dmfc_lppc_t        = lppc_target - dmfc_L_target,
+    
+    dmfc_dlpfc_it      = dmfc_dlpfc_i - dmfc_dlpfc_t,
+    dmfc_lppc_it       = dmfc_dlpfc_i - dmfc_lppc_t
+    
+  ) %>%
+    
+  summarize(
+    
+    m_dmfc_dlpfc_i  = mean(dmfc_dlpfc_i),
+    m_dmfc_lppc_i   = mean(dmfc_lppc_i),
+    
+    m_dmfc_dlpfc_t  = mean(dmfc_dlpfc_t),
+    m_dmfc_lppc_t   = mean(dmfc_lppc_t),
+    
+    m_dmfc_dlpfc_it = mean(dmfc_dlpfc_it),
+    m_dmfc_lppc_it  = mean(dmfc_lppc_it),
+    
+    sd_dmfc_dlpfc_i  = sd(dmfc_dlpfc_i),
+    sd_dmfc_lppc_i   = sd(dmfc_lppc_i),
+    
+    sd_dmfc_dlpfc_t  = sd(dmfc_dlpfc_t),
+    sd_dmfc_lppc_t   = sd(dmfc_lppc_t),
+    
+    sd_dmfc_dlpfc_it = sd(dmfc_dlpfc_it),
+    sd_dmfc_lppc_it  = sd(dmfc_lppc_it),
+    
+    p_dmfc_dlpfc_i  = wilcox.test(dmfc_dlpfc_i)$p.value,
+    p_dmfc_lppc_i   = wilcox.test(dmfc_lppc_i)$p.value,
+    p_dmfc_dlpfc_t  = wilcox.test(dmfc_dlpfc_t)$p.value,
+    p_dmfc_lppc_t   = wilcox.test(dmfc_lppc_t)$p.value,
+    p_dmfc_dlpfc_it = wilcox.test(dmfc_dlpfc_it)$p.value,
+    p_dmfc_lppc_it  = wilcox.test(dmfc_lppc_it)$p.value
+    
+  ) %>%
+  
+  as.data.table %>%
+  melt(
+    id.vars = "method", 
+    measure.vars = patterns(m = "^m_", sd = "^sd_", p = "^p_", cols = names(.)),
+    variable.name = "contrast"
+    ) %>%
+  mutate(
+    contrast = forcats::lvls_revalue(
+      contrast, 
+      c(
+        "dmfc_dlpfc_i", "dmfc_lppc_i", "dmfc_dlpfc_t", "dmfc_lppc_t", "dmfc_dlpfc_it", "dmfc_lppc_it"
+        )
+      )
+    ) %>% 
+  ungroup
+
+## make table ----
+
+table.group <- bind_rows(
+  stats.group.rois.g0 %>% mutate(contrast = paste0(roi.hemi, "|", param)) %>% select(method, contrast, m, sd, p),
+  stats.group.rois.wr %>% mutate(contrast = paste0(contrast, "|", roi)) %>% select(method, contrast, m, sd, p),
+  stats.group.rois.wrh %>% mutate(contrast = paste0(contrast, "|", roi.hemi)) %>% select(method, contrast, m, sd, p),
+  stats.group.rois.wm
+)
+
+table.group.w <- table.group %>% 
+  pivot_wider(id_cols = "contrast", names_from = "method", values_from = c("m", "sd", "p")) %>%
+  select(contrast, ends_with("down_both"), ends_with("down_crun"), ends_with("cval"))
+names(table.group.w) <- gsub("_down_both|_down_crun|_cval", "", names(table.group.w))
+
+
+saveRDS(table.group.w, here("out", "runwise", "group_results.rds"))
+
+
+stats.group.tbl <- 
+  kbl(table.group.w, booktabs = TRUE) %>%
+  kable_styling() %>%
+  add_header_above(c(" " = 1, "Within-run downsampled" = 3, "Cross-run downsampled" = 3, "Cross-validated" = 3))
+stats.group.tbl
+
+## plot ----
+
+
+dat_text <- data.frame(
+  param = c("incongruency", "target", "distractor"),
+  hemi = "L",
+  roi = "dlpfc",
+  x = 2.5,
+  y = c(0.11, 0.09, 0.07)
+)
+
+
+p_group <- d %>%
+  
+  filter(roi %in% c("dlpfc", "dmfc", "lppc")) %>%
+  
+  mutate(method = ordered(method, levels = c("down_both", "down_crun", "cval"))) %>%
+  
+  ggplot(aes(method, beta, color = param)) +
+  facet_grid(vars(hemi), vars(roi), scales = "free", labeller = labeller(roi = toupper)) +
+
+  geom_hline(yintercept = 0, alpha = 0.5) +
+  
+  stat_summary(fun.data = "mean_cl_boot", position = position_dodge(width = 0.25), size = 0.5, fun.args = list(B = 1E4)) +
+  geom_line(
+    data = . %>% 
+      group_by(method, roi, param, hemi) %>%
+      summarize(beta = mean(beta)),
+    aes(group = param), position = position_dodge(width = 0.25),
+    size = 1
+  ) +
+  
+  geom_text(data = dat_text, aes(x = x, y = y, label = param), hjust = 0, fontface = "bold", size = 4) +
+  scale_color_manual(values = colors.model) +
+  
+  scale_x_discrete(
+    labels = c("within-run\ndownsamp.", "cross-run\ndownsamp.", "cross-\nvalidated")
+    ) +
+  
+  coord_capped_cart(left = "both", bottom = "both") +
+  
+  theme(
+    panel.grid      = element_blank(),
+    panel.border    = element_blank(),
+    axis.line       = element_line(size = axis.line.size),
+    axis.text       = element_text(size = axis.text.size),
+    axis.ticks      = element_line(size = axis.line.size),
+    axis.title      = element_text(size = axis.title.size*1.5),
+    strip.background = element_blank(),
+    strip.text = element_text(size = axis.title.size),
+    legend.position = "none"
+  ) +
+  
+  labs(x = "estimation method", y = bquote("RSA model fit ("*beta*")"))
+
+p_group
+
+ggsave(here("out", "runwise", "runwise_group.pdf"), p_group, width = 17.6, height = 17.6/2, units = "cm")
+
+```
+
+
+
+
+# individual differences analysis
+
+
+
+```{r}
+
+facet_names <- c(
+  'dlpfc' = "DLPFC target",
+  'dmfc' = "DMFC incongruency",
+  'lppc' = "LPPC target"
+)
+
+p_indiv <-
+  d %>%
+  
+  filter((roi.hemi %in% c("dlpfc_R", "lppc_R") & param == "target") | (roi.hemi == "dmfc_L" & param == "incongruency")) %>%
+  
+  group_by(roi, param, method) %>%
+  summarize(r = cor(beta, stroop)) %>%
+
+  ggplot(aes(method, r)) +
+  facet_grid(cols = vars(roi), labeller = labeller(roi = facet_names)) +
+
+  geom_hline(yintercept = 0, color = "grey20") +
+  
+  geom_col(width = 0.5, fill = "grey20") +
+  
+  scale_x_discrete(labels = c("within-run\ndownsamp.", "cross-run\ndownsamp.", "cross-\nvalidated")) +
+  scale_y_continuous(breaks = c(-0.2, 0, 0.2)) +
+  coord_capped_cart(left = "both", bottom = "both") +
+  
+  theme(
+    panel.grid      = element_blank(),
+    panel.border    = element_blank(),
+    axis.line       = element_line(size = axis.line.size),
+    axis.text       = element_text(size = axis.text.size*0.75),
+    axis.ticks      = element_line(size = axis.line.size),
+    axis.title      = element_text(size = axis.title.size*1.5),
+    strip.background = element_blank(),
+    strip.text = element_text(size = axis.title.size),
+    legend.position = "none"
+  ) +
+  
+  labs(x = "Estimation method", y = bquote("cor(Stroop RT, "*beta*")"))
+
+p_indiv
+
+ggsave(here("out", "runwise", "runwise_indiv.pdf"), p_indiv, width = 13, height = 5, units = "cm")
+
+```
+
+
+
+# exploratory whole-cortex RSA
+
+
+```{r results = "asis", warning = FALSE}
+
+stats.group.mmp <- d.mmp %>%
+  
+  group_by(method, param, roi) %>%
+  
+  summarize(
+    v = wilcox.test(beta, alternative = "greater")$statistic,
+    p = wilcox.test(beta, alternative = "greater")$p.value,
+    b = mean(beta),
+    .groups = "drop_last"
+  ) %>%
+  
+  mutate(p.fdr = p.adjust(p, method = "fdr"))
+
+stats.group.mmp %<>% full_join(atlas.key$mmp, by = "roi")
+stats.group.mmp <- as.data.table(stats.group.mmp)
+
+stats.group.mmp %>% filter(p.fdr < 0.05) %>% pull(v) %>% range
+
+
+## read or write files for workbench ----
+
+
+dir.atlas <- "C:/Users/mcf/Documents/atlases/"
+nice.names <- setNames(
+  c("within-run downsampled", "cross-run downsampled", "cross-validated"), 
+  c("down_both", "down_crun", "cval")
+  )
+
+for (method.i in unique(d.mmp$method)) {
+  # method.i = "cval"
+  
+  fname.overlay.coding <- c(
+    here("out", "runwise", paste0("target_signrank_", method.i, ".png")), 
+    here("out", "runwise", paste0("distractor_signrank_", method.i, ".png")),
+    here("out", "runwise", paste0("incongruency_signrank_", method.i, ".png"))
+  )
+  
+  cat("\n")
+  cat('\n##', nice.names[method.i], '\n')
+
+  if (all(file.exists(fname.overlay.coding))) {
+    
+    
+    p.coding <- lapply(fname.overlay.coding, image_read)
+    grobs <- lapply(p.coding, rasterGrob)
+
+    grid.arrange(
+      arrangeGrob(grobs[[1]], top = textGrob("target", gp = gpar(fontsize = 24))),
+      arrangeGrob(grobs[[2]], top = textGrob("distractor", gp = gpar(fontsize = 24))),
+      arrangeGrob(grobs[[3]], top = textGrob("incongruency", gp = gpar(fontsize = 24))),
+      ncol = 3
+    )
+
+  } else {
+    
+    overlay.targt <- stats.group.mmp %>% 
+      
+      filter(method == method.i, param == "target") %>% 
+      dplyr::select(roi, num.roi, hemi, v, p, b, p.fdr) %>% 
+      mutate(val = ifelse(p.fdr < 0.05, v, 0)) %>%
+      arrange(num.roi)
+    
+    cifti.convert(
+      path.wb = "C:/Program Files/workbench/bin_windows64",
+      fname.overlay  = paste0("group_target_", method.i, "_v"),
+      dir.to.write   = here("out", "runwise"),
+      values.overlay = overlay.targt$val,
+      dir.template   = here("out", "wb"),
+      name.atlas     = "glasser"
+    )
+    
+    overlay.distr <- stats.group.mmp %>% 
+      
+      filter(method == method.i, param == "distractor") %>% 
+      dplyr::select(roi, num.roi, hemi, v, p, b, p.fdr) %>% 
+      mutate(val = ifelse(p.fdr < 0.05, v, 0)) %>%
+      arrange(num.roi)
+    
+    cifti.convert(
+      path.wb = "C:/Program Files/workbench/bin_windows64",
+      fname.overlay  = paste0("group_distractor_", method.i, "_v"),
+      dir.to.write   = here("out", "runwise"),
+      values.overlay = overlay.distr$val,
+      dir.template   = here("out", "wb"),
+      name.atlas     = "glasser"
+    )
+    
+    overlay.incon <- stats.group.mmp %>% 
+      
+      filter(method == method.i, param == "incongruency") %>% 
+      dplyr::select(roi, num.roi, hemi, v, p, b, p.fdr) %>% 
+      mutate(val = ifelse(p.fdr < 0.05, v, 0)) %>%
+      arrange(num.roi)
+    
+    cifti.convert(
+      path.wb = "C:/Program Files/workbench/bin_windows64",
+      fname.overlay  = paste0("group_incongruency_", method.i, "_v"),
+      dir.to.write   = here("out", "runwise"),
+      values.overlay = overlay.incon$val,
+      dir.template   = here("out", "wb"),
+      name.atlas     = "glasser"
+    )
+    
+    ## now build and save plots with workbench, and re-run this .rmd file
+  
+    cat('\n')
+    
+  }
+  
+    
+}
+
+
+```
+

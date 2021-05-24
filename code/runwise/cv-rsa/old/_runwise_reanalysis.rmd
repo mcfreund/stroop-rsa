@@ -1,0 +1,123 @@
+---
+title: "robustness analysis: runwise RSA"
+author: "michael freund"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    theme: spacelab
+    highlight: zenburn
+---
+
+
+
+```{r setup, include = FALSE}
+
+knitr::opts_chunk$set(
+  fig.align = 'center', fig.width = 11.5, fig.fullwidth = TRUE, cache = TRUE
+)
+
+source(here::here("code", "packages.R"))
+source(here("code", "strings.R"))
+source(here("code", "funs.R"))
+source(here("code", "plots.R"))
+source(here("code", "read_atlases.R"))
+
+
+d.super <- list(
+  cval = read_subj_stats(glm.suffix = "fmriprep_runwise_cv-euclidean-stand_", suffix = ""),
+  crun = read_subj_stats(glm.suffix = "fmriprep_im_run_", suffix = ""),
+  orig = read_subj_stats(glm.suffix = "fmriprep_", suffix = "_residual"),
+  down = read_subj_stats(glm.suffix = "fmriprep_im_run_downsampled-glmagg_", suffix = "")
+)
+
+d.mmp <- list(
+  cval = read_subj_stats(glm.suffix = "fmriprep_runwise_cv-euclidean-stand_", suffix = "", roi.set = "mmp"),
+  crun = read_subj_stats(glm.suffix = "fmriprep_im_run_", suffix = "", roi.set = "mmp"),
+  orig = read_subj_stats(glm.suffix = "fmriprep_", suffix = "_residual", roi.set = "mmp")
+)
+
+
+d <- full_join(
+  d.mmp$cval,
+  d.mmp$crun,
+  # d.mmp$orig,
+  by = c(
+    "subj", "is.analysis.group", "roi", "param", "num.roi", "hemi", "community", "community.short", "network", "md"
+    ),
+  suffix = c("_cval", "_crun")
+  )
+
+
+d %>%
+  group_by(roi, param) %>%
+  summarize(r = cor(beta_cval, beta_crun)) %>% 
+  
+  ggplot(aes(param, r)) +
+  geom_boxplot() +
+  # geom_point(position = "jitter") +
+  scale_y_continuous(limits = c(-0.5, 1), n.breaks = 5)
+
+
+```
+
+
+# intro
+
+## reviewer comments
+
+> **R1.1** When building the RSA matrix, only across-run correlations should be used as within-
+> run correlations will introduce bias (c.f. Cai et al (2019), PLOS computational biology). It
+> is not clear whether within-run correlations were included in this study.
+
+> **R2.3** On page 16, the authors describe a pre-whitening approach to remove nuisance
+> components from their data. While controlling for run-specific effects in this unbalanced
+> design seems possible this way, I wonder whether there isn't a cleaner way to control
+> for the same effects. The authors argue that having an imbalance across runs would
+> lead to an inflation of pattern similarity within the run where the stimulus was presented
+> most frequently. If this were true, simply downsampling data to create an equal
+> distribution of stimuli across runs should be a better control than pre-whitening. After all,
+> it should not reduce the overall effect size, just remove artificially inflated effects.
+
+This issue arose because some conditions were presented more frequently in run 1 than run 2 (vice versa for others).
+This leads to a scenario in which "run-1 conditions" (those presented mostly in run 1) will have inflated pattern similarity, relative to similarity between "run-1" and "run-2" conditions (likewise for similarities among "run-2 conditions").
+
+## proposed revision: sensitivity analysis with cross-valdiated similarity measure
+
+* measure selected: cross-validated euclidean distance
+    * description: 'correlate' pairwise contrasts (diff btw each condition) across runs
+    * cross-validated across scanning run
+      * unbiased: not impacted by # trials per run (**R2.3**)
+      * all comparisons are across scanning run (**R1.1**, **R2.3**)
+    * not prewhitened (comparability to extant results)
+    * standardized and non-standardized versions
+      * standardized: z-score normalized prior to contrasting
+      * non-standardized: no normalizations applied
+
+* fmriprep pipeline output (whereas original used HCP output)
+
+# group-level analyses
+
+## cross-validated
+
+```{r}
+measure <- "cval"
+```
+
+`r knitr::spin_child('fpc_dissoc.R')`
+
+```{r}
+measure <- "crun"
+measure <- "down"
+```
+
+`r knitr::spin_child('fpc_dissoc.R')`
+
+## cross-validated
+
+
+# individual-level analyses
+
+## 

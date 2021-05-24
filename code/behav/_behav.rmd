@@ -49,3 +49,7 @@ cl1 <- lmeControl(maxIter = 1E5, msMaxIter = 1E5, niterEM = 1E5, msMaxEval = 1E5
 
 `r spin_child('prelim_behavioral_models_validation_set.R')`
 
+# analysis-set-reduced subjs: estimation of stroop effects
+
+`r spin_child('prelim_behavioral_models_analysis-reduced_set.R')`
+

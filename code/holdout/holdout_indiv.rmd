@@ -1,0 +1,282 @@
+---
+title: "validation set analyses: individual-level"
+author: "michael freund"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    theme: spacelab
+    highlight: zenburn
+---
+
+
+
+```{r setup, include = FALSE}
+
+knitr::opts_chunk$set(
+  fig.align = 'center', fig.width = 11.5, fig.fullwidth = TRUE, cache = TRUE
+)
+
+source(here::here("code", "packages.R"))
+source(here("code", "strings.R"))
+source(here("code", "funs.R"))
+source(here("code", "plots.R"))
+source(here("code", "read_atlases.R"))
+
+# behav.mod.objs <- readRDS(here("out", "behav", "mod_objs.RDS"))  ## behavioral model objects
+
+blups <- 
+  bind_rows(
+    read.csv(here("out", "behav", "stroop_blups_rt_group201902.csv"), stringsAsFactors = FALSE),
+    read.csv(here("out", "behav", "stroop_blups_rt_group201902_validation.csv"), stringsAsFactors = FALSE) 
+  )
+
+stats.subjs <- bind_rows(
+  mmp         = 
+    read_subj_stats(
+      subjs = c(subjs.analysis, subjs.validation), 
+      roi.set = "mmp"
+      ) %>% 
+    mutate(roi.hemi = roi, roi = gsub("_L$|_R$", "", roi)),
+  superparcel = read_subj_stats(subjs = c(subjs.analysis, subjs.validation)),
+  .id = "scheme"
+  )
+
+## wrange data ----
+
+stats.subjs <- stats.subjs[stats.subjs$param %in% c("target", "distractor", "incongruency"), ]
+stats.subjs <- full_join(blups, stats.subjs, by = "subj")
+stats.subjs %<>% ungroup %>% mutate(id = paste0(roi.hemi, "_", param))
+stats.subjs %<>% group_by(scheme, id) %>% mutate(beta.s = c(scale(beta)))  ## scale betas
+
+## to long-form data-frame
+
+d.mmp <- stats.subjs %>% filter(scheme == "mmp")
+d.super <- stats.subjs %>% filter(scheme == "superparcel")
+
+## to wide-form matrix
+
+w.mmp <- stats.subjs %>% 
+  
+  filter(scheme == "mmp") %>%
+  
+  dplyr::select(subj, is.analysis.group, congr, stroop, beta, id) %>%
+  pivot_wider(names_from = "id", values_from = "beta")
+
+
+w.super <- stats.subjs %>% 
+  
+  filter(scheme == "superparcel") %>%
+  
+  dplyr::select(subj, is.analysis.group, congr, stroop, beta, id) %>%
+  pivot_wider(names_from = "id", values_from = "beta")
+
+
+are.identical <- identical(w.mmp[c("subj", "is.analysis.group")], w.super[c("subj", "is.analysis.group")])
+if (!are.identical) {
+  stop("something wrong")
+} else {
+  
+  ids <- w.mmp[c("subj", "is.analysis.group")]
+  
+  m.mmp    <- w.mmp %>% ungroup %>% dplyr::select(-subj, -is.analysis.group, -scheme) %>% as.matrix
+  m.super  <- w.super %>% ungroup %>%  dplyr::select(-subj, -is.analysis.group, -scheme) %>% as.matrix
+
+}
+
+
+## subj sets
+
+ids$is.train <- ids$subj %in% subjs.analysis.red
+ids$is.test1 <- ids$subj %in% setdiff(subjs.analysis, subjs.analysis.red)
+ids$is.test2 <- ids$subj %in% subjs.validation
+
+rm.these <- grep("stroop|^congr$|V1|\\.alt", colnames(m.super))
+X.super <- m.super[ids$is.train, -rm.these]  ## analysis set
+X.super_vset <- m.super[ids$is.test2, -rm.these]  ## 'held out' / validation set
+
+
+## response variables
+
+strooprt_train <- as.matrix(w.super[ids$is.train, "stroop"])  ## analysis set
+strooprt_test1 <- m.super[ids$is.test1, "stroop"]  ## validation set
+strooprt_test2 <- m.super[ids$is.test2, "stroop"]  ## validation set
+
+
+```
+
+
+# elastic net
+
+## estimate model
+
+```{r}
+
+lambdas.super.all <- tune_lambda(X.super, strooprt_train, alpha = 1, selection_crit = function(fit) fit$lambda.1se)
+hist(lambdas.super.all, breaks = 50, col = "grey50")
+lambda.best.super.all <- min(Mode(lambdas.super.all))
+
+## seq lambdas b/c warm start:
+net.super.all <- glmnet(x = X.super, y = strooprt_train, lambda = seq(0, lambda.best.super.all, 1), alpha = 1)
+coef(net.super.all, s = lambda.best.super.all)
+plot(net.super.all, "lambda")
+
+```
+
+## estimate test error
+
+```{r}
+
+## observed error
+
+ys.super.all <- cbind(
+  y = c(strooprt_test2),
+  yhat = c(predict(net.super.all, newx = X.super_vset, s = lambda.best.super.all))
+)
+
+(cor.obs.super.all <- cor(ys.super.all)["y", "yhat"])
+
+ys.super.all %>%
+  as.data.frame %>%
+  ggplot(aes(yhat, y)) +
+  stat_boot_ci(n = 1e4, alpha = 0.3, color = "grey50") +
+  geom_point()
+
+
+```
+
+
+# ridge: lateral target, medial congruency
+
+## estimate model
+
+
+```{r}
+
+hyp <- c("dlpfc_R_target", "dlpfc_L_target", "lppc_L_target", "lppc_R_target", "dmfc_L_incongruency", "dmfc_R_incongruency")
+
+lambdas.super.hyp <- tune_lambda(X.super[, hyp], strooprt_train, alpha = 0, selection_crit = function(fit) fit$lambda.1se)
+hist(lambdas.super.hyp, breaks = 50, col = "grey50")
+lambda.best.super.hyp <- min(Mode(lambdas.super.hyp))
+
+## seq lambdas b/c warm start:
+net.super.hyp <- glmnet(x = X.super[, hyp], y = strooprt_train, lambda = seq(0, lambda.best.super.hyp, 1), alpha = 0)
+coef(net.super.hyp, s = lambda.best.super.hyp)
+plot(net.super.hyp, "lambda")
+
+```
+
+## estimate test error
+
+```{r}
+
+## observed error
+
+ys.super.hyp <- cbind(
+  y = c(strooprt_test2),
+  yhat = c(predict(net.super.hyp, newx = X.super_vset[, hyp], s = lambda.best.super.hyp))
+)
+
+(cor.obs.super.hyp <- cor(ys.super.hyp)["y", "yhat"])
+
+ys.super.hyp %>%
+  as.data.frame %>%
+  ggplot(aes(yhat, y)) +
+  stat_boot_ci(n = 1e4, alpha = 0.3, color = "grey50") +
+  geom_point()
+
+```
+
+
+
+
+# ridge: medial target, lateral congruency
+
+## estimate model
+
+
+```{r}
+
+alt <- c(
+  "dlpfc_R_incongruency", "dlpfc_L_incongruency", "lppc_L_incongruency", 
+  "lppc_R_incongruency", "dmfc_R_target", "dmfc_R_target"
+  )
+
+lambdas.super.alt <- tune_lambda(X.super[, alt], strooprt_train, alpha = 0, selection_crit = function(fit) fit$lambda.1se)
+hist(lambdas.super.alt, breaks = 50, col = "grey50")
+lambda.best.super.alt <- min(Mode(lambdas.super.alt))
+
+## seq lambdas b/c warm start:
+net.super.alt <- glmnet(x = X.super[, alt], y = strooprt_train, lambda = seq(0, lambda.best.super.alt, 1), alpha = 0)
+coef(net.super.alt, s = lambda.best.super.alt)
+plot(net.super.alt, "lambda")
+
+```
+
+## estimate test error
+
+```{r}
+
+## observed error
+
+ys.super.alt <- cbind(
+  y = c(strooprt_test2),
+  yhat = c(predict(net.super.alt, newx = X.super_vset[, alt], s = lambda.best.super.alt))
+)
+
+(cor.obs.super.alt <- cor(ys.super.alt)["y", "yhat"])
+
+ys.super.alt %>%
+  as.data.frame %>%
+  ggplot(aes(yhat, y)) +
+  stat_boot_ci(n = 1e4, alpha = 0.3, color = "grey50") +
+  geom_point()
+
+
+```
+
+
+# test: hyps vs hyps alt
+
+```{r}
+
+## permuted validation error
+
+n_cores <- detectCores()
+nresamps <- 1E4
+cl <- makeCluster(n_cores / 2)
+registerDoParallel(cl)
+cor.boot.super <- foreach(ii = seq_len(nresamps), .inorder = FALSE, .packages = c("glmnet", "data.table")) %dorng% {
+
+  ii <- sample.int(nrow(strooprt_train), replace = TRUE)
+  y_train <- strooprt_train[ii, ]
+
+  fit.hyp <- glmnet(x = X.super[ii, hyp], y = y_train, lambda = seq(lambda.best.super.hyp-20, lambda.best.super.hyp, 1), alpha = 0)
+  fit.alt <- glmnet(x = X.super[ii, alt], y = y_train, lambda = seq(lambda.best.super.alt-20, lambda.best.super.alt, 1), alpha = 0)
+  
+  r.hyp <- cor(strooprt_test2, predict(fit.hyp, newx = X.super_vset[, hyp], s = lambda.best.super.hyp))
+  r.alt <- cor(strooprt_test2, predict(fit.alt, newx = X.super_vset[, alt], s = lambda.best.super.alt))
+  
+  as.data.table(cbind(hyp = r.hyp, alt = r.alt))
+
+}
+stopCluster(cl)
+res <- rbindlist(cor.boot.super)
+names(res) <- c("hyp", "alt")
+res$iter <- 1:nrow(res)
+
+plot(atanh(res$hyp) - atanh(res$alt))
+
+res$diff <- atanh(res$hyp) - atanh(res$alt)
+(p.value <- sum(res$diff < 0) / nresamps)
+
+res %>%
+  # melt(id.var = "iter") %>%
+  ggplot(aes(diff)) +
+  stat_density(fill = "grey50", color = "black", size = 3) +
+  geom_vline(xintercept = 0, color = "firebrick", size = 2)
+
+```
+

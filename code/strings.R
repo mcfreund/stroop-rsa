@@ -45,5 +45,17 @@ subjs.analysis <-
   unique(data.table::fread(here::here("in", "behavior-and-events_group201902.csv"))[is.analysis.group == TRUE]$subj)
 subjs.validation <- 
   unique(data.table::fread(here::here("in", "behavior-and-events_group201902.csv"))[is.analysis.group == FALSE]$subj)
+subjs.validation <- subjs.validation[!subjs.validation %in% c("DMCC4260551")]  ## coil error!
+subj_sum <- data.table::fread(here::here("in", "summary_group201902.csv"))[session == "pro"]
+twinpairs <- unique(subj_sum[subj %in% subjs.validation]$twin.pair)
+subjs.analysis.red <- unique(subj_sum[is.analysis.group == TRUE & !twin.pair %in% twinpairs]$subj)
+
+
+# test1 <- unique(subj_sum[is.analysis.group == TRUE & twin.pair %in% twinpairs]$subj)
+# test2 <- unique(subj_sum[is.analysis.group == FALSE]$subj)
+
+# identical(subjs.validation, test2)
+# setdiff(subjs.analysis.red, subjs.analysis)
+
 
 sets.of.rois <- c("masks", "mmp")
