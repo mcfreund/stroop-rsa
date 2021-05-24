@@ -119,39 +119,68 @@ for (set.i in sets.of.rois) {
     nsamp <- 1000
     set.seed(0)
     
+    ## NB: this following code is messy...
+    ##  - the idea is, for each condition (stroop stimulus), to select 3 trials at random ("downsample").
+    ##    then, to average activity patterns voxel-wise across the three trials per condition.
+    ##    as there are 16 conditions, this should result in an N_voxel by 16 matrix, where each column contains the averaged pattern.
+    ##  - i implement this by creating a matrix that holds downsampled indices, inds1 and inds2 (per run).
+    ##    a single column of this matrix (of 48 = 16*3 rows) holds the indices for 3 randomly selected trials per condition.
+    ##    there are N_resamples = 1000 columns of this matrix, corresponding to repeating this resampling approach 1000 independent times.
+    ##    i use this matrix to extract the relevant trials from the roi.betas object.
+    ##  - however some conditions for some subjects will occur less than 3 times.
+    ##    this is because some subjects made errors on some trials, which were excluded.
+    ##  - I ignored this fact, and per resample, I simply extracted these trials however many times they occurred (1 or 2).
+    ##    this will yield the same values each time, of course, but is more computation than necessary.
+    ##    however to me, it seemed like the more straightforward thing to code up.
+    
+    ## run 1:
+    
     inds1 <- setNames(vector("list", n.bias.items), bias.items)
     for (cond.i in seq_along(bias.items)) {
-      # cond.i = 2
+      # cond.i = 13
+      
       if (sum(bias.items[cond.i] == conds1) > 3) {  ## downsample to 3 trials if >3 trials, otherwise keep # trials as is
         n.trials1 <- 3
       } else {
         n.trials1 <- sum(bias.items[cond.i] == conds1)
       }
-      if (n.trials1 == 1) {  ## for flexible behavior of sample
+      
+      if (n.trials1 == 1) {  ## for flexible behavior of sample...see ? sample()
+        # break
         inds1[[cond.i]] <- matrix(rep(which(bias.items[cond.i] == conds1), nsamp), nrow = n.trials1)
       } else {
         inds1[[cond.i]] <- replicate(nsamp, sample(which(bias.items[cond.i] == conds1), n.trials1), nsamp)
       }
+      
       rownames(inds1[[cond.i]]) <- rep(bias.items[[cond.i]], n.trials1)
+      
     }
     inds1 <- do.call(rbind, inds1)
     
+    ## run 2:
+    
     inds2 <- setNames(vector("list", n.bias.items), bias.items)
     for (cond.i in seq_along(bias.items)) {
+      
       # cond.i = 2
       if (sum(bias.items[cond.i] == conds2) > 3) {  ## downsample to 3 trials if >3 trials, otherwise keep # trials as is
         n.trials2 <- 3
       } else {
         n.trials2 <- sum(bias.items[cond.i] == conds2)
       }
-      if (n.trials2 == 1) {  ## for flexible behavior of sample
+      
+      if (n.trials2 == 1) {  ## for flexible behavior of sample...see ? sample()
+        # break
         inds2[[cond.i]] <- matrix(rep(which(bias.items[cond.i] == conds2), nsamp), nrow = n.trials2)
       } else {
         inds2[[cond.i]] <- replicate(nsamp, sample(which(bias.items[cond.i] == conds2), n.trials2), nsamp)
       }
+      
       rownames(inds2[[cond.i]]) <- rep(bias.items[[cond.i]], n.trials2)
+      
     }
     inds2 <- do.call(rbind, inds2)
+    
     
     for (roi.i in seq_len(n.roi)) {  ## careful: roi.i is an index for as.numeric(rois)
       # roi.i <- 23
@@ -166,7 +195,7 @@ for (set.i in sets.of.rois) {
       
       roi.betas <- lapply(image.betas[[subj.i]], function(x1) apply(x1, "condition", function(x2) x2[mask.i]))  ## dirty
       
-      ## averaging matrices:
+      ## averaging matrices: (this can be moved out of this loop but w/e)
       A1 <- model.matrix(~ 0 + dimnames(inds1)[[1]])  ## build dummy/indicator matrices
       A1 <- sweep(A1, 2, colSums(A1), "/")  ## scale cols
       colnames(A1) <- gsub("dimnames(inds1)[[1]]", "", colnames(A1), fixed = TRUE)  ## remove weird prefix
@@ -242,4 +271,3 @@ for (set.i in sets.of.rois) {
   
   
 }  ## end atlas loop
-

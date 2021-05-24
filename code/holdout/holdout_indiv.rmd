@@ -89,30 +89,9 @@ if (!are.identical) {
 
 ## subj sets
 
-subj_sum <- fread(here("in", "summary_group201902.csv"))[session == "pro"]
-
-twinpairs <- unique(subj_sum[is.analysis.group == FALSE]$twin.pair)
-train <- unique(subj_sum[is.analysis.group == TRUE & !twin.pair %in% twinpairs]$subj)
-test1 <- unique(subj_sum[is.analysis.group == TRUE & twin.pair %in% twinpairs]$subj)
-test2 <- unique(subj_sum[is.analysis.group == FALSE]$subj)
-
-identical(subjs.validation, test2)
-setdiff(train, subjs.analysis)
-
-test2 <- test2[!test2 %in% c("DMCC4260551")]  ## coil error!
-
-# stats.subjs.super$subj.set <- ""
-# stats.subjs.super[subj %in% train]$subj.set <- "train"
-# stats.subjs.super[subj %in% test1]$subj.set <- "test1"
-# stats.subjs.super[subj %in% test2]$subj.set <- "test2"
-# unique(stats.subjs.super$subj.set)
-
-# length(train) + length(test2) + length(test1)
-# stats.subjs.super %<>% filter(subj != "DMCC4260551")
-
-ids$is.train <- ids$subj %in% train
-ids$is.test1 <- ids$subj %in% test1
-ids$is.test2 <- ids$subj %in% test2
+ids$is.train <- ids$subj %in% subjs.analysis.red
+ids$is.test1 <- ids$subj %in% setdiff(subjs.analysis, subjs.analysis.red)
+ids$is.test2 <- ids$subj %in% subjs.validation
 
 rm.these <- grep("stroop|^congr$|V1|\\.alt", colnames(m.super))
 X.super <- m.super[ids$is.train, -rm.these]  ## analysis set

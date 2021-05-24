@@ -35,8 +35,7 @@ d.super <- read_subj_stats() %>% filter(param == "incongruency")
 blups <- 
   bind_rows(
     read.csv(here("out", "behav", "stroop_blups_rt_group201902.csv"), stringsAsFactors = FALSE)
-  ) %>%
-  mutate(subj = ifelse(subj == "DMCC4854075", "562345", subj))
+  )
 
 means <- readRDS(here("out", "rsa", "obsv", "means_pro_bias_acc-only_masks.rds"))
 means <- as.data.table(reshape2::melt(means, value.name = "m"))
@@ -62,7 +61,6 @@ stats.subjs.rois <- means %>%
 
 
 d <- full_join(stats.subjs.rois %>% select(-congr, -incon), d.super)
-filter(d.super, subj == "562345")
 
 
 ## mmp
@@ -213,7 +211,6 @@ p <- plot_grid(
 ggsave(here("out", "univariate", "univariate.pdf"), p, width = 12, height = 11, units = "cm")
 
 
-
 ```
 
 
@@ -239,8 +236,6 @@ stats.group.mmp <- d.mmp %>%
 
 stats.group.mmp %>% filter(p.fdr < 0.1, m_bar > 0)  ## p < 0.1 for alpha = 0.05 (1-tailed)
 stats.group.mmp %>% filter(p < 0.1, m_bar > 0)  ## p < 0.1 for alpha = 0.05
-
-
 
 ```
 

@@ -23,7 +23,7 @@ To run the code, you can either execute this .rmd file (i.e., 'knit' to html), o
 ```{r setup, include = FALSE}
 
 knitr::opts_chunk$set(
-  fig.align = 'center', fig.width = 11.5, fig.fullwidth = TRUE, cache = TRUE
+  fig.align = 'center', fig.width = 11.5, fig.fullwidth = TRUE
 )
 
 source(here::here("code", "packages.R"))

@@ -249,6 +249,8 @@ fwrite(table.group.means, here("out", "group", "superparcels_means.txt"))
 fwrite(table.group.wnregion, here("out", "group", "superparcels_wnregion.txt"))
 fwrite(table.group.bnregion, here("out", "group", "superparcels_bnregion.txt"))
 
+saveRDS(contrasts.super, here("out", "group", "superparcels_contrast_matrix.rds"))
+saveRDS(table.group.contrast, here("out", "group", "superparcels_contrast_labels.rds"))
 
 #+
 

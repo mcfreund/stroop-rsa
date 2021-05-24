@@ -25,6 +25,8 @@ source(here("code", "funs.R"))
 source(here("code", "plots.R"))
 source(here("code", "read_atlases.R"))
 
+library(kableExtra)
+
 ## read data ----
 
 ## superparcels
@@ -63,7 +65,6 @@ d.mmp <- d.mmp[subj %in% subjs.analysis & param %in% c("target", "distractor", "
 d.mmp %<>% dplyr::full_join(atlas.key$mmp, by = "roi")
 
 
-
 ```
 
 
@@ -75,15 +76,23 @@ d.mmp %<>% dplyr::full_join(atlas.key$mmp, by = "roi")
 
 ```{r}
 
-dat_text <- data.frame(
-  param = c("incongruency", "target", "distractor"),
-  hemi = "L",
-  roi = "dlpfc",
-  x = 2.5,
-  y = c(0.11, 0.09, 0.07)
-)
+## mean greater than zero
+stats.group.rois.g0 <-
+  d %>%
+  
+  filter(roi %in% c("dlpfc", "dmfc", "lppc")) %>%
+  group_by(method, param, roi, roi.hemi) %>%
+  
+  summarize(
+    sd = sd(beta),
+    p = wilcox.test(beta, alternative = "greater")$p.value,
+    m = mean(beta),
+    .groups = "drop_last"
+  ) %>% 
+  ungroup
 
-stats.group.pairs.rois <-  d %>%
+## within region_hemi (between model):
+stats.group.rois.wrh <-  d %>%
   
   filter(roi %in% c("dlpfc", "dmfc", "lppc")) %>%
   pivot_wider(names_from = "param", values_from = "beta") %>%
@@ -104,84 +113,158 @@ stats.group.pairs.rois <-  d %>%
     p_td = wilcox.test(target, distractor, paired = TRUE)$p.value,
     p_id = wilcox.test(incongruency, distractor, paired = TRUE)$p.value
     
-  )
+  )  %>%
+  as.data.table %>%
+  melt(
+    id.vars = c("method", "roi.hemi"), 
+    measure.vars = patterns(m = "^m_", sd = "^sd_", p = "^p_", cols = names(.)),
+    variable.name = "contrast"
+    ) %>%
+  mutate(contrast = forcats::lvls_revalue(contrast, c("t_i","t_d", "i_d"))) %>% 
+  ungroup
 
-stats.group.rois <-
-  d %>%
+## within region (between model)
+stats.group.rois.wr <-  d %>%
   
   filter(roi %in% c("dlpfc", "dmfc", "lppc")) %>%
-  group_by(method, param, roi, roi.hemi) %>%
+  pivot_wider(names_from = "param", values_from = "beta") %>%
+  
+  group_by(method, roi) %>%
   
   summarize(
-    sd = sd(beta),
-    p = wilcox.test(beta, alternative = "greater")$p.value,
-    m = mean(beta),
-    .groups = "drop_last"
+    
+    m_ti = mean(target - incongruency),
+    m_td = mean(target - distractor),
+    m_id = mean(incongruency - distractor),
+    
+    sd_ti = sd(target - incongruency),
+    sd_td = sd(target - distractor),
+    sd_id = sd(incongruency - distractor),
+    
+    p_ti = wilcox.test(target, incongruency, paired = TRUE)$p.value,
+    p_td = wilcox.test(target, distractor, paired = TRUE)$p.value,
+    p_id = wilcox.test(incongruency, distractor, paired = TRUE)$p.value
+    
   ) %>%
   
-  group_by(param, roi) %>%
+  as.data.table %>%
+  melt(
+    id.vars = c("method", "roi"), 
+    measure.vars = patterns(m = "^m_", sd = "^sd_", p = "^p_", cols = names(.)),
+    variable.name = "contrast"
+    ) %>%
+  mutate(contrast = forcats::lvls_revalue(contrast, c("t_i","t_d", "i_d"))) %>% 
+  ungroup
+
+
+## within model (between region):
+
+stats.group.rois.wm <-  d %>%
   
-  mutate(p.fdr = p.adjust(p, method = "fdr"))
-
-
+  filter(roi %in% c("dlpfc", "dmfc", "lppc")) %>%
+  pivot_wider(id_cols = c("subj", "method"), names_from = c("roi.hemi", "param"), values_from = "beta") %>%
+  
+  group_by(method) %>%
+  
+  mutate(
+    
+    dlpfc_target       = (dlpfc_L_target + dlpfc_R_target)/2,
+    lppc_target        = (lppc_L_target + lppc_R_target)/2,
+    
+    dlpfc_incongruency = (dlpfc_L_target + dlpfc_R_target)/2,
+    lppc_incongruency  = (lppc_L_incongruency + lppc_R_incongruency)/2,
+    
+    dmfc_dlpfc_i       = dmfc_L_incongruency - dlpfc_incongruency,
+    dmfc_lppc_i        = dmfc_L_incongruency - lppc_incongruency,
+    
+    dmfc_dlpfc_t       = dlpfc_target - dmfc_L_target,
+    dmfc_lppc_t        = lppc_target - dmfc_L_target,
+    
+    dmfc_dlpfc_it      = dmfc_dlpfc_i - dmfc_dlpfc_t,
+    dmfc_lppc_it       = dmfc_dlpfc_i - dmfc_lppc_t
+    
+  ) %>%
+    
+  summarize(
+    
+    m_dmfc_dlpfc_i  = mean(dmfc_dlpfc_i),
+    m_dmfc_lppc_i   = mean(dmfc_lppc_i),
+    
+    m_dmfc_dlpfc_t  = mean(dmfc_dlpfc_t),
+    m_dmfc_lppc_t   = mean(dmfc_lppc_t),
+    
+    m_dmfc_dlpfc_it = mean(dmfc_dlpfc_it),
+    m_dmfc_lppc_it  = mean(dmfc_lppc_it),
+    
+    sd_dmfc_dlpfc_i  = sd(dmfc_dlpfc_i),
+    sd_dmfc_lppc_i   = sd(dmfc_lppc_i),
+    
+    sd_dmfc_dlpfc_t  = sd(dmfc_dlpfc_t),
+    sd_dmfc_lppc_t   = sd(dmfc_lppc_t),
+    
+    sd_dmfc_dlpfc_it = sd(dmfc_dlpfc_it),
+    sd_dmfc_lppc_it  = sd(dmfc_lppc_it),
+    
+    p_dmfc_dlpfc_i  = wilcox.test(dmfc_dlpfc_i)$p.value,
+    p_dmfc_lppc_i   = wilcox.test(dmfc_lppc_i)$p.value,
+    p_dmfc_dlpfc_t  = wilcox.test(dmfc_dlpfc_t)$p.value,
+    p_dmfc_lppc_t   = wilcox.test(dmfc_lppc_t)$p.value,
+    p_dmfc_dlpfc_it = wilcox.test(dmfc_dlpfc_it)$p.value,
+    p_dmfc_lppc_it  = wilcox.test(dmfc_lppc_it)$p.value
+    
+  ) %>%
+  
+  as.data.table %>%
+  melt(
+    id.vars = "method", 
+    measure.vars = patterns(m = "^m_", sd = "^sd_", p = "^p_", cols = names(.)),
+    variable.name = "contrast"
+    ) %>%
+  mutate(
+    contrast = forcats::lvls_revalue(
+      contrast, 
+      c(
+        "dmfc_dlpfc_i", "dmfc_lppc_i", "dmfc_dlpfc_t", "dmfc_lppc_t", "dmfc_dlpfc_it", "dmfc_lppc_it"
+        )
+      )
+    ) %>% 
+  ungroup
 
 ## make table ----
 
-library(kableExtra)
+table.group <- bind_rows(
+  stats.group.rois.g0 %>% mutate(contrast = paste0(roi.hemi, "|", param)) %>% select(method, contrast, m, sd, p),
+  stats.group.rois.wr %>% mutate(contrast = paste0(contrast, "|", roi)) %>% select(method, contrast, m, sd, p),
+  stats.group.rois.wrh %>% mutate(contrast = paste0(contrast, "|", roi.hemi)) %>% select(method, contrast, m, sd, p),
+  stats.group.rois.wm
+)
+
+table.group.w <- table.group %>% 
+  pivot_wider(id_cols = "contrast", names_from = "method", values_from = c("m", "sd", "p")) %>%
+  select(contrast, ends_with("down_both"), ends_with("down_crun"), ends_with("cval"))
+names(table.group.w) <- gsub("_down_both|_down_crun|_cval", "", names(table.group.w))
 
 
-stats.group.pairs.rois.w <- stats.group.pairs.rois %>% 
-  pivot_longer(cols = contains("_"), names_to = "contrast_stat") %>%
-  mutate(
-    stat = gsub("(.*)_(.*)", "\\1", contrast_stat),
-    contrast = gsub("(.*)_(.*)", "\\2", contrast_stat)
-    ) %>%
-  select(-contrast_stat) %>%
-  pivot_wider(id_cols = c("roi.hemi", "contrast"), names_from = c("stat", "method"), values_from = "value")
+saveRDS(table.group.w, here("out", "runwise", "group_results.rds"))
 
-
-stats.group.rois.w <- stats.group.rois %>% 
-  pivot_wider(id_cols = c("param", "roi.hemi"), names_from = "method", values_from = c("m", "sd", "p"))
-
-stats.group.tbl <- bind_rows(stats.group.rois.w %>% rename(contrast = param), stats.group.pairs.rois.w)
-stats.group.tbl %<>% select(contrast, roi.hemi, ends_with("down_both"), ends_with("down_crun"), ends_with("cval"))
-names(stats.group.tbl) <- gsub("_down_both|_down_crun|_cval", "", names(stats.group.tbl))
-stats.group.tbl <- stats.group.tbl[order(stats.group.tbl$contrast), ]
-
-
-stats.group.tbl$contrast[stats.group.tbl$contrast == "target"] <- "$$\\text{target}>0$$"
-stats.group.tbl$contrast[stats.group.tbl$contrast == "distractor"] <- "$$\\text{distractor}>0$$"
-stats.group.tbl$contrast[stats.group.tbl$contrast == "incongruency"] <- "$$\\text{incongruency}>0$$"
-stats.group.tbl$contrast[stats.group.tbl$contrast == "ti"] <- "$$\\text{target}-\\text{incon.}$$"
-stats.group.tbl$contrast[stats.group.tbl$contrast == "td"] <- "$$\\text{target}-\\text{distr.}$$"
-stats.group.tbl$contrast[stats.group.tbl$contrast == "id"] <- "$$\\text{incon.}-\\text{distr.}$$"
-
-levs <- factor(
-  stats.group.tbl$contrast, 
-  levels = c(
-    "$$\\text{distractor}>0$$", "$$\\text{incongruency}>0$$", "$$\\text{target}>0$$", 
-    "$$\\text{incon.}-\\text{distr.}$$", "$$\\text{target}-\\text{distr.}$$", "$$\\text{target}-\\text{incon.}$$"
-    )
-  )
-
-stats.group.tbl <- stats.group.tbl[order(levs, stats.group.tbl$contrast), ]
-stats.group.tbl$roi.hemi <- toupper(stats.group.tbl$roi.hemi)
-
-names(stats.group.tbl) <- c(
-  "contrast", "ROI", 
-  "$$\\bar\\beta$$", "$$\\sigma$$", "$$p$$", "$$\\bar\\beta$$", "$$\\sigma$$", "$$p$$", "$$\\bar\\beta$$", "$$\\sigma$$", "$$p$$"
-  )
 
 stats.group.tbl <- 
-  kbl(stats.group.tbl, booktabs = TRUE) %>%
+  kbl(table.group.w, booktabs = TRUE) %>%
   kable_styling() %>%
-  add_header_above(c(" " = 2, "Within-run downsampled" = 3, "Cross-run downsampled" = 3, "Cross-validated" = 3))
-
-
-saveRDS(stats.group.tbl, here("out", "runwise", "group_results.rds"))
-
+  add_header_above(c(" " = 1, "Within-run downsampled" = 3, "Cross-run downsampled" = 3, "Cross-validated" = 3))
+stats.group.tbl
 
 ## plot ----
+
+
+dat_text <- data.frame(
+  param = c("incongruency", "target", "distractor"),
+  hemi = "L",
+  roi = "dlpfc",
+  x = 2.5,
+  y = c(0.11, 0.09, 0.07)
+)
+
 
 p_group <- d %>%
   
@@ -194,7 +277,7 @@ p_group <- d %>%
 
   geom_hline(yintercept = 0, alpha = 0.5) +
   
-  stat_summary(fun.data = "mean_cl_boot", position = position_dodge(width = 0.25), size = 0.5) +
+  stat_summary(fun.data = "mean_cl_boot", position = position_dodge(width = 0.25), size = 0.5, fun.args = list(B = 1E4)) +
   geom_line(
     data = . %>% 
       group_by(method, roi, param, hemi) %>%
@@ -242,25 +325,25 @@ ggsave(here("out", "runwise", "runwise_group.pdf"), p_group, width = 17.6, heigh
 ```{r}
 
 facet_names <- c(
-  'dlpfc'="DLPFC target",
-  'dmfc'="DMFC incongruency",
-  'lppc'="LPPC target"
+  'dlpfc' = "DLPFC target",
+  'dmfc' = "DMFC incongruency",
+  'lppc' = "LPPC target"
 )
 
 p_indiv <-
   d %>%
   
-  filter((roi %in% c("dlpfc", "lppc") & param == "target") | (roi == "dmfc" & param == "incongruency")) %>%
+  filter((roi.hemi %in% c("dlpfc_R", "lppc_R") & param == "target") | (roi.hemi == "dmfc_L" & param == "incongruency")) %>%
   
-  group_by(roi, hemi, param, method) %>%
+  group_by(roi, param, method) %>%
   summarize(r = cor(beta, stroop)) %>%
 
   ggplot(aes(method, r)) +
-  facet_grid(hemi ~ roi, labeller = labeller(roi = facet_names)) +
+  facet_grid(cols = vars(roi), labeller = labeller(roi = facet_names)) +
 
-  geom_hline(yintercept = 0) +
+  geom_hline(yintercept = 0, color = "grey20") +
   
-  geom_col(width = 0.6, fill = "grey20") +
+  geom_col(width = 0.5, fill = "grey20") +
   
   scale_x_discrete(labels = c("within-run\ndownsamp.", "cross-run\ndownsamp.", "cross-\nvalidated")) +
   scale_y_continuous(breaks = c(-0.2, 0, 0.2)) +
@@ -278,11 +361,11 @@ p_indiv <-
     legend.position = "none"
   ) +
   
-  labs(x = "estimation method", y = bquote("cor(Stroop RT, "*beta*")"))
+  labs(x = "Estimation method", y = bquote("cor(Stroop RT, "*beta*")"))
 
 p_indiv
 
-ggsave(here("out", "runwise", "runwise_indiv.pdf"), p_indiv, width = 13, height = 8, units = "cm")
+ggsave(here("out", "runwise", "runwise_indiv.pdf"), p_indiv, width = 13, height = 5, units = "cm")
 
 ```
 

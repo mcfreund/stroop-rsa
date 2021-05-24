@@ -6,7 +6,7 @@ in/HCP_S1200_Atlas_pkXDZ/*
 # images
 *.nii.gz
 
-# temp
+# tempn
 docs/*
 
 # archival
