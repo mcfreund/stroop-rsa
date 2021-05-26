@@ -16,9 +16,9 @@ if (file.exists(fname.mods.wnroi)) {
   
   mods.wnroi <- list(
     
+    dmfc_L   = update(fit1.het.trim, rt ~ . + trial.type * dmfc_L_target + trial.type * dmfc_L_incongruency, data = d.dissoc.hlm),
     dlpfc_R  = update(fit1.het.trim, rt ~ . + trial.type * dlpfc_R_target + trial.type * dlpfc_R_incongruency, data = d.dissoc.hlm),
-    lppc_R   = update(fit1.het.trim, rt ~ . + trial.type * lppc_R_target + trial.type * lppc_R_incongruency, data = d.dissoc.hlm),
-    dmfc_L   = update(fit1.het.trim, rt ~ . + trial.type * dmfc_L_target + trial.type * dmfc_L_incongruency, data = d.dissoc.hlm)
+    lppc_R   = update(fit1.het.trim, rt ~ . + trial.type * lppc_R_target + trial.type * lppc_R_incongruency, data = d.dissoc.hlm)
     
   )
   
@@ -42,8 +42,17 @@ tab.wnroi %<>%
     # contrast = "\\beta_\\text{target}-\\beta_\\text{incon.}\\times\\text{stroop}"
     )
 
-kable(tab.wnroi, escape = FALSE)
   
+
+
+tab.wnroi$model <- c(
+  "$\\text{target}-\\text{incon. } | \\text{ DMFC (L)}$",
+  "$\\text{target}-\\text{incon. } | \\text{ DLPFC (R)}$",
+  "$\\text{target}-\\text{incon. } | \\text{ LPPC (R)}$"
+)
+
+kable(tab.wnroi, escape = FALSE)
+
 
 saveRDS(contrasts.wnroi, here("out", "indiv", "contrasts_wnroi.RDS"))
 fwrite(tab.wnroi, here("out", "indiv", "tab_wnroi.csv"))

@@ -38,14 +38,22 @@ tab.bnroi <- contrasts.bnroi %>% map("test") %>% map_df(~ .[c("coefficients", "s
 tab.bnroi %<>% 
   rename(b = coefficients, se = sigma, t = tstat, p = pvalues) %>%
   mutate(
-    model = c("incon.", "incon.", "target", "target"),
-    contrast = c(
-      "\\beta_\\text{DMFC (L)}-\\beta_\\text{DLPFC (R)}\\times\\text{stroop}",
-      "\\beta_\\text{DMFC (L)}-\\beta_\\text{LPPC (R)}\\times\\text{stroop}",
-      "\\beta_\\text{DMFC (L)}-\\beta_\\text{DLPFC (R)}\\times\\text{stroop}",
-      "\\beta_\\text{DMFC (L)}-\\beta_\\text{LPPC (R)}\\times\\text{stroop}"
-      )
+    model = c("incon.", "incon.", "target", "target")
+    # contrast = c(
+    #   "\\beta_\\text{DMFC (L)}-\\beta_\\text{DLPFC (R)}\\times\\text{stroop}",
+    #   "\\beta_\\text{DMFC (L)}-\\beta_\\text{LPPC (R)}\\times\\text{stroop}",
+    #   "\\beta_\\text{DMFC (L)}-\\beta_\\text{DLPFC (R)}\\times\\text{stroop}",
+    #   "\\beta_\\text{DMFC (L)}-\\beta_\\text{LPPC (R)}\\times\\text{stroop}"
+    #   )
   )
+
+tab.bnroi$contrast <- c(
+  "$\\text{DMFC (L)} - \\text{DLPFC (R) } | \\text{ incon.}$",
+  "$\\text{DMFC (L)} - \\text{LPPC (R) } | \\text{ incon.}$",
+  "$\\text{DMFC (L)} - \\text{DLPFC (R) } | \\text{ target}$",
+  "$\\text{DMFC (L)} - \\text{LPPC (R) } | \\text{ target}$"
+)
+
 
 kable(tab.bnroi, escape = FALSE)
 
