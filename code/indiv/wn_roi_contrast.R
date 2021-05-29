@@ -38,18 +38,14 @@ tab.wnroi <- contrasts.wnroi %>% map("test") %>% map_df(~ .[c("coefficients", "s
 tab.wnroi %<>% 
   rename(b = coefficients, se = sigma, t = tstat, p = pvalues) %>%
   mutate(
-    model = c("DLPFC (R)", "LPPC (R)", "DMFC (L)")
-    # contrast = "\\beta_\\text{target}-\\beta_\\text{incon.}\\times\\text{stroop}"
+    model = c("DMFC (L)", "DLPFC (R)", "LPPC (R)"),
+    contrast = c(
+      "$\\text{target}-\\text{incon. } | \\text{ DMFC (L)}$",
+      "$\\text{target}-\\text{incon. } | \\text{ DLPFC (R)}$",
+      "$\\text{target}-\\text{incon. } | \\text{ LPPC (R)}$"
     )
+  )
 
-  
-
-
-tab.wnroi$model <- c(
-  "$\\text{target}-\\text{incon. } | \\text{ DMFC (L)}$",
-  "$\\text{target}-\\text{incon. } | \\text{ DLPFC (R)}$",
-  "$\\text{target}-\\text{incon. } | \\text{ LPPC (R)}$"
-)
 
 kable(tab.wnroi, escape = FALSE)
 
