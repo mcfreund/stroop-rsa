@@ -53,7 +53,7 @@ tab.single %<>% group_by(group) %>% mutate(p.fdr = p.adjust(p.value, method = "f
 tab.single %<>% select(term, roi, b = Value, se = Std.Error, t = t.value, p = p.value, p.fdr)
 
 
-tab.single$model <- c(
+tab.single$contrast <- c(
   "DMFC (L) incon.",
   "DMFC (R) incon.",
   "DMFC (L) target",

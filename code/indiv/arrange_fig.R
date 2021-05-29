@@ -115,6 +115,8 @@ p.dlpfc <- last_plot()
 # plot_grid(p.vvis, p.dlpfc, axis = "")
 # p.explor <- plot_grid(p.vvis, p.dlpfc, align = "v")
 
+cor.perm.super <- readRDS(here("out", "indiv", "selected_model_validation.RDS"))$cor.perm.super
+
 data.frame(x = cor.perm.super[!is.na(cor.perm.super)]) %>%
   
   ggplot(aes(x = x)) +
