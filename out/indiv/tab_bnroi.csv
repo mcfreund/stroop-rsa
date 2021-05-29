@@ -1,5 +1,5 @@
 roi,b,se,t,p,model,contrast
-incon_dmfc_dlpfc,22.8519071823368,52.9200109048757,0.431819774629551,0.665872406141903,incon.,\beta_\text{DMFC (L)}-\beta_\text{DLPFC (R)}\times\text{stroop}
-incon_dmfc_lppc,134.192844634488,49.8494183905074,2.6919640984225,0.00710325913534859,incon.,\beta_\text{DMFC (L)}-\beta_\text{LPPC (R)}\times\text{stroop}
-target_dmfc_dlpfc,500.629795579137,139.142152768394,3.5979736235104,0.000320706133347892,target,\beta_\text{DMFC (L)}-\beta_\text{DLPFC (R)}\times\text{stroop}
-target_dmfc_lppc,468.988316348764,137.45503616032,3.41193985647613,0.000645023431086633,target,\beta_\text{DMFC (L)}-\beta_\text{LPPC (R)}\times\text{stroop}
+incon_dmfc_dlpfc,22.8519071823368,52.9200109048757,0.431819774629551,0.665872406141903,incon.,$\text{DMFC (L)} - \text{DLPFC (R) } | \text{ incon.}$
+target_dmfc_dlpfc,500.629795579137,139.142152768394,3.5979736235104,0.000320706133347892,incon.,$\text{DMFC (L)} - \text{DLPFC (R) } | \text{ target}$
+incon_dmfc_lppc,134.192844634488,49.8494183905074,2.6919640984225,0.00710325913534859,target,$\text{DMFC (L)} - \text{LPPC (R) } | \text{ incon.}$
+target_dmfc_lppc,468.988316348764,137.45503616032,3.41193985647613,0.000645023431086633,target,$\text{DMFC (L)} - \text{LPPC (R) } | \text{ target}$
