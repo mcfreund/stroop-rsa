@@ -65,7 +65,7 @@ tab.single$model <- c(
   "LPPC (L) incon.",
   "LPPC (R) incon.",
   "LPPC (L) target",
-  "LPPC (R) target",
+  "LPPC (R) target"
 )
 
 
