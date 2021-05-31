@@ -335,7 +335,7 @@ p.means.super <-
     scale_color_manual(values = colors.model) +
     lemon::coord_capped_cart(left = "both") +
     scale_x_discrete(labels = c("DMFC (L)", "DLPFC", "LPPC")) +
-    scale_y_continuous(breaks = c(0, 0.1, 0.2)) +
+    scale_y_continuous(breaks = c(0, 0.1, 0.2), limits = c(min(means.super$ymin), 0.2)) +
     
     annotate(
       geom = "text", x = 1.5, y = 0.14, label = "target", color = colors.model["target"],
@@ -406,17 +406,132 @@ ggsave(here("out", "group", "crossplot_superparcels.pdf"), p.means.super, device
 
 #+
 
+#' ### som-mot and v1 dissociation
+
+#+ fpc-dissoc_sommot-v1_model, include = TRUE
+
+
+fit.prelim <- lmer(
+  beta ~ 0 + interaction(roi, param) + (1 | subj),
+  stats.subjs.super %>% filter(param %in% c("distractor", "target"), roi %in% c("V1", "smmouth"))
+)
+summary(fit.prelim)
+
+contrasts.prelim <- rbind(
+  diag(4),  #' means
+  ## cross-parcel contrasts:
+  "V1-smmouth|distractor" = c(1, -1, 0, 0),
+  "smmouth-V1|target"     = c(0, 0, 1, -1),
+  ## within-parcel contrasts:
+  "distractor-target|V1"     = c(0, 1, 0, -1),
+  "target-distractor|smmouth"= c(-1, 0, 1, 0),
+  ## interaction:
+  "(smmouth-V1)(target-distractor)" = c(-1, -1, 1, 1)
+)
+rownames(contrasts.prelim)[1:4] <- c("V1.distractor", "smmouth.distractor", "V1.target", "smmouth.target")
+
+glht.prelim <- summary(glht(fit.prelim, contrasts.prelim, alternative = "greater"), test = adjusted("none"))
+glht.prelim$test$pvalues["(smmouth-V1)(target-distractor)"] <- 
+  glht.prelim$test$pvalues["(smmouth-V1)(target-distractor)"]*2  ## interaction should be two-sided
+
+glht.prelim
+
+#+
+
+
+#+ fpc-dissoc_sommot-v1_plot, include = TRUE
+
+means.prelim <- stats.subjs.super %>% 
+  
+  filter(param %in% c("distractor", "target"), roi %in% c("evis", "smmouth")) %>%
+  
+  group_by(roi, param) %>%
+  summarize(res = list(boot_mean_ci(beta)), .groups = "drop") %>% 
+  
+  unnest(cols = c(res))
+
+
+p.means.prelim <-
+  means.prelim %>%
+  
+  ggplot(aes(roi, y, color = param)) +
+  
+  geom_point(size = geom.point.size, position = position_dodge(width = 1/2)) +
+  geom_errorbar(aes(ymin = ymin, ymax = ymax), position = position_dodge(width = 1/2), width = 0, size = geom.line.size) +
+  
+  scale_color_manual(values = colors.model) +
+  lemon::coord_capped_cart(left = "both") +
+  scale_x_discrete(labels = c("V1", "vS1/vM1")) +
+  scale_y_continuous(breaks = c(0, 0.1, 0.2), limits = c(min(means.prelim$ymin), 0.2)) +
+  
+  annotate(
+    geom = "text", x = 0.75, y = 0.14, label = "target", color = colors.model["target"],
+    hjust = 0, vjust = 1, size = label.size, fontface = "bold"
+  ) +
+  annotate(
+    geom = "text", x = 0.75, y = 0.12, label = "distr.", color = colors.model["distractor"],
+    hjust = 0, vjust = 1, size = label.size, fontface = "bold"
+  ) +
+  
+  annotate(
+    geom = "segment", color = "grey40", size = geom.line.size/2,
+    y = ymax, yend = ymax,
+    x = 0.825 + 1, xend = 1.175 + 1
+  ) +
+  annotate(
+    geom = "segment", color = "grey40", size = geom.line.size/2, 
+    y = ymax, yend = ymax,
+    x = 0.825, xend = 1.175, linetype = "dotted"
+  ) +
+  
+  labs(y = bquote("Model fit ("*bar(beta)*")"), x = "Region") +
+  
+  theme(
+    legend.position = "none", 
+    panel.grid      = element_blank(), 
+    panel.border    = element_blank(),
+    axis.line.y     = element_line(size = axis.line.size),
+    axis.text       = element_text(size = axis.text.size),
+    axis.ticks.y    = element_line(size = axis.line.size),
+    axis.ticks.x    = element_blank(),
+    axis.title    = element_text(size = axis.title.size)
+  )
+
+ggsave(here("out", "group", "crossplot_sommot-v1.pdf"), p.means.prelim, device = "pdf", width = 4, height = 3)
+
+#+
+
+
 
 
 #' ### arrange figure
 #+ fpc-dissoc_arrange-fig_primary
 
 ## assumes p.mds object is in env (need to source mds.R script prior, or run _group.rmd)
+# plot.group <- plot_grid(
+#   p.means.super,
+#   p.mds,
+#   ncol = 2,
+#   vjust = c(1.25, 1.25),
+#   labels = "AUTO",
+#   label_size = 12
+# )
+# 
+# plot.group
+# 
+# ggsave(
+#   here("out", "group", "fig_group.pdf"),
+#   plot.group,
+#   device = "pdf", height = 4.25, width = 8.5, unit = "cm"
+# )
+
+
 plot.group <- plot_grid(
   p.means.super,
   p.mds,
-  ncol = 2,
-  vjust = c(1.25, 1.25),
+  p.means.prelim,
+  ncol = 3,
+  vjust = c(1.25, 1.25, 1.25),
   labels = "AUTO",
   label_size = 12
 )
@@ -426,7 +541,14 @@ plot.group
 ggsave(
   here("out", "group", "fig_group.pdf"), 
   plot.group, 
-  device = "pdf", height = 4.25, width = 8.5, unit = "cm"
+  device = "pdf", height = 4.25, width = 12.75, unit = "cm"
 )
+
+ggsave(
+  here("out", "group", "fig_group.eps"), 
+  plot.group, 
+  device = "eps", height = 4.25, width = 12.75, unit = "cm"
+)
+
 
 #+

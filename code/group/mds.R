@@ -102,9 +102,9 @@ mds.lines <- list(
 ## get grobs
 
 grobs <- list(
-  target       = plot.mds(mds$targt, .add.lines = mds.lines$targt, .size = rel(2), .fill = "transparent"),
-  distractor   = plot.mds(mds$distr, .add.lines = mds.lines$distr, .size = rel(2), .fill = "transparent"),
-  incongruency = plot.mds(mds$incon, .add.lines = mds.lines$incon, .size = rel(2), .fill = "transparent")
+  target       = plot.mds(mds$targt, .add.lines = mds.lines$targt, .size = rel(2.5), .fill = "transparent") + coord_cartesian(clip = "off"),
+  distractor   = plot.mds(mds$distr, .add.lines = mds.lines$distr, .size = rel(2.5), .fill = "transparent") + coord_cartesian(clip = "off"),
+  incongruency = plot.mds(mds$incon, .add.lines = mds.lines$incon, .size = rel(2.5), .fill = "transparent") + coord_cartesian(clip = "off")
 ) %>%
   lapply(ggplotGrob)
 
@@ -153,6 +153,11 @@ for (ii in seq_along(grobs)) {
   grid.draw(grobs[[ii]])
   upViewport()
 }
+
+grid.text("DMFC (L)", x = 0.75, y = 0.9, gp = gpar(fontface = "bold", fontsize = 10))
+grid.text("vS1/vM1", x = 0.12, y = 0.5, gp = gpar(fontface = "bold", fontsize = 10))
+grid.text("V1", x = 0.85, y = 0.5, gp = gpar(fontface = "bold", fontsize = 10))
+
 
 p.mds <- grid.grab(wrap.grobs = TRUE)
 
