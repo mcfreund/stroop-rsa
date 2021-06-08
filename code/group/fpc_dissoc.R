@@ -89,43 +89,22 @@ contrasts.super <- rbind(
   
   ## within-region contrasts
   
-  # "target-incongruency|DMFC"  = (is.dmfc * is.target - is.dmfc * is.incongruency) / 2,
-  "target-incongruency|DMFC_L" = (is.dmfc * is.target - is.dmfc * is.incongruency) * is.left,
-  "target-incongruency|DMFC_R" = (is.dmfc * is.target - is.dmfc * is.incongruency) * is.right,
-
-  # "distractor-incongruency|DMFC"  = (is.dmfc * is.distractor - is.dmfc * is.incongruency) / 2,
-  "distractor-incongruency|DMFC_L" = (is.dmfc * is.distractor - is.dmfc * is.incongruency) * is.left,
-  "distractor-incongruency|DMFC_R" = (is.dmfc * is.distractor - is.dmfc * is.incongruency) * is.right,
-  
-  # "target-distractor|DMFC"  = (is.dmfc * is.target - is.dmfc * is.distractor) / 2,
+  "incongruency-target|DMFC_L" = (is.dmfc * is.incongruency - is.dmfc * is.target) * is.left,
+  "incongruency-target|DMFC_R" = (is.dmfc * is.incongruency - is.dmfc * is.target) * is.right,
+  "incongruency-distractor|DMFC_L" = (is.dmfc * is.incongruency - is.dmfc * is.distractor) * is.left,
+  "incongruency-distractor|DMFC_R" = (is.dmfc * is.incongruency - is.dmfc * is.distractor) * is.right,
   "target-distractor|DMFC_L" = (is.dmfc * is.target - is.dmfc * is.distractor) * is.left,
   "target-distractor|DMFC_R" = (is.dmfc * is.target - is.dmfc * is.distractor) * is.right,
-  
-  
-  
-  # "target-incongruency|DLPFC" = (is.dlpfc * is.target - is.dlpfc * is.incongruency) / 2,
-  "target-incongruency|DLPFC_L" = (is.dlpfc * is.target - is.dlpfc * is.incongruency) * is.left,
-  "target-incongruency|DLPFC_R" = (is.dlpfc * is.target - is.dlpfc * is.incongruency) * is.right,
-  
-  # "distractor-incongruency|DLPFC" = (is.dlpfc * is.distractor - is.dlpfc * is.incongruency) / 2,
-  "distractor-incongruency|DLPFC_L" = (is.dlpfc * is.distractor - is.dlpfc * is.incongruency) * is.left,
-  "distractor-incongruency|DLPFC_R" = (is.dlpfc * is.distractor - is.dlpfc * is.incongruency) * is.right,
-  
-  # "target-distractor|DLPFC" = (is.dlpfc * is.target - is.dlpfc * is.distractor) / 2,
+  "incongruency-target|DLPFC_L" = (is.dlpfc * is.incongruency - is.dlpfc * is.target) * is.left,
+  "incongruency-target|DLPFC_R" = (is.dlpfc * is.incongruency - is.dlpfc * is.target) * is.right,
+  "incongruency-distractor|DLPFC_L" = (is.dlpfc * is.incongruency - is.dlpfc * is.distractor) * is.left,
+  "incongruency-distractor|DLPFC_R" = (is.dlpfc * is.incongruency - is.dlpfc * is.distractor) * is.right,
   "target-distractor|DLPFC_L" = (is.dlpfc * is.target - is.dlpfc * is.distractor) * is.left,
   "target-distractor|DLPFC_R" = (is.dlpfc * is.target - is.dlpfc * is.distractor) * is.right,
-  
-  
-  
-  # "target-incongruency|LPPC"  = (is.lppc * is.target - is.lppc * is.incongruency) / 2,
-  "target-incongruency|LPPC_L" = (is.lppc * is.target - is.lppc * is.incongruency) * is.left,
-  "target-incongruency|LPPC_R" = (is.lppc * is.target - is.lppc * is.incongruency) * is.right,
-  
-  # "distractor-incongruency|LPPC"  = (is.lppc * is.distractor - is.lppc * is.incongruency) / 2,
-  "distractor-incongruency|LPPC_L" = (is.lppc * is.distractor - is.lppc * is.incongruency) * is.left,
-  "distractor-incongruency|LPPC_R" = (is.lppc * is.distractor - is.lppc * is.incongruency) * is.right,
-  
-  # "target-distractor|LPPC"  = (is.lppc * is.target - is.lppc * is.distractor) / 2,
+  "incongruency-target|LPPC_L" = (is.lppc * is.incongruency - is.lppc * is.target) * is.left,
+  "incongruency-target|LPPC_R" = (is.lppc * is.incongruency - is.lppc * is.target) * is.right,
+  "incongruency-distractor|LPPC_L" = (is.lppc * is.incongruency - is.lppc * is.distractor) * is.left,
+  "incongruency-distractor|LPPC_R" = (is.lppc * is.incongruency - is.lppc * is.distractor) * is.right,
   "target-distractor|LPPC_L" = (is.lppc * is.target - is.lppc * is.distractor) * is.left,
   "target-distractor|LPPC_R" = (is.lppc * is.target - is.lppc * is.distractor) * is.right,
   
@@ -141,11 +120,11 @@ contrasts.super <- rbind(
   
   ## interactions:
   
-  "(DLPFC-DMFC_L)(target-incongruency)" = 
-    (is.dlpfc/2 - (is.dmfc * is.left)) * is.target - (is.dlpfc/2 - (is.dmfc * is.left)) * is.incongruency,
+  "(DMFC_L-DLPFC)(incongruency-target)" = 
+    ((is.dmfc * is.left) - is.dlpfc/2) * is.incongruency - ((is.dmfc * is.left) - is.dlpfc/2) * is.target,
   
-  "(DLPFC-LPPC_L)(target-incongruency)" = 
-    (is.dlpfc/2 - (is.lppc * is.left)) * is.target - (is.dlpfc/2 - (is.lppc * is.left)) * is.incongruency
+  "(LPPC_L-DLPFC)(incongruency-target)" = 
+    ((is.lppc * is.left) - is.dlpfc/2) * is.incongruency - ((is.lppc * is.left) - is.dlpfc/2) * is.target
   
   
 )
@@ -160,12 +139,12 @@ contrs2correct <- c(
   "target-distractor\\|DLPFC_.",
   "target-distractor\\|LPPC_.",
   "target-distractor\\|DMFC_.",
-  "target-incongruency\\|DLPFC_.",
-  "target-incongruency\\|LPPC_.",
-  "target-incongruency\\|DMFC_.",
-  "distractor-incongruency\\|DLPFC_.",
-  "distractor-incongruency\\|LPPC_.",
-  "distractor-incongruency\\|DMFC_."
+  "incongruency-target\\|DLPFC_.",
+  "incongruency-target\\|LPPC_.",
+  "incongruency-target\\|DMFC_.",
+  "incongruency-distractor\\|DLPFC_.",
+  "incongruency-distractor\\|LPPC_.",
+  "incongruency-distractor\\|DMFC_."
   
 )
 
@@ -189,83 +168,55 @@ table.group.contrast <- c(
   
   "$\\text{DMFC (L) incon.}$",
   "$\\text{DMFC (R) incon.}$",
-  
   "$\\text{DMFC (L) target}$",
   "$\\text{DMFC (R) target}$",
-  
   "$\\text{DMFC (L) distr.}$",
   "$\\text{DMFC (R) distr.}$",
   
-  
   "$\\text{DLPFC (L) incon.}$",
   "$\\text{DLPFC (R) incon.}$",
-  
   "$\\text{DLPFC (L) target}$",
   "$\\text{DLPFC (R) target}$",
-  
   "$\\text{DLPFC (L) distr.}$",
   "$\\text{DLPFC (R) distr.}$",
   
-  
   "$\\text{LPPC (L) incon.}$",
   "$\\text{LPPC (R) incon.}$",
-  
   "$\\text{LPPC (L) target}$",
   "$\\text{LPPC (R) target}$",
-  
   "$\\text{LPPC (L) distr.}$",
   "$\\text{LPPC (R) distr.}$",
 
   
   
-  # "$\\text{target}-\\text{incon. } | \\text{ DMFC}$",
-  "$\\text{target}-\\text{incon. } | \\text{ DMFC (L)}$",
-  "$\\text{target}-\\text{incon. } | \\text{ DMFC (R)}$",
-  
-  # "$\\text{distr.}-\\text{incon. } | \\text{ DMFC}$",
-  "$\\text{distr.}-\\text{incon. } | \\text{ DMFC (L)}$",
-  "$\\text{distr.}-\\text{incon. } | \\text{ DMFC (R)}$",
-  
-  # "$\\text{target}-\\text{distr. } | \\text{ DMFC}$",
+  "$\\text{incon.}-\\text{target } | \\text{ DMFC (L)}$",
+  "$\\text{incon.}-\\text{target } | \\text{ DMFC (R)}$",
+  "$\\text{incon.}-\\text{distr. } | \\text{ DMFC (L)}$",
+  "$\\text{incon.}-\\text{distr. } | \\text{ DMFC (R)}$",
   "$\\text{target}-\\text{distr. } | \\text{ DMFC (L)}$",
   "$\\text{target}-\\text{distr. } | \\text{ DMFC (R)}$",
   
-  
-  # "$\\text{target}-\\text{incon. } | \\text{ DLPFC}$",
-  "$\\text{target}-\\text{incon. } | \\text{ DLPFC (L)}$",
-  "$\\text{target}-\\text{incon. } | \\text{ DLPFC (R)}$",
-  
-  # "$\\text{distr.}-\\text{incon. } | \\text{ DLPFC}$",
-  "$\\text{distr.}-\\text{incon. } | \\text{ DLPFC (L)}$",
-  "$\\text{distr.}-\\text{incon. } | \\text{ DLPFC (R)}$",
-  
-  # "$\\text{target}-\\text{distr. } | \\text{ DLPFC}$",
+  "$\\text{incon.}-\\text{target } | \\text{ DLPFC (L)}$",
+  "$\\text{incon.}-\\text{target } | \\text{ DLPFC (R)}$",
+  "$\\text{incon.}-\\text{distr. } | \\text{ DLPFC (L)}$",
+  "$\\text{incon.}-\\text{distr. } | \\text{ DLPFC (R)}$",
   "$\\text{target}-\\text{distr. } | \\text{ DLPFC (L)}$",
   "$\\text{target}-\\text{distr. } | \\text{ DLPFC (R)}$",
   
-  
-  # "$\\text{target}-\\text{incon. } | \\text{ LPPC}$",
-  "$\\text{target}-\\text{incon. } | \\text{ LPPC (L)}$",
-  "$\\text{target}-\\text{incon. } | \\text{ LPPC (R)}$",
-  
-  # "$\\text{distr.}-\\text{incon. } | \\text{ LPPC}$",
-  "$\\text{distr.}-\\text{incon. } | \\text{ LPPC (L)}$",
-  "$\\text{distr.}-\\text{incon. } | \\text{ LPPC (R)}$",
-  
-  # "$\\text{target}-\\text{distr. } | \\text{ LPPC}$",
+  "$\\text{incon.}-\\text{target } | \\text{ LPPC (L)}$",
+  "$\\text{incon.}-\\text{target } | \\text{ LPPC (R)}$",
+  "$\\text{incon.}-\\text{distr. } | \\text{ LPPC (L)}$",
+  "$\\text{incon.}-\\text{distr. } | \\text{ LPPC (R)}$",
   "$\\text{target}-\\text{distr. } | \\text{ LPPC (L)}$",
   "$\\text{target}-\\text{distr. } | \\text{ LPPC (R)}$",
-
   
   "$\\text{DMFC (L)}-\\text{DLPFC } | \\text{ incon.} $",
   "$\\text{DMFC (L)}-\\text{DLPFC } | \\text{ target} $",
-  
   "$\\text{DMFC (L)}-\\text{LPPC } | \\text{ incon.} $",
   "$\\text{DMFC (L)}-\\text{LPPC } | \\text{ target} $",
   
-  
-  "$[\\text{target}-\\text{incon.}]\\cdot[\\text{DLPFC}-\\text{DMFC (L)}]$",
-  "$[\\text{target}-\\text{incon.}]\\cdot[\\text{DLPFC}-\\text{LPPC (L)}]$"
+  "$[\\text{incon.}-\\text{target}]\\cdot[\\text{DMFC (L)}-\\text{DLPFC}]$",
+  "$[\\text{incon.}-\\text{target}]\\cdot[\\text{LPPC (L)}-\\text{DLPFC}]$"
   
 )
 

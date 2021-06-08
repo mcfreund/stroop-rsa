@@ -33,7 +33,8 @@ lapply(mods.bnroi, summary) %>% lapply(coef)
 
 ## get contrasts
 
-contrasts.bnroi <- lapply(mods.bnroi, glht, linfct = W.single) %>% lapply(summary, test = adjusted("none"))
+## negate W.single to give contrast that matches the text notation column:
+contrasts.bnroi <- lapply(mods.bnroi, glht, linfct = -W.single) %>% lapply(summary, test = adjusted("none"))
 tab.bnroi <- contrasts.bnroi %>% map("test") %>% map_df(~ .[c("coefficients", "sigma", "tstat", "pvalues")], .id = "roi")
 
 tab.bnroi %<>% 

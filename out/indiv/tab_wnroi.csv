@@ -1,4 +1,4 @@
-roi,b,se,t,p,model
-dmfc_L,-20.924053439488,97.2340167036501,-0.21519272934348,0.829617059290596,$\text{target}-\text{incon. } | \text{ DMFC (L)}$
-dlpfc_R,-299.207510931948,80.6205163834013,-3.71130729936072,0.000206191604754657,$\text{target}-\text{incon. } | \text{ DLPFC (R)}$
-lppc_R,-204.5645211115,79.937746122901,-2.55904789705968,0.0104959279091015,$\text{target}-\text{incon. } | \text{ LPPC (R)}$
+roi,b,se,t,p,model,contrast
+dmfc_L,20.924053439488,97.2340167036501,0.21519272934348,0.829617059290596,DMFC (L),$\text{incon.}-\text{target } | \text{ DMFC (L)}$
+dlpfc_R,299.207510931948,80.6205163834013,3.71130729936072,0.000206191604754657,DLPFC (R),$\text{incon.}-\text{target } | \text{ DLPFC (R)}$
+lppc_R,204.5645211115,79.937746122901,2.55904789705968,0.0104959279091015,LPPC (R),$\text{incon.}-\text{target } | \text{ LPPC (R)}$

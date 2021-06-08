@@ -101,17 +101,17 @@ stats.group.rois.wrh <-  d %>%
   
   summarize(
     
-    m_ti = mean(target - incongruency),
+    m_it = mean(incongruency - target),
     m_td = mean(target - distractor),
-    m_di = mean(distractor - incongruency),
+    m_id = mean(incongruency - distractor),
     
-    sd_ti = sd(target - incongruency),
+    sd_it = sd(incongruency - target),
     sd_td = sd(target - distractor),
-    sd_di = sd(distractor - incongruency),
+    sd_id = sd(incongruency - distractor),
     
-    p_ti = wilcox.test(target, incongruency, paired = TRUE)$p.value,
+    p_it = wilcox.test(incongruency, target, paired = TRUE)$p.value,
     p_td = wilcox.test(target, distractor, paired = TRUE)$p.value,
-    p_di = wilcox.test(distractor, incongruency, paired = TRUE)$p.value
+    p_id = wilcox.test(incongruency, distractor, paired = TRUE)$p.value
     
   )  %>%
   as.data.table %>%
@@ -120,7 +120,7 @@ stats.group.rois.wrh <-  d %>%
     measure.vars = patterns(m = "^m_", sd = "^sd_", p = "^p_", cols = names(.)),
     variable.name = "contrast"
     ) %>%
-  mutate(contrast = forcats::lvls_revalue(contrast, c("t_i","t_d", "d_i"))) %>% 
+  mutate(contrast = forcats::lvls_revalue(contrast, c("i_t","t_d", "i_d"))) %>% 
   ungroup
 
 ## within region (between model)
@@ -133,17 +133,17 @@ stats.group.rois.wr <-  d %>%
   
   summarize(
     
-    m_ti = mean(target - incongruency),
+    m_it = mean(incongruency - target),
     m_td = mean(target - distractor),
-    m_di = mean(distractor - incongruency),
+    m_id = mean(incongruency - distractor),
     
-    sd_ti = sd(target - incongruency),
+    sd_it = sd(incongruency - target),
     sd_td = sd(target - distractor),
-    sd_di = sd(distractor - incongruency),
+    sd_id = sd(incongruency - distractor),
     
-    p_ti = wilcox.test(target, incongruency, paired = TRUE)$p.value,
+    p_it = wilcox.test(incongruency, target, paired = TRUE)$p.value,
     p_td = wilcox.test(target, distractor, paired = TRUE)$p.value,
-    p_di = wilcox.test(distractor, incongruency, paired = TRUE)$p.value
+    p_id = wilcox.test(incongruency, distractor, paired = TRUE)$p.value
     
   ) %>%
   
@@ -153,7 +153,7 @@ stats.group.rois.wr <-  d %>%
     measure.vars = patterns(m = "^m_", sd = "^sd_", p = "^p_", cols = names(.)),
     variable.name = "contrast"
     ) %>%
-  mutate(contrast = forcats::lvls_revalue(contrast, c("t_i","t_d", "d_i"))) %>% 
+  mutate(contrast = forcats::lvls_revalue(contrast, c("i_t","t_d", "i_d"))) %>% 
   ungroup
 
 
@@ -177,8 +177,8 @@ stats.group.rois.wm <-  d %>%
     dmfc_dlpfc_i       = dmfc_L_incongruency - dlpfc_incongruency,
     dmfc_lppc_i        = dmfc_L_incongruency - lppc_incongruency,
     
-    dmfc_dlpfc_t       = dlpfc_target - dmfc_L_target,
-    dmfc_lppc_t        = lppc_target - dmfc_L_target,
+    dmfc_dlpfc_t       = dmfc_L_target - dlpfc_target,
+    dmfc_lppc_t        = dmfc_L_target - lppc_target,
     
     dmfc_dlpfc_it      = dmfc_dlpfc_i - dmfc_dlpfc_t,
     dmfc_lppc_it       = dmfc_dlpfc_i - dmfc_lppc_t
@@ -280,24 +280,24 @@ contrast.order <- c(
   # "d_i|dmfc",
   # "d_i|lppc",
   
-  "t_i|dmfc_L",
-  "t_i|dmfc_R",
-  "d_i|dmfc_L",
-  "d_i|dmfc_R",
+  "i_t|dmfc_L",
+  "i_t|dmfc_R",
+  "i_d|dmfc_L",
+  "i_d|dmfc_R",
   "t_d|dmfc_L",
   "t_d|dmfc_R",
   
-  "t_i|dlpfc_L",
-  "t_i|dlpfc_R",
-  "d_i|dlpfc_L",
-  "d_i|dlpfc_R",
+  "i_t|dlpfc_L",
+  "i_t|dlpfc_R",
+  "i_d|dlpfc_L",
+  "i_d|dlpfc_R",
   "t_d|dlpfc_L",
   "t_d|dlpfc_R",
   
-  "t_i|lppc_L",
-  "t_i|lppc_R",
-  "d_i|lppc_L",
-  "d_i|lppc_R",
+  "i_t|lppc_L",
+  "i_t|lppc_R",
+  "i_d|lppc_L",
+  "i_d|lppc_R",
   "t_d|lppc_L",
   "t_d|lppc_R",
   
@@ -323,85 +323,58 @@ table.group.w$contrast <- c(
   
   "$\\text{DMFC (L) incon.}$",
   "$\\text{DMFC (R) incon.}$",
-  
   "$\\text{DMFC (L) target}$",
   "$\\text{DMFC (R) target}$",
-  
   "$\\text{DMFC (L) distr.}$",
   "$\\text{DMFC (R) distr.}$",
   
-  
   "$\\text{DLPFC (L) incon.}$",
   "$\\text{DLPFC (R) incon.}$",
-  
   "$\\text{DLPFC (L) target}$",
   "$\\text{DLPFC (R) target}$",
-  
   "$\\text{DLPFC (L) distr.}$",
   "$\\text{DLPFC (R) distr.}$",
   
-  
   "$\\text{LPPC (L) incon.}$",
   "$\\text{LPPC (R) incon.}$",
-  
   "$\\text{LPPC (L) target}$",
   "$\\text{LPPC (R) target}$",
-  
   "$\\text{LPPC (L) distr.}$",
   "$\\text{LPPC (R) distr.}$",
 
   
   
-  # "$\\text{target}-\\text{incon. } | \\text{ DMFC}$",
-  "$\\text{target}-\\text{incon. } | \\text{ DMFC (L)}$",
-  "$\\text{target}-\\text{incon. } | \\text{ DMFC (R)}$",
-  
-  # "$\\text{distr.}-\\text{incon. } | \\text{ DMFC}$",
-  "$\\text{distr.}-\\text{incon. } | \\text{ DMFC (L)}$",
-  "$\\text{distr.}-\\text{incon. } | \\text{ DMFC (R)}$",
-  
-  # "$\\text{target}-\\text{distr. } | \\text{ DMFC}$",
+  "$\\text{incon.}-\\text{target } | \\text{ DMFC (L)}$",
+  "$\\text{incon.}-\\text{target } | \\text{ DMFC (R)}$",
+  "$\\text{incon.}-\\text{distr. } | \\text{ DMFC (L)}$",
+  "$\\text{incon.}-\\text{distr. } | \\text{ DMFC (R)}$",
   "$\\text{target}-\\text{distr. } | \\text{ DMFC (L)}$",
   "$\\text{target}-\\text{distr. } | \\text{ DMFC (R)}$",
   
-  
-  # "$\\text{target}-\\text{incon. } | \\text{ DLPFC}$",
-  "$\\text{target}-\\text{incon. } | \\text{ DLPFC (L)}$",
-  "$\\text{target}-\\text{incon. } | \\text{ DLPFC (R)}$",
-  
-  # "$\\text{distr.}-\\text{incon. } | \\text{ DLPFC}$",
-  "$\\text{distr.}-\\text{incon. } | \\text{ DLPFC (L)}$",
-  "$\\text{distr.}-\\text{incon. } | \\text{ DLPFC (R)}$",
-  
-  # "$\\text{target}-\\text{distr. } | \\text{ DLPFC}$",
+  "$\\text{incon.}-\\text{target } | \\text{ DLPFC (L)}$",
+  "$\\text{incon.}-\\text{target } | \\text{ DLPFC (R)}$",
+  "$\\text{incon.}-\\text{distr. } | \\text{ DLPFC (L)}$",
+  "$\\text{incon.}-\\text{distr. } | \\text{ DLPFC (R)}$",
   "$\\text{target}-\\text{distr. } | \\text{ DLPFC (L)}$",
   "$\\text{target}-\\text{distr. } | \\text{ DLPFC (R)}$",
   
-  
-  # "$\\text{target}-\\text{incon. } | \\text{ LPPC}$",
-  "$\\text{target}-\\text{incon. } | \\text{ LPPC (L)}$",
-  "$\\text{target}-\\text{incon. } | \\text{ LPPC (R)}$",
-  
-  # "$\\text{distr.}-\\text{incon. } | \\text{ LPPC}$",
-  "$\\text{distr.}-\\text{incon. } | \\text{ LPPC (L)}$",
-  "$\\text{distr.}-\\text{incon. } | \\text{ LPPC (R)}$",
-  
-  # "$\\text{target}-\\text{distr. } | \\text{ LPPC}$",
+  "$\\text{incon.}-\\text{target } | \\text{ LPPC (L)}$",
+  "$\\text{incon.}-\\text{target } | \\text{ LPPC (R)}$",
+  "$\\text{incon.}-\\text{distr. } | \\text{ LPPC (L)}$",
+  "$\\text{incon.}-\\text{distr. } | \\text{ LPPC (R)}$",
   "$\\text{target}-\\text{distr. } | \\text{ LPPC (L)}$",
   "$\\text{target}-\\text{distr. } | \\text{ LPPC (R)}$",
-
   
   "$\\text{DMFC (L)}-\\text{DLPFC } | \\text{ incon.} $",
   "$\\text{DMFC (L)}-\\text{DLPFC } | \\text{ target} $",
-  
   "$\\text{DMFC (L)}-\\text{LPPC } | \\text{ incon.} $",
   "$\\text{DMFC (L)}-\\text{LPPC } | \\text{ target} $",
   
-  
-  "$[\\text{target}-\\text{incon.}]\\cdot[\\text{DLPFC}-\\text{DMFC (L)}]$",
-  "$[\\text{target}-\\text{incon.}]\\cdot[\\text{DLPFC}-\\text{LPPC (L)}]$"
+  "$[\\text{incon.}-\\text{target}]\\cdot[\\text{DMFC (L)}-\\text{DLPFC}]$",
+  "$[\\text{incon.}-\\text{target}]\\cdot[\\text{LPPC (L)}-\\text{DLPFC}]$"
   
 )
+
 
 # View(table.group.w)
 

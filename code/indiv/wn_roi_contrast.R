@@ -31,7 +31,7 @@ lapply(mods.wnroi, summary) %>% lapply(coef)
 
 ## get contrasts
 
-W.single <- rbind(c(0, 0, 0, 0, 1, -1))
+W.single <- rbind(c(0, 0, 0, 0, -1, 1))
 contrasts.wnroi <- lapply(mods.wnroi, glht, linfct = W.single) %>% lapply(summary, test = adjusted("none"))
 tab.wnroi <- contrasts.wnroi %>% map("test") %>% map_df(~ .[c("coefficients", "sigma", "tstat", "pvalues")], .id = "roi")
 
@@ -40,9 +40,9 @@ tab.wnroi %<>%
   mutate(
     model = c("DMFC (L)", "DLPFC (R)", "LPPC (R)"),
     contrast = c(
-      "$\\text{target}-\\text{incon. } | \\text{ DMFC (L)}$",
-      "$\\text{target}-\\text{incon. } | \\text{ DLPFC (R)}$",
-      "$\\text{target}-\\text{incon. } | \\text{ LPPC (R)}$"
+      "$\\text{incon.}-\\text{target } | \\text{ DMFC (L)}$",
+      "$\\text{incon.}-\\text{target } | \\text{ DLPFC (R)}$",
+      "$\\text{incon.}-\\text{target } | \\text{ LPPC (R)}$"
     )
   )
 
