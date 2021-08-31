@@ -154,9 +154,9 @@ for (ii in seq_along(grobs)) {
   upViewport()
 }
 
-grid.text("DMFC (L)", x = 0.75, y = 0.9, gp = gpar(fontface = "bold", fontsize = 10))
-grid.text("vS1/vM1", x = 0.12, y = 0.5, gp = gpar(fontface = "bold", fontsize = 10))
-grid.text("V1", x = 0.85, y = 0.5, gp = gpar(fontface = "bold", fontsize = 10))
+grid.text("DMFC (L)", x = 0.75, y = 0.9, gp = gpar(fontsize = 8))
+grid.text("vS1/vM1", x = 0.12, y = 0.5, gp = gpar(fontsize = 8))
+grid.text("V1", x = 0.85, y = 0.5, gp = gpar(fontsize = 8))
 
 
 p.mds <- grid.grab(wrap.grobs = TRUE)

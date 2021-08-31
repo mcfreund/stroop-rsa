@@ -439,3 +439,213 @@ tune_lambda <- function(
 
 
 ci2p <- function(bootobj, index = 1) min( sum(bootobj$t[, index] > 0), sum(bootobj$t[, index] < 0) ) / bootobj$R * 2
+
+
+
+## from 'mikeutils' ----
+
+
+combo.paste <- function(a, b, ..., sep = ".") apply(expand.grid(a, b, ...), 1, paste0, collapse = sep)
+combo_paste <- function(a, b, ..., sep = "_") apply(expand.grid(a, b, ...), 1, paste0, collapse = sep)
+farout <- function(x) {
+  
+  q1 <- quantile(x, 0.25)
+  q3 <- quantile(x, 0.75)
+  iqr3 <- IQR(x) * 3
+  
+  x < (q1 - iqr3) | x > (q3 + iqr3)
+  
+}
+mat2vec <- function(m, full.matrix = FALSE, varnames = c(".row", ".col"), ...) {
+  
+  if (any(is.na(m))) stop("matrix contains NA values.")
+  if (!is.array(m)) stop("m is not array.")
+  if (!full.matrix) m[upper.tri(m, diag = TRUE)] <- NA
+  
+  reshape2::melt(m, as.is = TRUE, na.rm = TRUE, varnames = varnames, ...)
+  
+}
+vec2mat <- function(v, dnames, diag.val = 1) {
+  
+  ## dimension of square matrix from num elements in upper triangle (excluding diag):
+  ## (http://blog.phytools.org/2013/06/upper-triangle-of-matrix-to-vector-by.html)
+  d <- (sqrt(8 * length(v) + 1) + 1) / 2
+  
+  m <- diag(d)
+  diag(m) <- diag.val
+  colnames(m) <- dnames
+  rownames(m) <- dnames
+  
+  m[lower.tri(m, diag = FALSE)] <- v
+  m <- t(m)
+  m[lower.tri(m, diag = FALSE)] <- v
+  
+  m
+  
+}
+Mode <- function(x, all.modes = TRUE) {
+  
+  ux <- unique(x)
+  
+  if (!all.modes) {
+    ## returns first mode in case of multiple
+    ux[which.max(tabulate(match(x, ux)))]
+  } else {
+    ## returns all modes in case of multiple
+    tab <- tabulate(match(x, ux))
+    ux[tab == max(tab)]
+  }
+}
+stat_boot_ci <- function(
+  mapping = NULL, data = NULL, geom = "ribbon",
+  position = "identity", na.rm = FALSE, show.legend = NA,
+  inherit.aes = TRUE, n = 1000, percent = 95, ...) {
+  
+  ggplot2::layer(
+    stat = BootCI, data = data, mapping = mapping, geom = geom,
+    position = position, show.legend = show.legend, inherit.aes = inherit.aes,
+    params = list(n = n, percent = percent, na.rm = na.rm, ...)
+  )
+  
+}
+BootCI <- ggplot2::ggproto(
+  "BootCI", ggplot2::Stat,
+  required_aes = c("x", "y"),
+  
+  compute_group = function(data, scales, params, n = 1000, percent = 95) {
+    
+    X <- cbind(rep(1, length(data$x)), data$x)  ## design matrix (includes intercept)
+    y <- data$y
+    
+    predictions <- vapply(
+      seq_len(n),
+      function(.) {
+        samp <- sample.int(nrow(X), replace = TRUE)
+        Xsamp <- X[samp, ]
+        X %*% solve(t(Xsamp) %*% Xsamp, t(Xsamp) %*% y[samp])  ## get bs then dot with X
+      },
+      FUN.VALUE = numeric(nrow(X))
+    )
+    
+    .alpha <- (100 - percent) / 200  ## 2 tailed
+    grid <- data.frame(
+      x    = data$x,
+      ymax = apply(predictions, 1, quantile, 1 - .alpha),
+      ymin = apply(predictions, 1, quantile, .alpha)
+    )
+    
+    grid
+    
+  }
+  
+)
+contrast_matrix <- function(n, condition.names) {
+  # n <- 10
+  # condition.names <- letters[1:n]
+  
+  if (n < 2) stop("you need more than 1 condition you dummy")
+  
+  W <- matrix(0, nrow = n^2, ncol = n)
+  
+  if (missing(condition.names)) {
+    dimnames(W) <- list(contrast = NULL, condition = NULL)
+  } else {
+    dimnames(W) <- list(
+      contrast = paste0(rep(condition.names, each = n), "_", rep(condition.names, n)),
+      condition = condition.names
+    )
+  }
+  
+  for (condition.i in seq_len(n)) {
+    # condition.i = 1
+    
+    row.beg <- (condition.i - 1) * n + 1
+    row.end <- (condition.i - 1) * n + n
+    W.i <- W[row.beg:row.end, ]  ## square matrix; the contrasts that define a column of the similarity matrix
+    
+    W.i[, condition.i] <- 1  ## the condition to which all others are contrasted
+    diag(W.i) <- diag(W.i) - 1  ## all others
+    
+    W[row.beg:row.end, ] <- W.i
+    
+  }
+  
+  W
+  
+}
+afni <- function(.fun, .args, afni.path, ...) {
+  
+  ## use windows subsystem linux?
+  
+  if (.Platform$OS.type == "windows") {
+    use.wsl <- TRUE
+  } else if (.Platform$OS.type == "unix") {
+    use.wsl <- FALSE
+  } else {stop("Unknown OS")}
+  
+  ## guess AFNI path if not specified
+  
+  if (missing(afni.path)) {
+    
+    nodename <- Sys.info()["nodename"]
+    
+    if (nodename == "ccplinux1") {
+      afni.path <- "/usr/local/pkg/linux_openmp_64/"
+    } else if (nodename == "CCP-FREUND") {
+      afni.path <- "/home/mcf/abin/"
+    } else {stop("Unknown AFNI path. (Add nodename to function or specify 'manually'.)")}
+    
+  }
+  
+  ## execute
+  
+  if (use.wsl) {
+    system2(
+      command = "wsl",
+      args    = paste(afni.path, .fun, " ", .args),
+      stdout  = TRUE,
+      ...
+    )
+  } else {
+    system2(
+      command = paste0(afni.path, .fun),
+      args    = .args,
+      stdout  = TRUE,
+      ...
+    )
+  }
+  
+}
+read_xmat <- function(
+  name,
+  uncensored = TRUE
+)
+{
+  ## TODO:
+  ##  - input validation
+  ##  - afni error checking (embed within X_temp?)
+  
+  ## get column names
+  
+  xlabels <- afni("1d_tool.py", paste0("-infile ", name, " -show_group_labels"))
+  xlabels <- gsub("(.*) label (.*)", "\\2", xlabels)
+  
+  ## delete previously created files (afni will not overwrite)
+  
+  unlink("X_temp.1D")
+  unlink("X_temp")
+  
+  ## get in format for R to read
+  
+  afni("1d_tool.py", paste0("-infile ", name, " -censor_fill -write X_temp.1D"))  ## write 1D file
+  afni("1dcat", "-d X_temp.1D > X_temp")  ## write text file from 1D file for R to read
+  
+  X <- as.matrix(read.table("X_temp", quote = "\"", comment.char = ""))
+  dimnames(X) <- list(tr = NULL, regressor = xlabels)
+  
+  unlink("X_temp.1D")
+  unlink("X_temp")
+  
+  X
+  
+}

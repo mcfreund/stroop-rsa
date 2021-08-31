@@ -5,7 +5,7 @@ library(knitr)
 
 ## misc
 
-library(mikeutils)
+# library(mikeutils)
 library(gifti)  ## must be loaded with mikeutils...
 
 ## vis
