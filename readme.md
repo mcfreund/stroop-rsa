@@ -1,10 +1,12 @@
 # A representational similarity analysis of cognitive control in color-word Stroop
 
-[![DOI](https://zenodo.org/badge/229976419.svg)](https://zenodo.org/badge/latestdoi/229976419)
+Michael C. Freund, Julie M. Bugg and Todd S. Braver
 
-Repository for manuscript [10.1101/2020.11.22.392704](https://www.biorxiv.org/content/10.1101/2020.11.22.392704v1)
+Published in Journal of Neuroscience 23 June 2021, JN-RM-2956-20; DOI: https://doi.org/10.1523/JNEUROSCI.2956-20.2021
+Biorxiv version: [10.1101/2020.11.22.392704](https://www.biorxiv.org/content/10.1101/2020.11.22.392704v1)
+Stable link to repository: [![DOI](https://zenodo.org/badge/229976419.svg)](https://zenodo.org/badge/latestdoi/229976419)
 
-Submitted for publication, 2020-10-21
+Please email Mike Freund at m.freund@wustl.edu with any questions or concerns.
 
 ---
 
