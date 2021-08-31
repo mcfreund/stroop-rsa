@@ -41,7 +41,7 @@ read_betas <- function(.dir.glms, .regs) {
       
       image.label <- paste0(reg.i, "#0_Coef")
       
-      brick.str <- mikeutils::afni("3dinfo", paste("-label2index", image.label, fname.nii))
+      brick.str <- afni("3dinfo", paste("-label2index", image.label, fname.nii))
 
       ## for error checking
       
@@ -96,7 +96,7 @@ n.regs <- length(regs)
 n.subj <- length(fit.subjs)
 n.bias.items <- length(bias.items)
 
-cmat <- mikeutils::contrast_matrix(length(bias.items), bias.items)  ## contrast matrix
+cmat <- contrast_matrix(length(bias.items), bias.items)  ## contrast matrix
 
 ## loop over sets of ROIs ----
 ## each iteration collates RSMs into a single array, and saves it as a single .rds file.

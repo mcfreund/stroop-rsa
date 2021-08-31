@@ -1,3 +1,7 @@
+#+ model-selection_setup, include = FALSE
+if (interactive()) source(here::here("code", "indiv", "setup.R"))
+#+
+
 #+ model-selection_fit
 ## estimate model ----
 
@@ -69,7 +73,10 @@ sum(is.na(cor.perm.super))  ## num models with no predictors
 
 saveRDS(net.super, here("out", "indiv", "selected_model.RDS"))
 saveRDS(
-  list(ys.super = ys.super, p.super = p.super), 
+  list(
+    ys.super = ys.super, p.super = p.super, cor.perm.super = cor.perm.super, 
+    cor.obs.super = cor.obs.super
+    ), 
   here("out", "indiv", "selected_model_validation.RDS")
   )
 

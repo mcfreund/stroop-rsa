@@ -105,4 +105,3 @@ p.means.prelim <- means.prelim %>%
 p.means.prelim
 
 ggsave(here("out", "group", "prelim.pdf"), p.means.prelim, device = "pdf", width = figwidth, height = 2.75)
-

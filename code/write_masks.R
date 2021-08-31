@@ -75,6 +75,11 @@ smmouth <- array(as.numeric(atlas$gordon@.Data %in% num.rois), dim = c(75, 90, 7
 writeNIfTI(as.nifti(smmouth), here::here("out", "masks", "smmouth"))
 
 
+## lotc mask:
+
+
+
+
 ## write parcel IDs ----
 
 saveRDS(superparcels, here::here("out", "masks", "ids_superparcels.RDS"))

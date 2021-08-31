@@ -1,3 +1,12 @@
+#+ arrange-fig_setup, include = FALSE
+if (interactive()) {
+  source(here::here("code", "indiv", "bivar_superparcel.R"))
+  p.super <- readRDS(here("out", "indiv", "selected_model_validation.RDS"))$p.super
+  cor.perm.super <- readRDS(here("out", "indiv", "selected_model_validation.RDS"))$cor.perm.super
+  cor.obs.super <- readRDS(here("out", "indiv", "selected_model_validation.RDS"))$cor.obs.super
+}
+#+
+
 #+ arrange-fig
 set.seed(0)
 w.super.agroup <- w.super %>% filter(is.analysis.group)
@@ -12,33 +21,44 @@ w.super.agroup %>%
   
   ggplot() +
   
-  stat_boot_ci(aes(vvis_L_incongruency, stroop), n = 1E4, alpha = 0.3, fill = colors.model["incongruency"]) +
+  stat_boot_ci(aes(vvis_L_incongruency, stroop), n = 1E4, fill = "#fec192ff") +
+  # stat_boot_ci(aes(vvis_L_incongruency, stroop), n = 1E4, alpha = 0.3, fill = colors.model["incongruency"]) +
   stat_smooth(aes(vvis_L_incongruency, stroop), color = colors.model["incongruency"], method = "lm", se = FALSE) +
   
   geom_point(
     aes(vvis_L_incongruency, stroop), 
-    fill = colors.model["incongruency"], color = "white", shape = 21, size = geom.point.size
+    fill = colors.model["incongruency"], color = "white", shape = 21, size = geom.point.size*1.25
   ) +
   
   coord_capped_cart(left = "both", bottom = "both") +
   
   annotate(
-    geom = "text", x = -0.175, y = 140, 
-    label = paste0(
-      "r = ", 
-      round(cor.vvis.l.incongruency$t0, 2), ", [", 
-      round(cor.vvis.l.incongruency$lower, 2), ", ", 
-      round(cor.vvis.l.incongruency$upper, 2), "]\n\U03C1 = ",
-      
-      round(cor.vvis.l.incongruency.rank$t0, 2), ", [", 
-      round(cor.vvis.l.incongruency.rank$lower, 2), ", ", 
-      round(cor.vvis.l.incongruency.rank$upper, 2), "]"
-    ),
-    size = label.size/1.33,
+    geom = "text", x = 0.1, y = 140,
+    label = paste0("r = ", round(cor.vvis.l.incongruency$t0, 2)),
+    size = label.size*1.5,
     hjust = 0,
     fontface = "italic",
     color = colors.model["incongruency"]
   ) +
+
+  
+  # annotate(
+  #   geom = "text", x = -0.175, y = 140, 
+  #   label = paste0(
+  #     "r = ", 
+  #     round(cor.vvis.l.incongruency$t0, 2), " [", 
+  #     round(cor.vvis.l.incongruency$lower, 2), ", ", 
+  #     round(cor.vvis.l.incongruency$upper, 2), "]\n\U03C1 = ",
+  #     
+  #     round(cor.vvis.l.incongruency.rank$t0, 2), " [", 
+  #     round(cor.vvis.l.incongruency.rank$lower, 2), ", ", 
+  #     round(cor.vvis.l.incongruency.rank$upper, 2), "]"
+  #   ),
+  #   size = label.size,
+  #   hjust = 0,
+  #   fontface = "italic",
+  #   color = colors.model["incongruency"]
+  # ) +
   
   theme_bw(base_size = 8) +
   
@@ -49,7 +69,7 @@ w.super.agroup %>%
     axis.line       = element_line(size = axis.line.size),
     axis.text       = element_text(size = axis.text.size),
     axis.ticks      = element_line(size = axis.line.size),
-    axis.title      = element_text(size = axis.title.size)
+    axis.title      = element_text(size = axis.title.size*1.25)
   ) +
   
   labs(y = "Stroop effect (RT)", x = bquote("Vent. Vis. (L) "*beta["incon."]*""))
@@ -62,39 +82,50 @@ w.super.agroup %>%
   filter(is.analysis.group) %>%
   
   ggplot() +
-  
-  stat_boot_ci(aes(dlpfc_L_distractor, stroop), n = 1E4, alpha = 0.3, fill = colors.model["distractor"]) +
+  stat_boot_ci(aes(dlpfc_L_distractor, stroop), n = 1E4, fill = "#bab7d9ff") +
+  # stat_boot_ci(aes(dlpfc_L_distractor, stroop), n = 1E4, alpha = 0.3, fill = colors.model["distractor"]) +
   stat_smooth(aes(dlpfc_L_distractor, stroop), color = colors.model["distractor"], method = "lm", se = FALSE) +
   
   geom_point(
     aes(dlpfc_L_distractor, stroop), 
-    fill = colors.model["distractor"], color = "white", shape = 21, size = geom.point.size
+    fill = colors.model["distractor"], color = "white", shape = 21, size = geom.point.size*1.25
   ) +
   
   theme_bw(base_size = 8) +
   
-  
-  
   annotate(
-    geom = "text", x = -0.1, y = 140, 
-    label = paste0(
-      "r = ", 
-      round(cor.dlpfc.l.distractor$t0, 2), ", [", 
-      round(cor.dlpfc.l.distractor$lower, 2), ", ", 
-      round(cor.dlpfc.l.distractor$upper, 2), "]\n\U03C1 = ",
-      
-      round(cor.dlpfc.l.distractor.rank$t0, 2), ", [", 
-      round(cor.dlpfc.l.distractor.rank$lower, 2), ", ", 
-      round(cor.dlpfc.l.distractor.rank$upper, 2), "]"
-    ),
-    size = label.size/1.33,
+    geom = "text", x = -0.12, y = 140,
+    label = paste0("r = ", round(cor.dlpfc.l.distractor$t0, 2)),
+    size = label.size*1.5,
     hjust = 0,
     fontface = "italic",
     # nudge_x = -0.1,
     color = colors.model["distractor"]
   ) +
+
+  
+  
+  # annotate(
+  #   geom = "text", x = -0.1, y = 140, 
+  #   label = paste0(
+  #     "r = ", 
+  #     round(cor.dlpfc.l.distractor$t0, 2), " [", 
+  #     round(cor.dlpfc.l.distractor$lower, 2), ", ", 
+  #     round(cor.dlpfc.l.distractor$upper, 2), "]\n\U03C1 = ",
+  #     
+  #     round(cor.dlpfc.l.distractor.rank$t0, 2), " [", 
+  #     round(cor.dlpfc.l.distractor.rank$lower, 2), ", ", 
+  #     round(cor.dlpfc.l.distractor.rank$upper, 2), "]"
+  #   ),
+  #   size = label.size,
+  #   hjust = 0,
+  #   fontface = "italic",
+  #   # nudge_x = -0.1,
+  #   color = colors.model["distractor"]
+  # ) +
   
   coord_capped_cart(left = "both", bottom = "both") +
+  scale_x_continuous(breaks = c(-0.1, 0, 0.1)) +
   
   theme(
     panel.grid      = element_blank(), 
@@ -103,7 +134,7 @@ w.super.agroup %>%
     axis.line       = element_line(size = axis.line.size),
     axis.text       = element_text(size = axis.text.size),
     axis.ticks      = element_line(size = axis.line.size),
-    axis.title      = element_text(size = axis.title.size),
+    axis.title      = element_text(size = axis.title.size*1.25),
     axis.title.y    = element_blank(),
     axis.text.y     = element_blank()
   ) +
@@ -131,7 +162,7 @@ data.frame(x = cor.perm.super[!is.na(cor.perm.super)]) %>%
     axis.line       = element_line(size = axis.line.size),
     axis.text       = element_text(size = axis.text.size),
     axis.ticks      = element_line(size = axis.line.size),
-    axis.title      = element_text(size = axis.title.size),
+    axis.title      = element_text(size = axis.title.size*1.25),
     axis.title.x    = element_blank(),
     axis.text.x     = element_blank(),
     axis.line.x     = element_blank(),
@@ -146,7 +177,7 @@ data.frame(x = cor.perm.super[!is.na(cor.perm.super)]) %>%
   annotate(
     geom = "text", y = 0, x = cor.obs.super, vjust = 0.5, hjust = 0,
     label = paste0("r = ", round(cor.obs.super, 2), "\np = ", round(p.super, 4)), 
-    color = "firebrick1", size = label.size, fontface = "italic"
+    color = "firebrick1", size = label.size*1.5, fontface = "italic"
   ) +
   
   labs(x = "Predictive accuracy")
@@ -156,31 +187,76 @@ p.heldout <- last_plot()
 
 ## arrange ----
 
-ratio <- (1 + sqrt(5))/2
 labelmargin <- 0.1
-fig.width <- 11.6
-unit.height <- fig.width/ratio  ## cm
-fig.height <- unit.height*3/2 + unit.height*labelmargin*2
+
+
+# install.packages("pdftools")
+img <- image_read_pdf(here("out", "masks", "inkscape", "superparcels_forfig.pdf"))
+# img <- image_read(here("out", "masks", "inkscape", "superparcels_forfig1.png"))
 
 bottom_row <- plot_grid(
   p.vvis, p.dlpfc, p.heldout, nrow = 1, rel_widths = c(1, 5/6, 2/3),
-  labels = c("B", "", "C"),
+  labels = c("C", "", "D"),
   vjust = c(0, 0, 0)
 )
 
+top_row <- plot_grid(
+  # p.dissoc, nrow = 1, rel_widths = c(2/3),
+  p.dissoc, image_ggplot(img), nrow = 1, rel_widths = c(1.33, 2/3),
+  labels = c("A", "B"),
+  vjust = c(0, 0)
+)
+
+
 plot.indiv <- plot_grid(
-  NULL, p.dissoc, NULL, bottom_row,
+  NULL, top_row, NULL, bottom_row,
   nrow = 4,
-  rel_heights = c(labelmargin, 2, labelmargin, 1), 
-  labels = c("", "A"),
-  vjust = c(0, 0.3, 0)
+  rel_heights = c(0.125, 2, labelmargin/4, 1.25)
+  # vjust = c(0, 0.3, 0)
 )
 
-plot.indiv
+## NB: ggplot eps way too large (>50MB), but cairo_ps works (~14MB)
+# ggsave(
+#   here("out", "indiv", "fig_indiv_withroi.pdf"),
+#   plot.indiv,
+#   device = "pdf", height = 15/1.25, width = 15, unit = "cm"
+# )
+#
 
-ggsave(
-  here("out", "indiv", "fig_indiv.pdf"),
-  plot.indiv,
-  device = "pdf", height = fig.height, width = fig.width, unit = "cm"
-)
+cairo_ps(
+  here("out", "indiv", "fig_indiv_withroi.eps"),
+  height = 15/1.25/2.54, width = 15/2.54,
+  fallback_resolution = 300
+  )
+print(plot.indiv)
+dev.off()
+
+
+# ratio <- (1 + sqrt(5))/2
+# labelmargin <- 0.1
+# fig.width <- 11.6
+# unit.height <- fig.width/ratio  ## cm
+# fig.height <- unit.height*3/2 + unit.height*labelmargin*2
+# 
+# bottom_row <- plot_grid(
+#   p.vvis, p.dlpfc, p.heldout, nrow = 1, rel_widths = c(1, 5/6, 2/3),
+#   labels = c("B", "", "C"),
+#   vjust = c(0, 0, 0)
+# )
+# 
+# plot.indiv <- plot_grid(
+#   NULL, p.dissoc, NULL, bottom_row,
+#   nrow = 4,
+#   rel_heights = c(labelmargin, 2, labelmargin, 1), 
+#   labels = c("", "A"),
+#   vjust = c(0, 0.3, 0)
+# )
+# 
+# plot.indiv
+# 
+# ggsave(
+#   here("out", "indiv", "fig_indiv.pdf"),
+#   plot.indiv,
+#   device = "pdf", height = fig.height, width = fig.width, unit = "cm"
+# )
 #+

@@ -57,77 +57,74 @@ contrasts.super <- rbind(
   
   ## region*model*hemi means
   
-  DLPFC_L.target = is.dlpfc * is.target * is.left,
-  LPPC_L.target = is.lppc * is.target * is.left,
-  DMFC_L.target = is.dmfc * is.target * is.left,
-  DLPFC_R.target = is.dlpfc * is.target * is.right,
-  LPPC_R.target = is.lppc * is.target * is.right,
-  DMFC_R.target = is.dmfc * is.target * is.right,
-  
-  DLPFC_L.distractor = is.dlpfc * is.distractor * is.left,
-  LPPC_L.distractor = is.lppc * is.distractor * is.left,
-  DMFC_L.distractor = is.dmfc * is.distractor * is.left,
-  DLPFC_R.distractor = is.dlpfc * is.distractor * is.right,
-  LPPC_R.distractor = is.lppc * is.distractor * is.right,
-  DMFC_R.distractor = is.dmfc * is.distractor * is.right,
-  
-  DLPFC_L.incongruency = is.dlpfc * is.incongruency * is.left,
-  LPPC_L.incongruency = is.lppc * is.incongruency * is.left,
   DMFC_L.incongruency = is.dmfc * is.incongruency * is.left,
-  DLPFC_R.incongruency = is.dlpfc * is.incongruency * is.right,
-  LPPC_R.incongruency = is.lppc * is.incongruency * is.right,
   DMFC_R.incongruency = is.dmfc * is.incongruency * is.right,
   
-  ## within-region contrasts (over/across hemi)
+  DMFC_L.target = is.dmfc * is.target * is.left,
+  DMFC_R.target = is.dmfc * is.target * is.right,
   
-  "target-distractor|DLPFC" = (is.dlpfc * is.target - is.dlpfc * is.distractor) / 2,
-  "target-distractor|LPPC"  = (is.lppc * is.target - is.lppc * is.distractor) / 2,
-  "target-distractor|DMFC"  = (is.dmfc * is.target - is.dmfc * is.distractor) / 2,
+  DMFC_L.distractor = is.dmfc * is.distractor * is.left,
+  DMFC_R.distractor = is.dmfc * is.distractor * is.right,
   
-  "target-incongruency|DLPFC" = (is.dlpfc * is.target - is.dlpfc * is.incongruency) / 2,
-  "target-incongruency|LPPC"  = (is.lppc * is.target - is.lppc * is.incongruency) / 2,
-  "target-incongruency|DMFC"  = (is.dmfc * is.target - is.dmfc * is.incongruency) / 2,
   
-  "distractor-incongruency|DLPFC" = (is.dlpfc * is.distractor - is.dlpfc * is.incongruency) / 2,
-  "distractor-incongruency|LPPC"  = (is.lppc * is.distractor - is.lppc * is.incongruency) / 2,
-  "distractor-incongruency|DMFC"  = (is.dmfc * is.distractor - is.dmfc * is.incongruency) / 2,
+  DLPFC_L.incongruency = is.dlpfc * is.incongruency * is.left,
+  DLPFC_R.incongruency = is.dlpfc * is.incongruency * is.right,
   
-  ## within-region target-incongruency contrasts (within/by hemi)
+  DLPFC_L.target = is.dlpfc * is.target * is.left,
+  DLPFC_R.target = is.dlpfc * is.target * is.right,
   
-  "target-distractor|DLPFC_L" = (is.dlpfc * is.target - is.dlpfc * is.distractor) * is.left,
-  "target-distractor|LPPC_L" = (is.lppc * is.target - is.lppc * is.distractor) * is.left,
+  DLPFC_L.distractor = is.dlpfc * is.distractor * is.left,
+  DLPFC_R.distractor = is.dlpfc * is.distractor * is.right,
+  
+  
+  LPPC_L.incongruency = is.lppc * is.incongruency * is.left,
+  LPPC_R.incongruency = is.lppc * is.incongruency * is.right,
+  
+  LPPC_L.target = is.lppc * is.target * is.left,
+  LPPC_R.target = is.lppc * is.target * is.right,
+  
+  LPPC_L.distractor = is.lppc * is.distractor * is.left,
+  LPPC_R.distractor = is.lppc * is.distractor * is.right,
+  
+  
+  ## within-region contrasts
+  
+  "incongruency-target|DMFC_L" = (is.dmfc * is.incongruency - is.dmfc * is.target) * is.left,
+  "incongruency-target|DMFC_R" = (is.dmfc * is.incongruency - is.dmfc * is.target) * is.right,
+  "incongruency-distractor|DMFC_L" = (is.dmfc * is.incongruency - is.dmfc * is.distractor) * is.left,
+  "incongruency-distractor|DMFC_R" = (is.dmfc * is.incongruency - is.dmfc * is.distractor) * is.right,
   "target-distractor|DMFC_L" = (is.dmfc * is.target - is.dmfc * is.distractor) * is.left,
-  "target-distractor|DLPFC_R" = (is.dlpfc * is.target - is.dlpfc * is.distractor) * is.right,
-  "target-distractor|LPPC_R" = (is.lppc * is.target - is.lppc * is.distractor) * is.right,
   "target-distractor|DMFC_R" = (is.dmfc * is.target - is.dmfc * is.distractor) * is.right,
+  "incongruency-target|DLPFC_L" = (is.dlpfc * is.incongruency - is.dlpfc * is.target) * is.left,
+  "incongruency-target|DLPFC_R" = (is.dlpfc * is.incongruency - is.dlpfc * is.target) * is.right,
+  "incongruency-distractor|DLPFC_L" = (is.dlpfc * is.incongruency - is.dlpfc * is.distractor) * is.left,
+  "incongruency-distractor|DLPFC_R" = (is.dlpfc * is.incongruency - is.dlpfc * is.distractor) * is.right,
+  "target-distractor|DLPFC_L" = (is.dlpfc * is.target - is.dlpfc * is.distractor) * is.left,
+  "target-distractor|DLPFC_R" = (is.dlpfc * is.target - is.dlpfc * is.distractor) * is.right,
+  "incongruency-target|LPPC_L" = (is.lppc * is.incongruency - is.lppc * is.target) * is.left,
+  "incongruency-target|LPPC_R" = (is.lppc * is.incongruency - is.lppc * is.target) * is.right,
+  "incongruency-distractor|LPPC_L" = (is.lppc * is.incongruency - is.lppc * is.distractor) * is.left,
+  "incongruency-distractor|LPPC_R" = (is.lppc * is.incongruency - is.lppc * is.distractor) * is.right,
+  "target-distractor|LPPC_L" = (is.lppc * is.target - is.lppc * is.distractor) * is.left,
+  "target-distractor|LPPC_R" = (is.lppc * is.target - is.lppc * is.distractor) * is.right,
   
-  "target-incongruency|DLPFC_L" = (is.dlpfc * is.target - is.dlpfc * is.incongruency) * is.left,
-  "target-incongruency|LPPC_L" = (is.lppc * is.target - is.lppc * is.incongruency) * is.left,
-  "target-incongruency|DMFC_L" = (is.dmfc * is.target - is.dmfc * is.incongruency) * is.left,
-  "target-incongruency|DLPFC_R" = (is.dlpfc * is.target - is.dlpfc * is.incongruency) * is.right,
-  "target-incongruency|LPPC_R" = (is.lppc * is.target - is.lppc * is.incongruency) * is.right,
-  "target-incongruency|DMFC_R" = (is.dmfc * is.target - is.dmfc * is.incongruency) * is.right,
-
-  "distractor-incongruency|DLPFC_L" = (is.dlpfc * is.distractor - is.dlpfc * is.incongruency) * is.left,
-  "distractor-incongruency|LPPC_L" = (is.lppc * is.distractor - is.lppc * is.incongruency) * is.left,
-  "distractor-incongruency|DMFC_L" = (is.dmfc * is.distractor - is.dmfc * is.incongruency) * is.left,
-  "distractor-incongruency|DLPFC_R" = (is.dlpfc * is.distractor - is.dlpfc * is.incongruency) * is.right,
-  "distractor-incongruency|LPPC_R" = (is.lppc * is.distractor - is.lppc * is.incongruency) * is.right,
-  "distractor-incongruency|DMFC_R" = (is.dmfc * is.distractor - is.dmfc * is.incongruency) * is.right,
   
   ## cross-region contrasts:
   
   "DMFC_L-DLPFC|incongruency" = (is.dmfc * is.left - is.dlpfc / 2) * is.incongruency,
-  "DMFC_L-LPPC|incongruency"  = (is.dmfc * is.left - is.lppc / 2) * is.incongruency,
   "DMFC_L-DLPFC|target"       = (is.dmfc * is.left - is.dlpfc / 2) * is.target,
+  
+  "DMFC_L-LPPC|incongruency"  = (is.dmfc * is.left - is.lppc / 2) * is.incongruency,
   "DMFC_L-LPPC|target"        = (is.dmfc * is.left - is.lppc / 2) * is.target,
+  
   
   ## interactions:
   
-  "(DLPFC-DMFC_L)(target-incongruency)" = 
-    (is.dlpfc/2 - (is.dmfc * is.left)) * is.target - (is.dlpfc/2 - (is.dmfc * is.left)) * is.incongruency,
-  "(DLPFC-LPPC_L)(target-incongruency)" = 
-    (is.dlpfc/2 - (is.lppc * is.left)) * is.target - (is.dlpfc/2 - (is.lppc * is.left)) * is.incongruency
+  "(DMFC_L-DLPFC)(incongruency-target)" = 
+    ((is.dmfc * is.left) - is.dlpfc/2) * is.incongruency - ((is.dmfc * is.left) - is.dlpfc/2) * is.target,
+  
+  "(LPPC_L-DLPFC)(incongruency-target)" = 
+    ((is.lppc * is.left) - is.dlpfc/2) * is.incongruency - ((is.lppc * is.left) - is.dlpfc/2) * is.target
   
   
 )
@@ -142,12 +139,12 @@ contrs2correct <- c(
   "target-distractor\\|DLPFC_.",
   "target-distractor\\|LPPC_.",
   "target-distractor\\|DMFC_.",
-  "target-incongruency\\|DLPFC_.",
-  "target-incongruency\\|LPPC_.",
-  "target-incongruency\\|DMFC_.",
-  "distractor-incongruency\\|DLPFC_.",
-  "distractor-incongruency\\|LPPC_.",
-  "distractor-incongruency\\|DMFC_."
+  "incongruency-target\\|DLPFC_.",
+  "incongruency-target\\|LPPC_.",
+  "incongruency-target\\|DMFC_.",
+  "incongruency-distractor\\|DLPFC_.",
+  "incongruency-distractor\\|LPPC_.",
+  "incongruency-distractor\\|DMFC_."
   
 )
 
@@ -168,63 +165,58 @@ for (contr.i in seq_along(contrs2correct)) {
 
 table.group.contrast <- c(
   
-  "$\\text{target DLPFC (L)}$",
-  "$\\text{target LPPC (L)}$",
-  "$\\text{target DMFC (L)}$",
-  "$\\text{target DLPFC (R)}$",
-  "$\\text{target LPPC (R)}$",
-  "$\\text{target DMFC (R)}$",
-  "$\\text{distr. DLPFC (L)}$",
-  "$\\text{distr. LPPC (L)}$",
-  "$\\text{distr. DMFC (L)}$",
-  "$\\text{distr. DLPFC (R)}$",
-  "$\\text{distr. LPPC (R)}$",
-  "$\\text{distr. DMFC (R)}$",
-  "$\\text{incon. DLPFC (L)}$",
-  "$\\text{incon. LPPC (L)}$",
-  "$\\text{incon. DMFC (L)}$",
-  "$\\text{incon. DLPFC (R)}$",
-  "$\\text{incon. LPPC (R)}$",
-  "$\\text{incon. DMFC (R)}$",
   
-  "$\\text{target}-\\text{distr.: } \\text{DLPFC}$",
-  "$\\text{target}-\\text{distr.: } \\text{LPPC}$",
-  "$\\text{target}-\\text{distr.: } \\text{DMFC}$",
-  "$\\text{target}-\\text{incon.: } \\text{DLPFC}$",
-  "$\\text{target}-\\text{incon.: } \\text{LPPC}$",
-  "$\\text{target}-\\text{incon.: } \\text{DMFC}$",
-  "$\\text{distr.}-\\text{incon.: } \\text{DLPFC}$",
-  "$\\text{distr.}-\\text{incon.: } \\text{LPPC}$",
-  "$\\text{distr.}-\\text{incon.: } \\text{DMFC}$",
+  "$\\text{DMFC (L) incon.}$",
+  "$\\text{DMFC (R) incon.}$",
+  "$\\text{DMFC (L) target}$",
+  "$\\text{DMFC (R) target}$",
+  "$\\text{DMFC (L) distr.}$",
+  "$\\text{DMFC (R) distr.}$",
   
-  "$\\text{target}-\\text{distr.: } \\text{DLPFC (L)}$",
-  "$\\text{target}-\\text{distr.: } \\text{LPPC (L)}$",
-  "$\\text{target}-\\text{distr.: } \\text{DMFC (L)}$",
-  "$\\text{target}-\\text{distr.: } \\text{DLPFC (R)}$",
-  "$\\text{target}-\\text{distr.: } \\text{LPPC (R)}$",
-  "$\\text{target}-\\text{distr.: } \\text{DMFC (R)}$",
+  "$\\text{DLPFC (L) incon.}$",
+  "$\\text{DLPFC (R) incon.}$",
+  "$\\text{DLPFC (L) target}$",
+  "$\\text{DLPFC (R) target}$",
+  "$\\text{DLPFC (L) distr.}$",
+  "$\\text{DLPFC (R) distr.}$",
   
-  "$\\text{target}-\\text{incon.: } \\text{DLPFC (L)}$",
-  "$\\text{target}-\\text{incon.: } \\text{LPPC (L)}$",
-  "$\\text{target}-\\text{incon.: } \\text{DMFC (L)}$",
-  "$\\text{target}-\\text{incon.: } \\text{DLPFC (R)}$",
-  "$\\text{target}-\\text{incon.: } \\text{LPPC (R)}$",
-  "$\\text{target}-\\text{incon.: } \\text{DMFC (R)}$",
-  
-  "$\\text{distr.}-\\text{incon.: } \\text{DLPFC (L)}$",
-  "$\\text{distr.}-\\text{incon.: } \\text{LPPC (L)}$",
-  "$\\text{distr.}-\\text{incon.: } \\text{DMFC (L)}$",
-  "$\\text{distr.}-\\text{incon.: } \\text{DLPFC (R)}$",
-  "$\\text{distr.}-\\text{incon.: } \\text{LPPC (R)}$",
-  "$\\text{distr.}-\\text{incon.: } \\text{DMFC (R)}$",
+  "$\\text{LPPC (L) incon.}$",
+  "$\\text{LPPC (R) incon.}$",
+  "$\\text{LPPC (L) target}$",
+  "$\\text{LPPC (R) target}$",
+  "$\\text{LPPC (L) distr.}$",
+  "$\\text{LPPC (R) distr.}$",
 
-  "$\\text{incon.: } \\text{DMFC (L)}-\\text{DLPFC}$",
-  "$\\text{incon.: } \\text{DMFC (L)}-\\text{LPPC}$",
-  "$\\text{target: } \\text{DMFC (L)}-\\text{DLPFC}$",
-  "$\\text{target: } \\text{DMFC (L)}-\\text{LPPC}$",
-
-  "$[\\text{target}-\\text{incon.}]\\cdot[\\text{DLPFC}-\\text{DMFC (L)}]$",
-  "$[\\text{target}-\\text{incon.}]\\cdot[\\text{DLPFC}-\\text{LPPC (L)}]$"
+  
+  
+  "$\\text{incon.}-\\text{target } | \\text{ DMFC (L)}$",
+  "$\\text{incon.}-\\text{target } | \\text{ DMFC (R)}$",
+  "$\\text{incon.}-\\text{distr. } | \\text{ DMFC (L)}$",
+  "$\\text{incon.}-\\text{distr. } | \\text{ DMFC (R)}$",
+  "$\\text{target}-\\text{distr. } | \\text{ DMFC (L)}$",
+  "$\\text{target}-\\text{distr. } | \\text{ DMFC (R)}$",
+  
+  "$\\text{incon.}-\\text{target } | \\text{ DLPFC (L)}$",
+  "$\\text{incon.}-\\text{target } | \\text{ DLPFC (R)}$",
+  "$\\text{incon.}-\\text{distr. } | \\text{ DLPFC (L)}$",
+  "$\\text{incon.}-\\text{distr. } | \\text{ DLPFC (R)}$",
+  "$\\text{target}-\\text{distr. } | \\text{ DLPFC (L)}$",
+  "$\\text{target}-\\text{distr. } | \\text{ DLPFC (R)}$",
+  
+  "$\\text{incon.}-\\text{target } | \\text{ LPPC (L)}$",
+  "$\\text{incon.}-\\text{target } | \\text{ LPPC (R)}$",
+  "$\\text{incon.}-\\text{distr. } | \\text{ LPPC (L)}$",
+  "$\\text{incon.}-\\text{distr. } | \\text{ LPPC (R)}$",
+  "$\\text{target}-\\text{distr. } | \\text{ LPPC (L)}$",
+  "$\\text{target}-\\text{distr. } | \\text{ LPPC (R)}$",
+  
+  "$\\text{DMFC (L)}-\\text{DLPFC } | \\text{ incon.} $",
+  "$\\text{DMFC (L)}-\\text{DLPFC } | \\text{ target} $",
+  "$\\text{DMFC (L)}-\\text{LPPC } | \\text{ incon.} $",
+  "$\\text{DMFC (L)}-\\text{LPPC } | \\text{ target} $",
+  
+  "$[\\text{incon.}-\\text{target}]\\cdot[\\text{DMFC (L)}-\\text{DLPFC}]$",
+  "$[\\text{incon.}-\\text{target}]\\cdot[\\text{LPPC (L)}-\\text{DLPFC}]$"
   
 )
 
@@ -237,20 +229,27 @@ table.group <- data.frame(
 )
 rownames(table.group) <- NULL
 
-table.group.means <- table.group[1:18, ]
-table.group.wnregion <- table.group[19:45, ]
-table.group.bnregion <- table.group[46:51, ]
-
-kable(table.group.means)
-kable(table.group.wnregion)
-kable(table.group.bnregion)
-
-fwrite(table.group.means, here("out", "group", "superparcels_means.txt"))
-fwrite(table.group.wnregion, here("out", "group", "superparcels_wnregion.txt"))
-fwrite(table.group.bnregion, here("out", "group", "superparcels_bnregion.txt"))
+# table.group.means <- table.group[1:18, ]
+# table.group.wnregion <- table.group[19:45, ]
+# table.group.bnregion <- table.group[46:51, ]
+# 
+# kable(table.group.means)
+# kable(table.group.wnregion)
+# kable(table.group.bnregion)
+# 
+# fwrite(table.group.means, here("out", "group", "superparcels_means.txt"))
+# fwrite(table.group.wnregion, here("out", "group", "superparcels_wnregion.txt"))
+# fwrite(table.group.bnregion, here("out", "group", "superparcels_bnregion.txt"))
 
 saveRDS(contrasts.super, here("out", "group", "superparcels_contrast_matrix.rds"))
 saveRDS(table.group.contrast, here("out", "group", "superparcels_contrast_labels.rds"))
+
+
+kable(table.group)
+
+fwrite(table.group, here("out", "group", "superparcels_bigtab.txt"))
+
+
 
 #+
 
@@ -287,7 +286,7 @@ p.means.super <-
     scale_color_manual(values = colors.model) +
     lemon::coord_capped_cart(left = "both") +
     scale_x_discrete(labels = c("DMFC (L)", "DLPFC", "LPPC")) +
-    scale_y_continuous(breaks = c(0, 0.1, 0.2)) +
+    scale_y_continuous(breaks = c(0, 0.1, 0.2), limits = c(min(means.super$ymin), 0.2)) +
     
     annotate(
       geom = "text", x = 1.5, y = 0.14, label = "target", color = colors.model["target"],
@@ -358,17 +357,132 @@ ggsave(here("out", "group", "crossplot_superparcels.pdf"), p.means.super, device
 
 #+
 
+#' ### som-mot and v1 dissociation
+
+#+ fpc-dissoc_sommot-v1_model, include = TRUE
+
+
+fit.prelim <- lmer(
+  beta ~ 0 + interaction(roi, param) + (1 | subj),
+  stats.subjs.super %>% filter(param %in% c("distractor", "target"), roi %in% c("V1", "smmouth"))
+)
+summary(fit.prelim)
+
+contrasts.prelim <- rbind(
+  diag(4),  #' means
+  ## cross-parcel contrasts:
+  "V1-smmouth|distractor" = c(1, -1, 0, 0),
+  "smmouth-V1|target"     = c(0, 0, 1, -1),
+  ## within-parcel contrasts:
+  "distractor-target|V1"     = c(0, 1, 0, -1),
+  "target-distractor|smmouth"= c(-1, 0, 1, 0),
+  ## interaction:
+  "(smmouth-V1)(target-distractor)" = c(-1, -1, 1, 1)
+)
+rownames(contrasts.prelim)[1:4] <- c("V1.distractor", "smmouth.distractor", "V1.target", "smmouth.target")
+
+glht.prelim <- summary(glht(fit.prelim, contrasts.prelim, alternative = "greater"), test = adjusted("none"))
+glht.prelim$test$pvalues["(smmouth-V1)(target-distractor)"] <- 
+  glht.prelim$test$pvalues["(smmouth-V1)(target-distractor)"]*2  ## interaction should be two-sided
+
+glht.prelim
+
+#+
+
+
+#+ fpc-dissoc_sommot-v1_plot, include = TRUE
+
+means.prelim <- stats.subjs.super %>% 
+  
+  filter(param %in% c("distractor", "target"), roi %in% c("evis", "smmouth")) %>%
+  
+  group_by(roi, param) %>%
+  summarize(res = list(boot_mean_ci(beta)), .groups = "drop") %>% 
+  
+  unnest(cols = c(res))
+
+
+p.means.prelim <-
+  means.prelim %>%
+  
+  ggplot(aes(roi, y, color = param)) +
+  
+  geom_point(size = geom.point.size, position = position_dodge(width = 1/2)) +
+  geom_errorbar(aes(ymin = ymin, ymax = ymax), position = position_dodge(width = 1/2), width = 0, size = geom.line.size) +
+  
+  scale_color_manual(values = colors.model) +
+  lemon::coord_capped_cart(left = "both") +
+  scale_x_discrete(labels = c("V1", "vS1/vM1")) +
+  scale_y_continuous(breaks = c(0, 0.1, 0.2), limits = c(min(means.prelim$ymin), 0.2)) +
+  
+  annotate(
+    geom = "text", x = 0.75, y = 0.14, label = "target", color = colors.model["target"],
+    hjust = 0, vjust = 1, size = label.size, fontface = "bold"
+  ) +
+  annotate(
+    geom = "text", x = 0.75, y = 0.12, label = "distr.", color = colors.model["distractor"],
+    hjust = 0, vjust = 1, size = label.size, fontface = "bold"
+  ) +
+  
+  annotate(
+    geom = "segment", color = "grey40", size = geom.line.size/2,
+    y = ymax, yend = ymax,
+    x = 0.825 + 1, xend = 1.175 + 1
+  ) +
+  annotate(
+    geom = "segment", color = "grey40", size = geom.line.size/2, 
+    y = ymax, yend = ymax,
+    x = 0.825, xend = 1.175, linetype = "dotted"
+  ) +
+  
+  labs(y = bquote("Model fit ("*bar(beta)*")"), x = "Region") +
+  
+  theme(
+    legend.position = "none", 
+    panel.grid      = element_blank(), 
+    panel.border    = element_blank(),
+    axis.line.y     = element_line(size = axis.line.size),
+    axis.text       = element_text(size = axis.text.size),
+    axis.ticks.y    = element_line(size = axis.line.size),
+    axis.ticks.x    = element_blank(),
+    axis.title    = element_text(size = axis.title.size)
+  )
+
+ggsave(here("out", "group", "crossplot_sommot-v1.pdf"), p.means.prelim, device = "pdf", width = 4, height = 3)
+
+#+
+
+
 
 
 #' ### arrange figure
 #+ fpc-dissoc_arrange-fig_primary
 
 ## assumes p.mds object is in env (need to source mds.R script prior, or run _group.rmd)
+# plot.group <- plot_grid(
+#   p.means.super,
+#   p.mds,
+#   ncol = 2,
+#   vjust = c(1.25, 1.25),
+#   labels = "AUTO",
+#   label_size = 12
+# )
+# 
+# plot.group
+# 
+# ggsave(
+#   here("out", "group", "fig_group.pdf"),
+#   plot.group,
+#   device = "pdf", height = 4.25, width = 8.5, unit = "cm"
+# )
+
+
 plot.group <- plot_grid(
   p.means.super,
   p.mds,
-  ncol = 2,
-  vjust = c(1.25, 1.25),
+  p.means.prelim,
+  ncol = 3,
+  vjust = c(1.25, 1.25, 1.25),
   labels = "AUTO",
   label_size = 12
 )
@@ -378,7 +492,14 @@ plot.group
 ggsave(
   here("out", "group", "fig_group.pdf"), 
   plot.group, 
-  device = "pdf", height = 4.25, width = 8.5, unit = "cm"
+  device = "pdf", height = 4.25, width = 12.75, unit = "cm"
 )
+
+ggsave(
+  here("out", "group", "fig_group.eps"), 
+  plot.group, 
+  device = "eps", height = 4.25, width = 12.75, unit = "cm"
+)
+
 
 #+

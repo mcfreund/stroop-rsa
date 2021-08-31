@@ -17,8 +17,9 @@ if (file.exists(fname.mods.bnroi)) {
   mods.bnroi <- list(
     
     incon_dmfc_dlpfc  = update(fit1.het.trim, rt ~ . + trial.type * dmfc_L_incongruency + trial.type * dlpfc_R_incongruency, data = d.dissoc.hlm),
-    incon_dmfc_lppc   = update(fit1.het.trim, rt ~ . + trial.type * dmfc_L_incongruency + trial.type * lppc_R_incongruency, data = d.dissoc.hlm),
     target_dmfc_dlpfc = update(fit1.het.trim, rt ~ . + trial.type * dmfc_L_target + trial.type * dlpfc_R_target, data = d.dissoc.hlm),
+    
+    incon_dmfc_lppc   = update(fit1.het.trim, rt ~ . + trial.type * dmfc_L_incongruency + trial.type * lppc_R_incongruency, data = d.dissoc.hlm),
     target_dmfc_lppc  = update(fit1.het.trim, rt ~ . + trial.type * dmfc_L_target + trial.type * lppc_R_target, data = d.dissoc.hlm)
     
   )
@@ -32,20 +33,23 @@ lapply(mods.bnroi, summary) %>% lapply(coef)
 
 ## get contrasts
 
-contrasts.bnroi <- lapply(mods.bnroi, glht, linfct = W.single) %>% lapply(summary, test = adjusted("none"))
+## negate W.single to give contrast that matches the text notation column:
+contrasts.bnroi <- lapply(mods.bnroi, glht, linfct = -W.single) %>% lapply(summary, test = adjusted("none"))
 tab.bnroi <- contrasts.bnroi %>% map("test") %>% map_df(~ .[c("coefficients", "sigma", "tstat", "pvalues")], .id = "roi")
 
 tab.bnroi %<>% 
   rename(b = coefficients, se = sigma, t = tstat, p = pvalues) %>%
   mutate(
-    model = c("incon.", "incon.", "target", "target"),
+    model = c("incon.", "target", "incon.", "target"),
     contrast = c(
-      "\\beta_\\text{DMFC (L)}-\\beta_\\text{DLPFC (R)}\\times\\text{stroop}",
-      "\\beta_\\text{DMFC (L)}-\\beta_\\text{LPPC (R)}\\times\\text{stroop}",
-      "\\beta_\\text{DMFC (L)}-\\beta_\\text{DLPFC (R)}\\times\\text{stroop}",
-      "\\beta_\\text{DMFC (L)}-\\beta_\\text{LPPC (R)}\\times\\text{stroop}"
-      )
+      "$\\text{DMFC (L)} - \\text{DLPFC (R) } | \\text{ incon.}$",
+      "$\\text{DMFC (L)} - \\text{DLPFC (R) } | \\text{ target}$",
+      
+      "$\\text{DMFC (L)} - \\text{LPPC (R) } | \\text{ incon.}$",
+      "$\\text{DMFC (L)} - \\text{LPPC (R) } | \\text{ target}$"
+    )
   )
+
 
 kable(tab.bnroi, escape = FALSE)
 

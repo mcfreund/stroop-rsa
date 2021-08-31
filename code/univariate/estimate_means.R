@@ -81,7 +81,7 @@ for (set.i in sets.of.rois) {
       
       image.label <- paste0(reg.i, "#0_Coef")
       
-      brick.str <- mikeutils::afni("3dinfo", paste("-label2index", image.label, fname.nii))
+      brick.str <- afni("3dinfo", paste("-label2index", image.label, fname.nii))
       
       ## for error checking
       

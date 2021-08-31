@@ -42,17 +42,17 @@ stats.subjs %<>% group_by(scheme, id) %>% mutate(beta.s = c(scale(beta)))  ## sc
 
 ## to long-form data-frame
 
-d.mmp <- stats.subjs %>% filter(scheme == "mmp")
+# d.mmp <- stats.subjs %>% filter(scheme == "mmp")
 d.super <- stats.subjs %>% filter(scheme == "superparcel")
 
 ## to wide-form matrix
 
-w.mmp <- stats.subjs %>% 
-  
-  filter(scheme == "mmp") %>%
-  
-  dplyr::select(subj, is.analysis.group, congr, stroop, beta, id) %>%
-  pivot_wider(names_from = "id", values_from = "beta")
+# w.mmp <- stats.subjs %>% 
+#   
+#   filter(scheme == "mmp") %>%
+#   
+#   dplyr::select(subj, is.analysis.group, congr, stroop, beta, id) %>%
+#   pivot_wider(names_from = "id", values_from = "beta")
 
 
 w.super <- stats.subjs %>% 
@@ -62,18 +62,21 @@ w.super <- stats.subjs %>%
   dplyr::select(subj, is.analysis.group, congr, stroop, beta, id) %>%
   pivot_wider(names_from = "id", values_from = "beta")
 
+w.super[w.super$subj == "562345", "subj"] <- "DMCC4854075"  ## NB: change back to "old" name just for binding below
 
-are.identical <- identical(w.mmp[c("subj", "is.analysis.group")], w.super[c("subj", "is.analysis.group")])
-if (!are.identical) {
-  stop("something wrong")
-} else {
+
+
+# are.identical <- identical(w.mmp[c("subj", "is.analysis.group")], w.super[c("subj", "is.analysis.group")])
+# if (!are.identical) {
+#   stop("something wrong")
+# } else {
   
-  ids <- w.mmp[c("subj", "is.analysis.group")]
+  ids <- w.super[c("subj", "is.analysis.group")]
   
-  m.mmp    <- w.mmp %>% ungroup %>% dplyr::select(-subj, -is.analysis.group, -scheme) %>% as.matrix
+  # m.mmp    <- w.mmp %>% ungroup %>% dplyr::select(-subj, -is.analysis.group, -scheme) %>% as.matrix
   m.super  <- w.super %>% ungroup %>%  dplyr::select(-subj, -is.analysis.group, -scheme) %>% as.matrix
 
-}
+# }
 
 ## response variables
 

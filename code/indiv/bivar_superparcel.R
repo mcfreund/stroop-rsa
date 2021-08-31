@@ -145,44 +145,50 @@ w.super.agroup %>%
   
   ggplot() +
   
-  stat_boot_ci(aes(dmfc_L_incongruency, stroop), n = 1E4, alpha = 0.3, fill = colors.model["incongruency"]) +
+  stat_boot_ci(aes(dmfc_L_incongruency, stroop), n = 1E4, fill = "#fec192ff") +
+  # stat_boot_ci(aes(dmfc_L_incongruency, stroop), n = 1E4, alpha = 0.3, fill = colors.model["incongruency"]) +
   stat_smooth(aes(dmfc_L_incongruency, stroop), method = "lm", color = colors.model["incongruency"], se = FALSE) +
   
-  stat_boot_ci(aes(dlpfc_R_target, stroop), n = 1E4, alpha = 0.3, fill = colors.model["target"]) +
+  stat_boot_ci(aes(dlpfc_R_target, stroop), n = 1E4, fill = "#b7f1e1ff") +
+  # stat_boot_ci(aes(dlpfc_R_target, stroop), n = 1E4, alpha = 0.3, fill = colors.model["target"]) +
   stat_smooth(aes(dlpfc_R_target, stroop), method = "lm", color = colors.model["target"], se = FALSE) +
   
   
   annotate(
-    geom = "text", x = 0.3, y = 40, 
-    label = paste0(
-      "DMFC (L) incongr.:\nr = ", 
-      round(cor.dmfc.l.incongruency$t0, 2), ", [", 
-      round(cor.dmfc.l.incongruency$lower, 2), ", ", 
-      round(cor.dmfc.l.incongruency$upper, 2), "]\n\U03C1 = ",
-      
-      round(cor.dmfc.l.incongruency.rank$t0, 2), ", [", 
-      round(cor.dmfc.l.incongruency.rank$lower, 2), ", ", 
-      round(cor.dmfc.l.incongruency.rank$upper, 2), "]"
-    ),
-    size = label.size,
-    hjust = 0,
+    geom = "text", x = 0.58, y = 30, 
+    # label = "DMFC (L) incon.",
+    label = paste0("DMFC (L) incon.\nr = ", round(cor.dmfc.l.incongruency$t0, 2)),
+    # label = paste0(
+    #   "DMFC (L) incongr.:\nr = ", 
+    #   round(cor.dmfc.l.incongruency$t0, 2), " [", 
+    #   round(cor.dmfc.l.incongruency$lower, 2), ", ", 
+    #   round(cor.dmfc.l.incongruency$upper, 2), "]\n\U03C1 = ",
+    #   
+    #   round(cor.dmfc.l.incongruency.rank$t0, 2), ", [", 
+    #   round(cor.dmfc.l.incongruency.rank$lower, 2), ", ", 
+    #   round(cor.dmfc.l.incongruency.rank$upper, 2), "]"
+    # ),
+    size = label.size*1.5,
+    hjust = 1,
     fontface = "italic",
     color = colors.model["incongruency"]
   ) +
   
   annotate(
-    geom = "text", x = -0.35, y = 140, 
-    label = paste0(
-      "DLPFC (R) target:\nr = ", 
-      round(cor.dlpfc.r.target$t0, 2), ", [", 
-      round(cor.dlpfc.r.target$lower, 2), ", ", 
-      round(cor.dlpfc.r.target$upper, 2), "]\n\U03C1 = ",
-      
-      round(cor.dlpfc.r.target.rank$t0, 2), ", [", 
-      round(cor.dlpfc.r.target.rank$lower, 2), ", ", 
-      round(cor.dlpfc.r.target.rank$upper, 2), "]"
-    ),
-    size = label.size,
+    geom = "text", x = -0.35, y = 130, 
+    # label = "DLPFC (R) target",
+    label = paste0("DLPFC (R) target:\nr = ", round(cor.dlpfc.r.target$t0, 2)),
+    # label = paste0(
+    #   "DLPFC (R) target:\nr = ",
+    #   round(cor.dlpfc.r.target$t0, 2), " [",
+    #   round(cor.dlpfc.r.target$lower, 2), ", ",
+    #   round(cor.dlpfc.r.target$upper, 2), "]\n\U03C1 = ",
+    # 
+    #   round(cor.dlpfc.r.target.rank$t0, 2), ", [",
+    #   round(cor.dlpfc.r.target.rank$lower, 2), ", ",
+    #   round(cor.dlpfc.r.target.rank$upper, 2), "]"
+    # ),
+    size = label.size*1.5,
     hjust = 0,
     fontface = "italic",
     color = colors.model["target"]

@@ -36,7 +36,7 @@ read_betas <- function(.dir.glms, .regs = bias.items) {
     
     ## get labels
     
-    labs <- mikeutils::afni("3dinfo", paste("-label",  fname.nii))
+    labs <- afni("3dinfo", paste("-label",  fname.nii))
     labs <- unlist(strsplit(labs, "\\|"))
     is.reg <- grepl(paste0(.regs, "#[0-9]_Coef", collapse = "|"), labs)
     regs <- gsub("([a:Z]*)(#.*)", "\\1", labs[is.reg])
