@@ -8,6 +8,9 @@
 ## mike freund, 2019-02-20
 ## adapted for new project directory 2019-12-24
 
+## hack-y bug fix. add combo.paste here even though defined in funs.R...
+combo.paste <- function(a, b, ..., sep = ".") apply(expand.grid(a, b, ...), 1, paste0, collapse = sep)
+
 
 ## paths: pointers for atlases and for BOLD timeseries ----
 
